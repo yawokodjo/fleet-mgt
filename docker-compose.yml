@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  laravel:
+    build:
+      context: ./fleet-mgt-api
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./fleet-mgt-api:/var/www/html
+      - /var/www/html/vendor
+    env_file:
+      - ./fleet-mgt-api/.env
+    depends_on:
+      - db
+    command: ["dockerize", "-wait", "tcp://db:3306", "-timeout", "60s", "php", "artisan", "serve", "--host=0.0.0.0"]
+
+  react:
+    build:
+      context: ./fleet-mgt-frontend
+      dockerfile: Dockerfile
+    container_name: react_app
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./fleet-mgt-frontend:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+
+  db:
+    image: mysql:8
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fleet_mgt_db
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: david1
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+
+  adminer:
+    image: adminer
+    container_name: adminer_app
+    restart: always
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
