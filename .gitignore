@@ -1,0 +1,17 @@
+# Node
+fleet-mgt-frontend/node_modules/
+fleet-mgt-frontend/dist/
+
+# Laravel
+fleet-mgt-api/vendor/
+fleet-mgt-api/node_modules/
+fleet-mgt-api/.env
+fleet-mgt-api/storage/*.key
+fleet-mgt-api/storage/logs/*.log
+fleet-mgt-api/storage/framework/cache/*
+fleet-mgt-api/storage/framework/sessions/*
+fleet-mgt-api/storage/framework/views/*
+
+# System
+.DS_Store
+Thumbs.db
