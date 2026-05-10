@@ -4,10 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
 {
@@ -55,7 +54,7 @@ class AuthController extends Controller
         $user = User::where('email', $credentials['email'])->first();
 
         /** ❌ Utilisateur inexistant */
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'code' => 'INVALID_PASSWORD',
                 'message' => 'Email ou mot de passe incorrect',
@@ -73,7 +72,7 @@ class AuthController extends Controller
         }
 
         /** ❌ Mauvais mot de passe */
-        if (!Hash::check($credentials['password'], $user->password)) {
+        if (! Hash::check($credentials['password'], $user->password)) {
 
             $user->login_attempts += 1;
 
@@ -86,6 +85,7 @@ class AuthController extends Controller
                 // 💣 2 blocages → suppression du compte
                 if ($user->block_count >= 2) {
                     $user->delete(); // soft delete
+
                     return response()->json([
                         'code' => 'ACCOUNT_DELETED',
                         'message' => 'Compte supprimé après plusieurs tentatives échouées',

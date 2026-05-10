@@ -1,16 +1,14 @@
 <?php
 
-use App\Http\Controllers\{
-    AuthController,
-    ConsumptionController,
-    MaintenanceController,
-    ReportController,
-    UserController,
-    VehicleController,
-    SearchController,
-    MessageController
-};
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ConsumptionController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,23 +77,23 @@ Route::middleware('auth:sanctum')->group(function () {
     // ------------------------------------------------------------------------
     // Rapports
     // ------------------------------------------------------------------------
-    
+
     // Routes spécifiques AVANT apiResource pour éviter les conflits
     Route::prefix('reports')->group(function () {
         // Génération automatique de rapports
         Route::post('/generate', [ReportController::class, 'generateReport']);
-        
+
         // Export de consommation (entre 2 dates)
         Route::get('/exportBetweenDates', [ReportController::class, 'exportBetweenDates']);
-        
+
         // Export de maintenance (entre 2 dates)
         Route::get('/maintenanceBetweenDates', [ReportController::class, 'maintenanceBetweenDates']);
-        
+
         // Routes héritées (à vérifier si utilisées)
         // Route::get('/monthly-consumption', [ReportController::class, 'monthlyConsumptionReport']);
         // Route::get('/export-monthly', [ReportController::class, 'exportMonthlyReport']);
     });
-    
+
     // CRUD standard des rapports
     Route::apiResource('reports', ReportController::class);
 });

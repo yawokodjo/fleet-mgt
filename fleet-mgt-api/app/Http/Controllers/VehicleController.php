@@ -16,9 +16,9 @@ class VehicleController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('manager-action') && !Gate::allows('accountant-action')) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé. Seuls les administrateurs, managers et comptables peuvent accéder à cette ressource.'
+                'message' => 'Accès non autorisé. Seuls les administrateurs, managers et comptables peuvent accéder à cette ressource.',
             ], 403);
         }
 
@@ -34,9 +34,9 @@ class VehicleController extends Controller
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('manager-action')) {
+        if (! Gate::allows('manager-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent créer des véhicules.'
+                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent créer des véhicules.',
             ], 403);
         }
 
@@ -44,19 +44,19 @@ class VehicleController extends Controller
             'marque' => 'required|string|max:50',
             'model' => 'required|string|max:50',
             'license_plate' => 'required|string|unique:vehicles|max:20',
-            'year' => 'required|integer|min:1900|max:' . (date('Y') + 1),
+            'year' => 'required|integer|min:1900|max:'.(date('Y') + 1),
             'fuel_type' => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
             'fuel_card' => 'nullable|string|max:50',
             'mileage' => 'required|integer|min:0',
             'status' => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id' => 'nullable|exists:users,id'
+            'current_driver_id' => 'nullable|exists:users,id',
         ]);
 
         $vehicle = Vehicle::create($data);
 
         return response()->json([
             'message' => 'Véhicule créé avec succès',
-            'vehicle' => $vehicle
+            'vehicle' => $vehicle,
         ], 201);
     }
 
@@ -68,6 +68,7 @@ class VehicleController extends Controller
     public function show(Vehicle $vehicle)
     {
         $vehicle->load('currentDriver');
+
         return response()->json($vehicle);
     }
 
@@ -78,29 +79,29 @@ class VehicleController extends Controller
      */
     public function update(Request $request, Vehicle $vehicle)
     {
-        if (!Gate::allows('manager-action')) {
+        if (! Gate::allows('manager-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent modifier des véhicules.'
+                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent modifier des véhicules.',
             ], 403);
         }
 
         $data = $request->validate([
             'marque' => 'sometimes|string|max:50',
             'model' => 'sometimes|string|max:50',
-            'license_plate' => 'sometimes|string|unique:vehicles,license_plate,' . $vehicle->id . '|max:20',
-            'year' => 'sometimes|integer|min:1900|max:' . (date('Y') + 1),
+            'license_plate' => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
+            'year' => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
             'fuel_type' => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
             'fuel_card' => 'nullable|string|max:50',
             'mileage' => 'sometimes|integer|min:0',
             'status' => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id' => 'nullable|exists:users,id'
+            'current_driver_id' => 'nullable|exists:users,id',
         ]);
 
         $vehicle->update($data);
 
         return response()->json([
             'message' => 'Véhicule mis à jour avec succès',
-            'vehicle' => $vehicle
+            'vehicle' => $vehicle,
         ]);
     }
 
@@ -111,16 +112,16 @@ class VehicleController extends Controller
      */
     public function destroy(Vehicle $vehicle)
     {
-        if (!Gate::allows('admin-action')) {
+        if (! Gate::allows('admin-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé. Seuls les administrateurs peuvent supprimer des véhicules.'
+                'message' => 'Accès non autorisé. Seuls les administrateurs peuvent supprimer des véhicules.',
             ], 403);
         }
 
         $vehicle->delete();
 
         return response()->json([
-            'message' => 'Véhicule supprimé avec succès'
+            'message' => 'Véhicule supprimé avec succès',
         ], 200);
     }
 
@@ -146,9 +147,9 @@ class VehicleController extends Controller
      */
     public function detailsVehicle(Vehicle $vehicle)
     {
-        if (!Gate::allows('manager-action') && !Gate::allows('accountant-action')) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé.'
+                'message' => 'Accès non autorisé.',
             ], 403);
         }
 
@@ -160,7 +161,7 @@ class VehicleController extends Controller
             },
             'maintenances' => function ($query) {
                 $query->latest()->limit(10);
-            }
+            },
         ]);
 
         // Statistiques supplémentaires
@@ -175,7 +176,7 @@ class VehicleController extends Controller
 
         return response()->json([
             'vehicle' => $vehicle,
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 
@@ -186,21 +187,21 @@ class VehicleController extends Controller
      */
     public function assignDriver(Request $request, Vehicle $vehicle)
     {
-        if (!Gate::allows('manager-action')) {
+        if (! Gate::allows('manager-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent assigner des chauffeurs.'
+                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent assigner des chauffeurs.',
             ], 403);
         }
 
         $data = $request->validate([
-            'driver_id' => 'required|exists:users,id'
+            'driver_id' => 'required|exists:users,id',
         ]);
 
         // Vérifier que l'utilisateur est bien un chauffeur
         $driver = \App\Models\User::find($data['driver_id']);
-        if (!$driver->isDriver()) {
+        if (! $driver->isDriver()) {
             return response()->json([
-                'message' => 'L\'utilisateur sélectionné n\'est pas un chauffeur.'
+                'message' => 'L\'utilisateur sélectionné n\'est pas un chauffeur.',
             ], 422);
         }
 
@@ -211,7 +212,7 @@ class VehicleController extends Controller
 
         if ($existingAssignment) {
             return response()->json([
-                'message' => 'Ce chauffeur est déjà assigné au véhicule ' . $existingAssignment->license_plate
+                'message' => 'Ce chauffeur est déjà assigné au véhicule '.$existingAssignment->license_plate,
             ], 422);
         }
 
@@ -219,7 +220,7 @@ class VehicleController extends Controller
 
         return response()->json([
             'message' => 'Chauffeur assigné avec succès',
-            'vehicle' => $vehicle->load('currentDriver')
+            'vehicle' => $vehicle->load('currentDriver'),
         ]);
     }
 
@@ -235,14 +236,14 @@ class VehicleController extends Controller
                      Gate::allows('mechanic-action') ||
                      ($vehicle->current_driver_id === auth()->id() && Gate::allows('driver-action'));
 
-        if (!$canUpdate) {
+        if (! $canUpdate) {
             return response()->json([
-                'message' => 'Accès non autorisé. Seul le chauffeur assigné, un mécanicien ou un administrateur peut modifier le kilométrage.'
+                'message' => 'Accès non autorisé. Seul le chauffeur assigné, un mécanicien ou un administrateur peut modifier le kilométrage.',
             ], 403);
         }
 
         $data = $request->validate([
-            'mileage' => 'required|integer|min:' . $vehicle->mileage
+            'mileage' => 'required|integer|min:'.$vehicle->mileage,
         ]);
 
         $oldMileage = $vehicle->mileage;
@@ -253,7 +254,7 @@ class VehicleController extends Controller
             'vehicle' => $vehicle,
             'old_mileage' => $oldMileage,
             'new_mileage' => $data['mileage'],
-            'difference' => $data['mileage'] - $oldMileage
+            'difference' => $data['mileage'] - $oldMileage,
         ]);
     }
 
@@ -263,9 +264,9 @@ class VehicleController extends Controller
      */
     public function available()
     {
-        if (!Gate::allows('manager-action')) {
+        if (! Gate::allows('manager-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé.'
+                'message' => 'Accès non autorisé.',
             ], 403);
         }
 
@@ -284,9 +285,9 @@ class VehicleController extends Controller
      */
     public function inMaintenance()
     {
-        if (!Gate::allows('manager-action') && !Gate::allows('mechanic-action')) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('mechanic-action')) {
             return response()->json([
-                'message' => 'Accès non autorisé.'
+                'message' => 'Accès non autorisé.',
             ], 403);
         }
 

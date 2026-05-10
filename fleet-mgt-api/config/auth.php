@@ -1,32 +1,32 @@
 <?php
 
-return array(
+return [
 
-    'defaults' => array(
+    'defaults' => [
 
         'guard' => 'web', // pour les sessions web classiques
         'passwords' => 'users',
-    ),
+    ],
 
-    'guards' => array(
-        'web' => array(
+    'guards' => [
+        'web' => [
             'driver' => 'session',
             'provider' => 'users',
-        ),
+        ],
 
-        'api' => array(
+        'api' => [
 
             'driver' => 'sanctum', // API guard avec Sanctum
             'provider' => 'users',
-        ),
-    ),
+        ],
+    ],
 
-    'providers' => array(
-        'users' => array(
+    'providers' => [
+        'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,  // Utilisation du modèle User par défaut
-        ),
-    ),
+        ],
+    ],
 
     'passwords' => [
         'users' => [
@@ -37,7 +37,6 @@ return array(
         ],
     ],
 
-
     'password_timeout' => 10800,
 
-);
+];

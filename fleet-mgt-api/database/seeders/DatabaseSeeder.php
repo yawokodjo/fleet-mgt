@@ -28,11 +28,11 @@ class DatabaseSeeder extends Seeder
             'fuel_type' => 'Essence',
             'fuel_card' => 'jkgaksfa',
             'mileage' => 23456,
-            'current_driver_id' =>  2
+            'current_driver_id' => 2,
         ]);
 
         $this->call([
-            //UserSeeder::class
+            // UserSeeder::class
         ]);
     }
 }

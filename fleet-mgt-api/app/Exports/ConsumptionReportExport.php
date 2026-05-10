@@ -4,31 +4,29 @@ namespace App\Exports;
 
 use App\Models\Consumption;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ConsumptionReportExport implements 
-    FromCollection, 
-    WithHeadings, 
-    WithMapping, 
-    WithStyles, 
-    WithTitle,
-    WithColumnWidths,
-    ShouldAutoSize
+class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $startDate;
+
     protected $endDate;
+
     protected $order;
+
     protected $vehicleId;
+
     protected $rowNumber = 1;
+
     protected $data;
 
     public function __construct($startDate, $endDate, $order = 'asc', $vehicleId = null)
@@ -78,7 +76,7 @@ class ConsumptionReportExport implements
             'Kilométrage (Km)',
             'Taux de conso (L/100Km)',
             'Type Carburant',
-            'Station'
+            'Station',
         ];
     }
 
@@ -103,7 +101,7 @@ class ConsumptionReportExport implements
             number_format($consumption->kilometers ?? 0, 0, ',', ' '),
             $consumptionRate > 0 ? number_format($consumptionRate, 2, ',', ' ') : 'N/A',
             $this->getFuelTypeLabel($consumption->fuel_type),
-            $consumption->station ?? 'N/A'
+            $consumption->station ?? 'N/A',
         ];
     }
 
@@ -118,7 +116,7 @@ class ConsumptionReportExport implements
             'essence' => 'Essence',
             'super' => 'Super',
             'gas' => 'Gaz',
-            'electric' => 'Électrique'
+            'electric' => 'Électrique',
         ];
 
         return $labels[strtolower($type ?? '')] ?? ucfirst($type ?? 'N/A');
@@ -133,57 +131,57 @@ class ConsumptionReportExport implements
         $lastColumn = $sheet->getHighestColumn();
 
         // Style de l'en-tête (ligne 1)
-        $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray([
+        $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
-                'size' => 11
+                'size' => 11,
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '198754'] // Vert Bootstrap success
+                'startColor' => ['rgb' => '198754'], // Vert Bootstrap success
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
-                'wrapText' => true
+                'wrapText' => true,
             ],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000']
-                ]
-            ]
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
         ]);
 
         // Style des données (lignes 2 à n)
         if ($lastRow > 1) {
-            $sheet->getStyle('A2:' . $lastColumn . $lastRow)->applyFromArray([
+            $sheet->getStyle('A2:'.$lastColumn.$lastRow)->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => 'CCCCCC']
-                    ]
+                        'color' => ['rgb' => 'CCCCCC'],
+                    ],
                 ],
                 'alignment' => [
-                    'vertical' => Alignment::VERTICAL_CENTER
-                ]
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                ],
             ]);
 
             // Centrer les colonnes spécifiques
-            $sheet->getStyle('A2:B' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A2:B'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             // Aligner à droite les colonnes numériques
-            $sheet->getStyle('D2:H' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('I2:J' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D2:H'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('I2:J'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             // Alterner les couleurs des lignes
             for ($i = 2; $i <= $lastRow; $i++) {
                 if ($i % 2 == 0) {
-                    $sheet->getStyle('A' . $i . ':' . $lastColumn . $i)->applyFromArray([
+                    $sheet->getStyle('A'.$i.':'.$lastColumn.$i)->applyFromArray([
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'F8F9FA']
-                        ]
+                            'startColor' => ['rgb' => 'F8F9FA'],
+                        ],
                     ]);
                 }
             }
@@ -196,33 +194,33 @@ class ConsumptionReportExport implements
 
         // Ajouter une ligne de total
         $totalRow = $lastRow + 1;
-        $sheet->setCellValue('A' . $totalRow, 'TOTAUX');
-        $sheet->setCellValue('D' . $totalRow, number_format($totalQuantity, 2, ',', ' ') . ' L');
-        $sheet->setCellValue('E' . $totalRow, '-');
-        $sheet->setCellValue('F' . $totalRow, number_format($totalCost, 0, ',', ' ') . ' FCFA');
-        $sheet->setCellValue('G' . $totalRow, '-');
-        $sheet->setCellValue('H' . $totalRow, $avgConsumptionRate > 0 ? number_format($avgConsumptionRate, 2, ',', ' ') . ' (moy.)' : '-');
+        $sheet->setCellValue('A'.$totalRow, 'TOTAUX');
+        $sheet->setCellValue('D'.$totalRow, number_format($totalQuantity, 2, ',', ' ').' L');
+        $sheet->setCellValue('E'.$totalRow, '-');
+        $sheet->setCellValue('F'.$totalRow, number_format($totalCost, 0, ',', ' ').' FCFA');
+        $sheet->setCellValue('G'.$totalRow, '-');
+        $sheet->setCellValue('H'.$totalRow, $avgConsumptionRate > 0 ? number_format($avgConsumptionRate, 2, ',', ' ').' (moy.)' : '-');
 
         // Style de la ligne de total
-        $sheet->getStyle('A' . $totalRow . ':' . $lastColumn . $totalRow)->applyFromArray([
+        $sheet->getStyle('A'.$totalRow.':'.$lastColumn.$totalRow)->applyFromArray([
             'font' => [
                 'bold' => true,
-                'size' => 11
+                'size' => 11,
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'D4EDDA'] // Vert clair
+                'startColor' => ['rgb' => 'D4EDDA'], // Vert clair
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_MEDIUM,
-                    'color' => ['rgb' => '198754']
-                ]
-            ]
+                    'color' => ['rgb' => '198754'],
+                ],
+            ],
         ]);
 
         // Ajuster la hauteur des lignes
@@ -234,43 +232,43 @@ class ConsumptionReportExport implements
 
         // Ajouter un titre au-dessus du tableau
         $sheet->insertNewRowBefore(1, 2);
-        $sheet->mergeCells('A1:' . $lastColumn . '1');
+        $sheet->mergeCells('A1:'.$lastColumn.'1');
         $sheet->setCellValue('A1', '⛽ RAPPORT DE CONSOMMATION CARBURANT');
         $sheet->getStyle('A1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 16,
-                'color' => ['rgb' => '198754']
+                'color' => ['rgb' => '198754'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
-            ]
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
         ]);
         $sheet->getRowDimension(1)->setRowHeight(35);
 
         // Ajouter la période et informations
         $sheet->insertNewRowBefore(2, 1);
-        $sheet->mergeCells('A2:' . $lastColumn . '2');
-        $period = 'Période : ' . \Carbon\Carbon::parse($this->startDate)->format('d/m/Y') . 
-                  ' au ' . \Carbon\Carbon::parse($this->endDate)->format('d/m/Y');
+        $sheet->mergeCells('A2:'.$lastColumn.'2');
+        $period = 'Période : '.\Carbon\Carbon::parse($this->startDate)->format('d/m/Y').
+                  ' au '.\Carbon\Carbon::parse($this->endDate)->format('d/m/Y');
         if ($this->vehicleId) {
             $vehicle = \App\Models\Vehicle::find($this->vehicleId);
             if ($vehicle) {
-                $period .= ' | Véhicule : ' . $vehicle->license_plate;
+                $period .= ' | Véhicule : '.$vehicle->license_plate;
             }
         }
-        $period .= ' | Nombre d\'enregistrements : ' . $this->data->count();
+        $period .= ' | Nombre d\'enregistrements : '.$this->data->count();
         $sheet->setCellValue('A2', $period);
         $sheet->getStyle('A2')->applyFromArray([
             'font' => [
                 'italic' => true,
                 'size' => 10,
-                'color' => ['rgb' => '6C757D']
+                'color' => ['rgb' => '6C757D'],
             ],
             'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER
-            ]
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+            ],
         ]);
         $sheet->getRowDimension(2)->setRowHeight(22);
 
@@ -285,7 +283,7 @@ class ConsumptionReportExport implements
      */
     private function calculateAverageConsumptionRate(): float
     {
-        $validRecords = $this->data->filter(function($item) {
+        $validRecords = $this->data->filter(function ($item) {
             return $item->kilometers > 0 && $item->quantity > 0;
         });
 
@@ -293,7 +291,7 @@ class ConsumptionReportExport implements
             return 0;
         }
 
-        $totalRate = $validRecords->sum(function($item) {
+        $totalRate = $validRecords->sum(function ($item) {
             return ($item->quantity / $item->kilometers) * 100;
         });
 

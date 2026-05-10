@@ -16,7 +16,7 @@ class Maintenance extends Model
         'completed_date',
         'cost',
         'description',
-        'status'
+        'status',
     ];
 
     protected $casts = [
@@ -49,7 +49,7 @@ class Maintenance extends Model
     {
         $this->update([
             'status' => 'completed',
-            'completed_date' => now()
+            'completed_date' => now(),
         ]);
     }
 }

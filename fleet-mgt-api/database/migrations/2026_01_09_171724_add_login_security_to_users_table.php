@@ -12,23 +12,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-        $table->integer('login_attempts')->default(0);
-        $table->timestamp('blocked_until')->nullable();
-        $table->integer('block_count')->default(0);
-    });
+            $table->integer('login_attempts')->default(0);
+            $table->timestamp('blocked_until')->nullable();
+            $table->integer('block_count')->default(0);
+        });
     }
 
     /**
      * Reverse the migrations.
      */
-   public function down()
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->dropColumn([
-            'login_attempts',
-            'blocked_until',
-            'block_count'
-        ]);
-    });
-}
+    public function down()
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn([
+                'login_attempts',
+                'blocked_until',
+                'block_count',
+            ]);
+        });
+    }
 };

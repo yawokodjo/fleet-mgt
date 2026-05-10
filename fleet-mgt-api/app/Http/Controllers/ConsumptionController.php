@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Consumption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 
 class ConsumptionController extends Controller
 {
@@ -45,23 +44,23 @@ class ConsumptionController extends Controller
     public function store(Request $request)
     {
         // Autorisation: admins, managers, conducteurs
-       /* $allowed = Gate::allows('admin-action') ||
-                   Gate::allows('manager-action') ||
-                   Gate::allows('driver-action');
+        /* $allowed = Gate::allows('admin-action') ||
+                    Gate::allows('manager-action') ||
+                    Gate::allows('driver-action');
 
-        if (!$allowed) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+         if (!$allowed) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         }*/
 
         $data = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'driver_id' => 'required|exists:users,id',
             'date' => 'required|date|before_or_equal:today',
             'fuel_volume' => 'required|numeric|min:0.01',
-            'fuel_cost' => 'required|numeric|min:0.01'
+            'fuel_cost' => 'required|numeric|min:0.01',
         ], [
-        'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
-     ]);
+            'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
+        ]);
 
         $consumption = Consumption::create($data);
 
@@ -99,10 +98,10 @@ class ConsumptionController extends Controller
             'driver_id' => 'sometimes|exists:users,id',
             'date' => 'sometimes|date |before_or_equal:today',
             'fuel_volume' => 'sometimes|numeric|min:0.01',
-            'fuel_cost' => 'sometimes|numeric|min:0.01'
+            'fuel_cost' => 'sometimes|numeric|min:0.01',
         ], [
-        'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
-     ]);
+            'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
+        ]);
 
         $consumption->update($data);
 
@@ -124,16 +123,16 @@ class ConsumptionController extends Controller
     // Rapport de consommation pour un véhicule
     public function vehicleReport($vehicleId)
     {
-       /* if (!Gate::allows('admin-action') &&
-            !Gate::allows('manager-action') &&
-            !Gate::allows('accountant-action')) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /* if (!Gate::allows('admin-action') &&
+             !Gate::allows('manager-action') &&
+             !Gate::allows('accountant-action')) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         return Consumption::where('vehicle_id', $vehicleId)
-        ->selectRaw('SUM(fuel_volume) as total_volume, SUM(fuel_cost) as total_cost,
+            ->selectRaw('SUM(fuel_volume) as total_volume, SUM(fuel_cost) as total_cost,
                      CASE WHEN SUM(fuel_volume) > 0 THEN SUM(fuel_cost)/SUM(fuel_volume) ELSE 0 END as avg_cost_per_liter')
-        ->first();
+            ->first();
 
     }
 }

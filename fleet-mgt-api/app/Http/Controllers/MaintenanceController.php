@@ -52,10 +52,10 @@ class MaintenanceController extends Controller
             'maintenance_company' => 'required|string|max:100',
             'scheduled_date' => 'required|date|after_or_equal:today',
             'cost' => 'required|numeric|min:0',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
         ], [
-        'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
-     ]);
+            'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
+        ]);
 
         $maintenance = Maintenance::create($data);
 
@@ -65,14 +65,14 @@ class MaintenanceController extends Controller
     public function show(Maintenance $maintenance)
     {
         // Autorisation: admins, managers, mécaniciens, conducteur concerné
-      /*  $canView = Gate::allows('admin-action') ||
-                   Gate::allows('manager-action') ||
-                   Gate::allows('mechanic-action') ||
-                   ($maintenance->driver_id && $maintenance->driver_id === auth()->id());
+        /*  $canView = Gate::allows('admin-action') ||
+                     Gate::allows('manager-action') ||
+                     Gate::allows('mechanic-action') ||
+                     ($maintenance->driver_id && $maintenance->driver_id === auth()->id());
 
-        if (!$canView) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+          if (!$canView) {
+              return response()->json(['message' => 'Accès non autorisé'], 403);
+          }*/
 
         return $maintenance->load(['vehicle', 'driver']);
     }
@@ -80,13 +80,13 @@ class MaintenanceController extends Controller
     public function update(Request $request, Maintenance $maintenance)
     {
         // Autorisation: admins, managers, mécaniciens
-       /* $allowed = Gate::allows('admin-action') ||
-                   Gate::allows('manager-action') ||
-                   Gate::allows('mechanic-action');
+        /* $allowed = Gate::allows('admin-action') ||
+                    Gate::allows('manager-action') ||
+                    Gate::allows('mechanic-action');
 
-        if (!$allowed) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+         if (!$allowed) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         $data = $request->validate([
             'vehicle_id' => 'sometimes|exists:vehicles,id',
@@ -97,9 +97,9 @@ class MaintenanceController extends Controller
             'completed_date' => 'nullable|date',
             'cost' => 'sometimes|numeric|min:0',
             'description' => 'nullable|string',
-            'status' => 'sometimes|in:planned,in_progress,completed,cancelled'
+            'status' => 'sometimes|in:planned,in_progress,completed,cancelled',
         ], [
-        'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
+            'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
         ]);
 
         $maintenance->update($data);
@@ -110,9 +110,9 @@ class MaintenanceController extends Controller
     public function destroy(Maintenance $maintenance)
     {
         // Autorisation: admins et managers seulement
-       /* if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /* if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         $maintenance->delete();
 
@@ -135,7 +135,7 @@ class MaintenanceController extends Controller
 
         return response()->json([
             'message' => 'Maintenance marquée comme complétée',
-            'maintenance' => $maintenance
+            'maintenance' => $maintenance,
         ]);
     }
 }

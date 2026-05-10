@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class DebugAuthController extends Controller
 {
@@ -17,10 +17,10 @@ class DebugAuthController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 '❌ ERREUR' => 'Aucun utilisateur authentifié',
-                'solution' => 'Vérifiez que le token Bearer est bien présent dans le header Authorization'
+                'solution' => 'Vérifiez que le token Bearer est bien présent dans le header Authorization',
             ], 401);
         }
 
@@ -74,19 +74,19 @@ class DebugAuthController extends Controller
         ];
 
         // Diagnostic automatique
-        if (!$user->role) {
+        if (! $user->role) {
             $debug['7️⃣ DIAGNOSTIC'][] = '❌ PROBLÈME: Le champ role est NULL dans la base de données';
             $debug['7️⃣ DIAGNOSTIC'][] = '✅ SOLUTION: Exécutez GET /api/fix-admin-role pour corriger';
         } elseif ($user->role !== 'admin') {
             $debug['7️⃣ DIAGNOSTIC'][] = "⚠️ PROBLÈME: Le rôle est '{$user->role}' au lieu de 'admin'";
             $debug['7️⃣ DIAGNOSTIC'][] = '✅ SOLUTION: Exécutez GET /api/fix-admin-role pour corriger';
-        } elseif (!method_exists($user, 'isAdmin')) {
+        } elseif (! method_exists($user, 'isAdmin')) {
             $debug['7️⃣ DIAGNOSTIC'][] = '❌ PROBLÈME: La méthode isAdmin() n\'existe pas dans le modèle User';
             $debug['7️⃣ DIAGNOSTIC'][] = '✅ SOLUTION: Ajoutez les méthodes dans app/Models/User.php';
-        } elseif (!$user->isAdmin()) {
+        } elseif (! $user->isAdmin()) {
             $debug['7️⃣ DIAGNOSTIC'][] = '❌ PROBLÈME: isAdmin() retourne false';
             $debug['7️⃣ DIAGNOSTIC'][] = '✅ SOLUTION: Vérifiez la logique de la méthode isAdmin()';
-        } elseif (!Gate::allows('admin-action')) {
+        } elseif (! Gate::allows('admin-action')) {
             $debug['7️⃣ DIAGNOSTIC'][] = '❌ PROBLÈME: Le Gate admin-action refuse l\'accès';
             $debug['7️⃣ DIAGNOSTIC'][] = '✅ SOLUTION: Vérifiez app/Providers/AuthServiceProvider.php';
         } else {
@@ -104,14 +104,14 @@ class DebugAuthController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'error' => 'Non authentifié'
+                'error' => 'Non authentifié',
             ], 401);
         }
 
         $oldRole = $user->role;
-        
+
         // Mettre à jour le rôle
         $user->role = 'admin';
         $user->save();
@@ -129,7 +129,7 @@ class DebugAuthController extends Controller
                 'isAdmin()' => method_exists($user, 'isAdmin') ? $user->isAdmin() : 'Méthode non disponible',
                 'Gate admin-action' => Gate::allows('admin-action') ? '✅ Autorisé' : '❌ Refusé',
             ],
-            'next_step' => 'Reconnectez-vous pour obtenir un nouveau token avec les bonnes permissions'
+            'next_step' => 'Reconnectez-vous pour obtenir un nouveau token avec les bonnes permissions',
         ]);
     }
 
@@ -141,7 +141,7 @@ class DebugAuthController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['error' => 'Non authentifié'], 401);
         }
 
@@ -151,7 +151,7 @@ class DebugAuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role ?? 'NULL',
             ],
-            'access_tests' => []
+            'access_tests' => [],
         ];
 
         // Test manager-action
@@ -182,7 +182,7 @@ class DebugAuthController extends Controller
         $canAccessVehicles = $managerAllowed || $accountantAllowed;
         $results['conclusion'] = [
             'can_access_vehicles' => $canAccessVehicles,
-            'verdict' => $canAccessVehicles 
+            'verdict' => $canAccessVehicles
                 ? '✅ Vous DEVRIEZ pouvoir accéder à /api/vehicles'
                 : '❌ Accès REFUSÉ à /api/vehicles',
             'reason' => $canAccessVehicles
@@ -190,7 +190,7 @@ class DebugAuthController extends Controller
                 : 'Aucun des gates requis (manager-action OU accountant-action) n\'est autorisé',
         ];
 
-        if (!$canAccessVehicles) {
+        if (! $canAccessVehicles) {
             $results['solutions'] = [
                 '1' => 'Exécutez GET /api/fix-admin-role',
                 '2' => 'Reconnectez-vous après avoir fixé le rôle',
@@ -207,8 +207,8 @@ class DebugAuthController extends Controller
      */
     public function checkUserTable()
     {
-        $columns = DB::select("DESCRIBE users");
-        
+        $columns = DB::select('DESCRIBE users');
+
         $hasRoleColumn = false;
         $roleColumnInfo = null;
 
@@ -225,7 +225,7 @@ class DebugAuthController extends Controller
             'has_role_column' => $hasRoleColumn,
             'role_column_info' => $roleColumnInfo,
             'all_columns' => $columns,
-            'diagnostic' => $hasRoleColumn 
+            'diagnostic' => $hasRoleColumn
                 ? '✅ La colonne role existe'
                 : '❌ La colonne role n\'existe PAS - Vous devez créer une migration',
         ]);
@@ -254,27 +254,27 @@ Route::middleware('auth:sanctum')->group(function () {
  * ========================================
  * INSTRUCTIONS D'UTILISATION
  * ========================================
- * 
+ *
  * 1. Créez le fichier app/Http/Controllers/DebugAuthController.php
  * 2. Ajoutez les routes ci-dessus dans routes/api.php
  * 3. Connectez-vous normalement pour obtenir un token
  * 4. Testez ces endpoints dans l'ordre :
- * 
+ *
  *    GET /api/check-user-table
  *    → Vérifier que la colonne 'role' existe
- * 
+ *
  *    GET /api/debug-auth
  *    → Voir tous les détails de l'authentification
- * 
+ *
  *    GET /api/fix-admin-role
  *    → Corriger automatiquement le rôle en 'admin'
- * 
+ *
  *    POST /api/logout puis POST /api/login
  *    → Se reconnecter pour obtenir un nouveau token
- * 
+ *
  *    GET /api/test-vehicle-access
  *    → Vérifier que l'accès est maintenant autorisé
- * 
+ *
  *    GET /api/vehicles
  *    → Devrait maintenant fonctionner !
  */

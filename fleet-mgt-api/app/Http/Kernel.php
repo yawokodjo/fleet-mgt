@@ -4,6 +4,7 @@ namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+
 class Kernel extends HttpKernel
 {
     /**
@@ -22,7 +23,6 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\CorsMiddleware::class,
-
 
     ];
 
@@ -73,8 +73,8 @@ class Kernel extends HttpKernel
     ];
 
     // app/Http/Kernel.php
-protected $routeMiddleware = [
-    // ...
-    'admin' => \App\Http\Middleware\AdminMiddleware::class,
-];
+    protected $routeMiddleware = [
+        // ...
+        'admin' => \App\Http\Middleware\AdminMiddleware::class,
+    ];
 }

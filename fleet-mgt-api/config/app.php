@@ -123,8 +123,7 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-  'Pdf' => Barryvdh\DomPDF\Facade\Pdf::class,
-  'Excel' => Maatwebsite\Excel\Facades\Excel::class,
-
+    'Pdf' => Barryvdh\DomPDF\Facade\Pdf::class,
+    'Excel' => Maatwebsite\Excel\Facades\Excel::class,
 
 ];

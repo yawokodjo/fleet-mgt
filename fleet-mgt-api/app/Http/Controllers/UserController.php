@@ -33,10 +33,10 @@ class UserController extends Controller
         Gate::authorize('admin-action');
 
         $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role'     => 'required|in:admin,manager,driver,accountant,mechanic',
+            'role' => 'required|in:admin,manager,driver,accountant,mechanic',
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -45,7 +45,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
-            'user'    => $user,
+            'user' => $user,
         ], 201);
     }
 
@@ -59,7 +59,7 @@ class UserController extends Controller
         Gate::authorize('access-user', $user);
 
         return response()->json([
-            'user' => $user->load('vehicles')
+            'user' => $user->load('vehicles'),
         ]);
     }
 
@@ -73,18 +73,18 @@ class UserController extends Controller
         Gate::authorize('access-user', $user);
 
         $data = $request->validate([
-            'name'     => 'sometimes|string|max:255',
-            'email'    => [
+            'name' => 'sometimes|string|max:255',
+            'email' => [
                 'sometimes',
                 'email',
                 Rule::unique('users')->ignore($user->id),
             ],
             'password' => ['sometimes', 'confirmed', Password::defaults()],
-            'role'     => 'sometimes|in:admin,manager,driver,accountant,mechanic',
+            'role' => 'sometimes|in:admin,manager,driver,accountant,mechanic',
         ]);
 
         // Seul l'admin peut modifier le rôle
-        if (isset($data['role']) && !Gate::allows('admin-action')) {
+        if (isset($data['role']) && ! Gate::allows('admin-action')) {
             unset($data['role']);
         }
 
@@ -96,7 +96,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Utilisateur mis à jour',
-            'user'    => $user,
+            'user' => $user,
         ]);
     }
 
@@ -110,7 +110,7 @@ class UserController extends Controller
         User::findOrFail($id)->delete();
 
         return response()->json([
-            'message' => 'Utilisateur désactivé'
+            'message' => 'Utilisateur désactivé',
         ]);
     }
 
@@ -126,7 +126,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Utilisateur réactivé',
-            'user'    => $user,
+            'user' => $user,
         ]);
     }
 
@@ -140,7 +140,7 @@ class UserController extends Controller
         User::withTrashed()->findOrFail($id)->forceDelete();
 
         return response()->json([
-            'message' => 'Utilisateur supprimé définitivement'
+            'message' => 'Utilisateur supprimé définitivement',
         ]);
     }
 
@@ -160,7 +160,7 @@ class UserController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'name'  => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => [
                 'required',
                 'email',
@@ -177,7 +177,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Profil mis à jour avec succès',
-            'user'    => $user,
+            'user' => $user,
         ]);
     }
 
@@ -188,20 +188,20 @@ class UserController extends Controller
     {
         $request->validate([
             'current_password' => 'required',
-            'new_password'     => ['required', 'confirmed', Password::defaults()],
+            'new_password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json([
-                'message' => 'Mot de passe actuel incorrect'
+                'message' => 'Mot de passe actuel incorrect',
             ], 401);
         }
 
         if (Hash::check($request->new_password, $user->password)) {
             return response()->json([
-                'message' => 'Le nouveau mot de passe doit être différent'
+                'message' => 'Le nouveau mot de passe doit être différent',
             ], 422);
         }
 
@@ -210,7 +210,7 @@ class UserController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Mot de passe modifié avec succès'
+            'message' => 'Mot de passe modifié avec succès',
         ]);
     }
 

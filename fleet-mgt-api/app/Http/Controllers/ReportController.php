@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Report;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-use App\Models\Vehicle;
-use App\Models\Consumption;
-use App\Models\Maintenance;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ConsumptionReportExport;
 use App\Exports\MaintenanceReportExport;
-use Illuminate\Support\Carbon;
+use App\Models\Consumption;
+use App\Models\Maintenance;
+use App\Models\Report;
+use App\Models\Vehicle;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -21,9 +20,9 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-      /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
+              return response()->json(['message' => 'Accès non autorisé'], 403);
+          } */
 
         $query = Report::with(['manager', 'vehicle', 'maintenance', 'consumption']);
 
@@ -53,9 +52,9 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
-       /* if (!Gate::any(['admin-action', 'manager-action'])) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /* if (!Gate::any(['admin-action', 'manager-action'])) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         $data = $request->validate([
             'vehicle_id' => 'nullable|exists:vehicles,id',
@@ -65,7 +64,7 @@ class ReportController extends Controller
             'report_type' => 'required|string',
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'metadata' => 'nullable|json'
+            'metadata' => 'nullable|json',
         ]);
 
         $data['manager_id'] = auth()->id();
@@ -80,9 +79,9 @@ class ReportController extends Controller
      */
     public function show(Report $report)
     {
-      /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
+              return response()->json(['message' => 'Accès non autorisé'], 403);
+          } */
 
         return $report->load(['manager', 'vehicle', 'maintenance', 'consumption']);
     }
@@ -92,12 +91,12 @@ class ReportController extends Controller
      */
     public function update(Request $request, Report $report)
     {
-       /*  $canUpdate = Gate::allows('admin-action') ||
-                     (Gate::allows('manager-action') && $report->manager_id === auth()->id());
+        /*  $canUpdate = Gate::allows('admin-action') ||
+                      (Gate::allows('manager-action') && $report->manager_id === auth()->id());
 
-        if (!$canUpdate) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+         if (!$canUpdate) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         $data = $request->validate([
             'vehicle_id' => 'nullable|exists:vehicles,id',
@@ -107,7 +106,7 @@ class ReportController extends Controller
             'report_type' => 'sometimes|string',
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
-            'metadata' => 'nullable|json'
+            'metadata' => 'nullable|json',
         ]);
 
         $report->update($data);
@@ -120,12 +119,12 @@ class ReportController extends Controller
      */
     public function destroy(Report $report)
     {
-       /*  $canDelete = Gate::allows('admin-action') ||
-                     (Gate::allows('manager-action') && $report->manager_id === auth()->id());
+        /*  $canDelete = Gate::allows('admin-action') ||
+                      (Gate::allows('manager-action') && $report->manager_id === auth()->id());
 
-        if (!$canDelete) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+         if (!$canDelete) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         $report->delete();
 
@@ -137,9 +136,9 @@ class ReportController extends Controller
      */
     public function generateReport(Request $request)
     {
-       /* if (!Gate::any(['admin-action', 'manager-action'])) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /* if (!Gate::any(['admin-action', 'manager-action'])) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         $type = $request->input('type', 'monthly_summary');
         $startDate = $request->input('start_date', now()->startOfMonth());
@@ -151,9 +150,9 @@ class ReportController extends Controller
             'manager_id' => auth()->id(),
             'date' => now(),
             'report_type' => $type,
-            'title' => "Rapport généré: " . ucfirst(str_replace('_', ' ', $type)),
+            'title' => 'Rapport généré: '.ucfirst(str_replace('_', ' ', $type)),
             'content' => $reportData['content'],
-            'metadata' => $reportData['metadata']
+            'metadata' => $reportData['metadata'],
         ]);
 
         return response()->json($report);
@@ -164,9 +163,9 @@ class ReportController extends Controller
      */
     public function exportBetweenDates(Request $request)
     {
-      /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
+              return response()->json(['message' => 'Accès non autorisé'], 403);
+          } */
 
         // Validation des paramètres
         $validated = $request->validate([
@@ -174,7 +173,7 @@ class ReportController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'order' => 'nullable|in:asc,desc',
-            'format' => 'nullable|in:json,pdf,excel'
+            'format' => 'nullable|in:json,pdf,excel',
         ]);
 
         $start = $validated['start_date'];
@@ -196,7 +195,7 @@ class ReportController extends Controller
         // Format JSON (pour affichage dans le tableau React)
         if ($format === 'json') {
             return response()->json([
-                'consumptions' => $consumptions->map(function($c) {
+                'consumptions' => $consumptions->map(function ($c) {
                     // Calcul du taux de consommation
                     $consumptionRate = 0;
                     if ($c->kilometers && $c->kilometers > 0 && $c->quantity) {
@@ -214,19 +213,19 @@ class ReportController extends Controller
                         'kilometers' => $c->kilometers,
                         'consumption_rate' => $consumptionRate > 0 ? $consumptionRate : null,
                         'fuel_type' => $c->fuel_type,
-                        'station' => $c->station
+                        'station' => $c->station,
                     ];
                 }),
                 'filters' => [
                     'start_date' => $start,
                     'end_date' => $end,
                     'vehicle_id' => $vehicleId,
-                    'order' => $order
+                    'order' => $order,
                 ],
                 'totals' => [
                     'total_fuel' => round($consumptions->sum('quantity'), 2),
-                    'total_cost' => $consumptions->sum('fuel_cost')
-                ]
+                    'total_cost' => $consumptions->sum('fuel_cost'),
+                ],
             ]);
         }
 
@@ -240,19 +239,20 @@ class ReportController extends Controller
             'end' => $end,
             'order' => $order,
             'vehicle_id' => $vehicleId,
-            'consumptions' => $consumptions
+            'consumptions' => $consumptions,
         ];
 
         // Export Excel
         if ($format === 'excel') {
             return Excel::download(
-                new ConsumptionReportExport($start, $end, $order, $vehicleId), 
+                new ConsumptionReportExport($start, $end, $order, $vehicleId),
                 "rapport_consommation_{$start}_{$end}.xlsx"
             );
         }
 
         // Export PDF
         $pdf = Pdf::loadView('reports.monthly_consumption', $reportData);
+
         return $pdf->download("rapport_consommation_{$start}_{$end}.pdf");
     }
 
@@ -261,9 +261,9 @@ class ReportController extends Controller
      */
     public function maintenanceBetweenDates(Request $request)
     {
-       /* if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        /* if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
+             return response()->json(['message' => 'Accès non autorisé'], 403);
+         } */
 
         // Validation des paramètres
         $validated = $request->validate([
@@ -271,7 +271,7 @@ class ReportController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
             'order' => 'nullable|in:asc,desc',
-            'format' => 'nullable|in:json,pdf,excel'
+            'format' => 'nullable|in:json,pdf,excel',
         ]);
 
         $start = $validated['start_date'];
@@ -293,7 +293,7 @@ class ReportController extends Controller
         // Format JSON (pour affichage dans le tableau React)
         if ($format === 'json') {
             return response()->json([
-                'maintenances' => $maintenances->map(function($m) {
+                'maintenances' => $maintenances->map(function ($m) {
                     return [
                         'id' => $m->id,
                         'date' => $m->scheduled_date,
@@ -304,19 +304,19 @@ class ReportController extends Controller
                         'kilometers' => $m->current_mileage ?? $m->vehicle->mileage ?? 0,
                         'vendor' => $m->vendor ?? 'N/A',
                         'status' => $m->status,
-                        'notes' => $m->notes ?? ''
+                        'notes' => $m->notes ?? '',
                     ];
                 }),
                 'filters' => [
                     'start_date' => $start,
                     'end_date' => $end,
                     'vehicle_id' => $vehicleId,
-                    'order' => $order
+                    'order' => $order,
                 ],
                 'totals' => [
                     'total_cost' => $maintenances->sum('cost'),
-                    'count' => $maintenances->count()
-                ]
+                    'count' => $maintenances->count(),
+                ],
             ]);
         }
 
@@ -330,19 +330,20 @@ class ReportController extends Controller
             'end' => $end,
             'order' => $order,
             'vehicle_id' => $vehicleId,
-            'maintenances' => $maintenances
+            'maintenances' => $maintenances,
         ];
 
         // Export Excel
         if ($format === 'excel') {
             return Excel::download(
-                new MaintenanceReportExport($start, $end, $order, $vehicleId), 
+                new MaintenanceReportExport($start, $end, $order, $vehicleId),
                 "rapport_maintenance_{$start}_{$end}.xlsx"
             );
         }
 
         // Export PDF
         $pdf = Pdf::loadView('reports.maintenance_report', $reportData);
+
         return $pdf->download("rapport_maintenance_{$start}_{$end}.pdf");
     }
 
@@ -357,14 +358,14 @@ class ReportController extends Controller
                 'metadata' => [
                     'vehicles_count' => Vehicle::count(),
                     'maintenances_count' => Maintenance::whereBetween('scheduled_date', [$startDate, $endDate])->count(),
-                    'fuel_cost_total' => Consumption::whereBetween('date', [$startDate, $endDate])->sum('fuel_cost')
-                ]
+                    'fuel_cost_total' => Consumption::whereBetween('date', [$startDate, $endDate])->sum('fuel_cost'),
+                ],
             ];
         }
 
         return [
-            'content' => "Contenu du rapport généré automatiquement.",
-            'metadata' => null
+            'content' => 'Contenu du rapport généré automatiquement.',
+            'metadata' => null,
         ];
     }
 }

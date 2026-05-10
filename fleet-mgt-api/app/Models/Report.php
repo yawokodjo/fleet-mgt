@@ -2,15 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\{
-    Model,
-    Relations\BelongsTo,
-    Factories\HasFactory
-};
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Modèle Report - Gestion des rapports du système
- * 
+ *
  * @property int $id
  * @property int $manager_id
  * @property int|null $vehicle_id
@@ -30,7 +28,7 @@ class Report extends Model
 
     /**
      * Les attributs assignables en masse
-     * 
+     *
      * @var array<string>
      */
     protected $fillable = [
@@ -47,7 +45,7 @@ class Report extends Model
 
     /**
      * Les attributs qui doivent être castés
-     * 
+     *
      * @var array<string, string>
      */
     protected $casts = [
@@ -59,7 +57,7 @@ class Report extends Model
 
     /**
      * Types de rapports disponibles
-     * 
+     *
      * @var array<string, string>
      */
     public const REPORT_TYPES = [
@@ -70,13 +68,11 @@ class Report extends Model
         'driver_activity' => 'Activité des Conducteurs',
         'financial_report' => 'Rapport Financier',
         'incident_report' => 'Rapport d\'Incident',
-        'custom' => 'Rapport Personnalisé'
+        'custom' => 'Rapport Personnalisé',
     ];
 
     /**
      * Relation avec le gestionnaire (User)
-     * 
-     * @return BelongsTo
      */
     public function manager(): BelongsTo
     {
@@ -85,8 +81,6 @@ class Report extends Model
 
     /**
      * Relation avec le véhicule
-     * 
-     * @return BelongsTo
      */
     public function vehicle(): BelongsTo
     {
@@ -95,8 +89,6 @@ class Report extends Model
 
     /**
      * Relation avec la maintenance
-     * 
-     * @return BelongsTo
      */
     public function maintenance(): BelongsTo
     {
@@ -105,8 +97,6 @@ class Report extends Model
 
     /**
      * Relation avec la consommation
-     * 
-     * @return BelongsTo
      */
     public function consumption(): BelongsTo
     {
@@ -115,8 +105,6 @@ class Report extends Model
 
     /**
      * Obtenir le nom formaté du type de rapport
-     * 
-     * @return string
      */
     public function getReportTypeNameAttribute(): string
     {
@@ -125,9 +113,6 @@ class Report extends Model
 
     /**
      * Vérifier si le rapport appartient à un gestionnaire spécifique
-     * 
-     * @param int $managerId
-     * @return bool
      */
     public function belongsToManager(int $managerId): bool
     {
@@ -136,9 +121,6 @@ class Report extends Model
 
     /**
      * Vérifier si le rapport concerne un véhicule spécifique
-     * 
-     * @param int $vehicleId
-     * @return bool
      */
     public function isForVehicle(int $vehicleId): bool
     {
@@ -147,9 +129,8 @@ class Report extends Model
 
     /**
      * Scope pour filtrer par type de rapport
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $type
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeOfType($query, string $type)
@@ -159,10 +140,8 @@ class Report extends Model
 
     /**
      * Scope pour filtrer par plage de dates
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $startDate
-     * @param string $endDate
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeBetweenDates($query, string $startDate, string $endDate)
@@ -172,8 +151,8 @@ class Report extends Model
 
     /**
      * Scope pour les rapports récents (30 derniers jours)
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeRecent($query)
@@ -183,9 +162,8 @@ class Report extends Model
 
     /**
      * Scope pour les rapports d'un gestionnaire
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param int $managerId
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeByManager($query, int $managerId)
@@ -195,7 +173,7 @@ class Report extends Model
 
     /**
      * Obtenir tous les types de rapports disponibles
-     * 
+     *
      * @return array<string, string>
      */
     public static function getAvailableTypes(): array
@@ -205,8 +183,6 @@ class Report extends Model
 
     /**
      * Formater la date pour l'affichage
-     * 
-     * @return string
      */
     public function getFormattedDateAttribute(): string
     {
@@ -215,19 +191,16 @@ class Report extends Model
 
     /**
      * Vérifier si le rapport a des métadonnées
-     * 
-     * @return bool
      */
     public function hasMetadata(): bool
     {
-        return !empty($this->metadata);
+        return ! empty($this->metadata);
     }
 
     /**
      * Obtenir une valeur spécifique des métadonnées
-     * 
-     * @param string $key
-     * @param mixed $default
+     *
+     * @param  mixed  $default
      * @return mixed
      */
     public function getMetadata(string $key, $default = null)
@@ -237,10 +210,8 @@ class Report extends Model
 
     /**
      * Définir une valeur dans les métadonnées
-     * 
-     * @param string $key
-     * @param mixed $value
-     * @return void
+     *
+     * @param  mixed  $value
      */
     public function setMetadata(string $key, $value): void
     {

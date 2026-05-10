@@ -3,15 +3,15 @@
 namespace App\Models;
 
 use App\Notifications\ResetPasswordNotification;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, SoftDeletes, HasFactory;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * Champs modifiables en masse
@@ -100,4 +100,3 @@ class User extends Authenticatable
         return $this->hasMany(Vehicle::class, 'current_driver_id');
     }
 }
-        
