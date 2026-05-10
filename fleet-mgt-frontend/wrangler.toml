@@ -1,0 +1,6 @@
+name = "fleet-frontend"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-01-01"
+
+[vars]
+VITE_API_URL = "/api"

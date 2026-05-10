@@ -17,7 +17,7 @@ export default function VehicleCreate() {
         current_driver_id: "",
     });
 
-    const [errors, setErrors] = useState({}); // Pour stocker les erreurs Laravel
+    const [errors, setErrors] = useState({});
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,7 +25,8 @@ export default function VehicleCreate() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrors({}); // reset erreurs
+        setErrors({});
+
         try {
             await axios.post("http://localhost:8000/api/vehicles", form, {
                 headers: {
@@ -33,18 +34,17 @@ export default function VehicleCreate() {
                 },
             });
 
-            alert("Véhicule ajouté avec succès !");
+            alert("✅ Véhicule ajouté avec succès !");
             navigate("/vehicles");
         } catch (err) {
             console.error(err.response?.data);
 
             if (err.response?.status === 422) {
-                // erreurs de validation
                 setErrors(err.response.data.errors);
             } else if (err.response?.status === 403) {
-                alert("Accès non autorisé : vous n'avez pas la permission.");
+                alert("⛔ Accès non autorisé.");
             } else if (err.response?.status === 401) {
-                alert("Non connecté : veuillez vous reconnecter.");
+                alert("⚠️ Session expirée, veuillez vous reconnecter.");
             } else {
                 alert(err.response?.data?.message || "Erreur lors de l’ajout du véhicule.");
             }
@@ -52,125 +52,172 @@ export default function VehicleCreate() {
     };
 
     return (
-        <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-            <h2 className="text-xl font-bold mb-4">Ajouter un véhicule</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Marque */}
-                <input
-                    type="text"
-                    name="marque"
-                    placeholder="Marque"
-                    value={form.marque}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                />
-                {errors.marque && <p className="text-red-600">{errors.marque.join(", ")}</p>}
+        <div className="container mt-5">
+            <div className="card shadow-lg">
+                <div className="card-header bg-success text-white text-center">
+                    <h4>Ajouter un véhicule</h4>
+                </div>
 
-                {/* Modèle */}
-                <input
-                    type="text"
-                    name="model"
-                    placeholder="Modèle"
-                    value={form.model}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                />
-                {errors.model && <p className="text-red-600">{errors.model.join(", ")}</p>}
+                <div className="card-body">
+                    <form onSubmit={handleSubmit}>
+                        {/* Marque */}
+                        <div className="mb-3">
+                            <label className="form-label">Marque</label>
+                            <input
+                                type="text"
+                                name="marque"
+                                value={form.marque}
+                                onChange={handleChange}
+                                className={`form-control ${errors.marque ? "is-invalid" : ""}`}
+                                required
+                            />
+                            {errors.marque && (
+                                <div className="invalid-feedback">{errors.marque.join(", ")}</div>
+                            )}
+                        </div>
 
-                {/* Immatriculation */}
-                <input
-                    type="text"
-                    name="license_plate"
-                    placeholder="Immatriculation"
-                    value={form.license_plate}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                />
-                {errors.license_plate && <p className="text-red-600">{errors.license_plate.join(", ")}</p>}
+                        {/* Modèle */}
+                        <div className="mb-3">
+                            <label className="form-label">Modèle</label>
+                            <input
+                                type="text"
+                                name="model"
+                                value={form.model}
+                                onChange={handleChange}
+                                className={`form-control ${errors.model ? "is-invalid" : ""}`}
+                                required
+                            />
+                            {errors.model && (
+                                <div className="invalid-feedback">{errors.model.join(", ")}</div>
+                            )}
+                        </div>
 
-                {/* Année */}
-                <input
-                    type="number"
-                    name="year"
-                    placeholder="Année"
-                    value={form.year}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                />
-                {errors.year && <p className="text-red-600">{errors.year.join(", ")}</p>}
+                        {/* Immatriculation */}
+                        <div className="mb-3">
+                            <label className="form-label">Immatriculation</label>
+                            <input
+                                type="text"
+                                name="license_plate"
+                                value={form.license_plate}
+                                onChange={handleChange}
+                                className={`form-control ${errors.license_plate ? "is-invalid" : ""
+                                    }`}
+                                required
+                            />
+                            {errors.license_plate && (
+                                <div className="invalid-feedback">
+                                    {errors.license_plate.join(", ")}
+                                </div>
+                            )}
+                        </div>
 
-                {/* Type de carburant */}
-                <select
-                    name="fuel_type"
-                    value={form.fuel_type}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                >
-                    <option value="">Sélectionner type de carburant</option>
-                    <option value="essence">essence</option>
-                    <option value="diesel">diesel</option>
-                    <option value="hybride">hybride</option>
-                    <option value="électrique">électrique</option>
-                    <option value="gpl">gpl</option>
-                    <option value="autre">autre</option>
-                </select>
-                {errors.fuel_type && <p className="text-red-600">{errors.fuel_type.join(", ")}</p>}
+                        {/* Année */}
+                        <div className="mb-3">
+                            <label className="form-label">Année</label>
+                            <input
+                                type="number"
+                                name="year"
+                                value={form.year}
+                                onChange={handleChange}
+                                className={`form-control ${errors.year ? "is-invalid" : ""}`}
+                                required
+                            />
+                            {errors.year && (
+                                <div className="invalid-feedback">{errors.year.join(", ")}</div>
+                            )}
+                        </div>
 
-                {/* Carte carburant (optionnel) */}
-                <input
-                    type="text"
-                    name="fuel_card"
-                    placeholder="Carte carburant (optionnel)"
-                    value={form.fuel_card}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                />
-                {errors.fuel_card && <p className="text-red-600">{errors.fuel_card.join(", ")}</p>}
+                        {/* Type de carburant */}
+                        <div className="mb-3">
+                            <label className="form-label">Type de carburant</label>
+                            <select
+                                name="fuel_type"
+                                value={form.fuel_type}
+                                onChange={handleChange}
+                                className={`form-select ${errors.fuel_type ? "is-invalid" : ""}`}
+                                required
+                            >
+                                <option value="">Sélectionner...</option>
+                                <option value="essence">Essence</option>
+                                <option value="diesel">Diesel</option>
+                                <option value="hybride">Hybride</option>
+                                <option value="électrique">Électrique</option>
+                                <option value="gpl">GPL</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                            {errors.fuel_type && (
+                                <div className="invalid-feedback">
+                                    {errors.fuel_type.join(", ")}
+                                </div>
+                            )}
+                        </div>
 
-                {/* Kilométrage */}
-                <input
-                    type="number"
-                    name="mileage"
-                    placeholder="Kilométrage"
-                    value={form.mileage}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                />
-                {errors.mileage && <p className="text-red-600">{errors.mileage.join(", ")}</p>}
+                        {/* Carte carburant */}
+                        <div className="mb-3">
+                            <label className="form-label">Carte carburant (optionnel)</label>
+                            <input
+                                type="text"
+                                name="fuel_card"
+                                value={form.fuel_card}
+                                onChange={handleChange}
+                                className="form-control"
+                            />
+                            {errors.fuel_card && (
+                                <div className="invalid-feedback">
+                                    {errors.fuel_card.join(", ")}
+                                </div>
+                            )}
+                        </div>
 
-                {/* Statut */}
-                <select
-                    name="status"
-                    value={form.status}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                    required
-                >
-                    <option value="operational">opérationnel</option>
-                    <option value="maintenance">maintenance</option>
-                    <option value="out_of_service">hors service</option>
-                </select>
-                {errors.status && <p className="text-red-600">{errors.status.join(", ")}</p>}
-                <button
-                    type="submit"
-                    className="px-4 py-2 text-white bg-green-600 rounded"
-                >
-                    Enregistrer
-                </button>
-                <Link
-                    to="/vehicles"
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-                >
-                    Retour à la liste
-                </Link>
+                        {/* Kilométrage */}
+                        <div className="mb-3">
+                            <label className="form-label">Kilométrage</label>
+                            <input
+                                type="number"
+                                name="mileage"
+                                value={form.mileage}
+                                onChange={handleChange}
+                                className={`form-control ${errors.mileage ? "is-invalid" : ""}`}
+                                required
+                            />
+                            {errors.mileage && (
+                                <div className="invalid-feedback">
+                                    {errors.mileage.join(", ")}
+                                </div>
+                            )}
+                        </div>
 
-            </form>
+                        {/* Statut */}
+                        <div className="mb-3">
+                            <label className="form-label">Statut</label>
+                            <select
+                                name="status"
+                                value={form.status}
+                                onChange={handleChange}
+                                className={`form-select ${errors.status ? "is-invalid" : ""}`}
+                                required
+                            >
+                                <option value="operational">Opérationnel</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="out_of_service">Hors service</option>
+                            </select>
+                            {errors.status && (
+                                <div className="invalid-feedback">{errors.status.join(", ")}</div>
+                            )}
+                        </div>
+
+                        {/* Boutons */}
+                        <div className="d-flex justify-content-between mt-4">
+                            <Link to="/vehicles" className="btn btn-secondary">
+                                ← Retour
+                            </Link>
+                            <button type="submit" className="btn btn-success">
+                                💾 Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }

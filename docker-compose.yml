@@ -1,26 +1,29 @@
-version: "3.9"
-
 services:
   laravel:
     build:
       context: ./fleet-mgt-api
       dockerfile: Dockerfile
+      target: dev
     container_name: laravel_app
+    user: "1000:1000"
     ports:
       - "8000:8000"
     volumes:
-      - ./fleet-mgt-api:/var/www/html
-      - /var/www/html/vendor
+      - type: bind
+        source: ./fleet-mgt-api
+        target: /var/www/html
     env_file:
       - ./fleet-mgt-api/.env
     depends_on:
-      - db
-    command: ["dockerize", "-wait", "tcp://db:3306", "-timeout", "60s", "php", "artisan", "serve", "--host=0.0.0.0"]
+      db:
+        condition: service_healthy
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
 
   react:
     build:
       context: ./fleet-mgt-frontend
       dockerfile: Dockerfile
+      target: dev
     container_name: react_app
     working_dir: /app
     ports:
@@ -43,6 +46,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "laravel", "-pdavid1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   adminer:
     image: adminer

@@ -9,21 +9,36 @@ use Illuminate\Validation\Rule;
 
 class VehicleController extends Controller
 {
+    /**
+     * Liste tous les véhicules (avec pagination)
+     * Route: GET /api/vehicles
+     * Accessible par : admin, manager, accountant
+     */
     public function index()
     {
-       /* if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        if (!Gate::allows('manager-action') && !Gate::allows('accountant-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé. Seuls les administrateurs, managers et comptables peuvent accéder à cette ressource.'
+            ], 403);
+        }
+
         $vehicles = Vehicle::with('currentDriver')->paginate(10);
 
         return response()->json($vehicles);
     }
 
+    /**
+     * Créer un nouveau véhicule
+     * Route: POST /api/vehicles
+     * Accessible par : admin, manager
+     */
     public function store(Request $request)
     {
-       /* if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        if (!Gate::allows('manager-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent créer des véhicules.'
+            ], 403);
+        }
 
         $data = $request->validate([
             'marque' => 'required|string|max:50',
@@ -39,21 +54,35 @@ class VehicleController extends Controller
 
         $vehicle = Vehicle::create($data);
 
-        return response()->json($vehicle, 201);
+        return response()->json([
+            'message' => 'Véhicule créé avec succès',
+            'vehicle' => $vehicle
+        ], 201);
     }
 
-    // Méthode show() standard pour apiResource
-   public function show(Vehicle $vehicle): \Illuminate\Http\JsonResponse
-   {
-    // Retourne le véhicule en JSON
-    return response()->json($vehicle);
-  }
+    /**
+     * Afficher les détails d'un véhicule (simple)
+     * Route: GET /api/vehicles/{vehicle}
+     * Accessible par : tous les utilisateurs authentifiés
+     */
+    public function show(Vehicle $vehicle)
+    {
+        $vehicle->load('currentDriver');
+        return response()->json($vehicle);
+    }
 
+    /**
+     * Mettre à jour un véhicule
+     * Route: PUT /api/vehicles/{vehicle}
+     * Accessible par : admin, manager
+     */
     public function update(Request $request, Vehicle $vehicle)
     {
-        /*if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
-            return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+        if (!Gate::allows('manager-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent modifier des véhicules.'
+            ], 403);
+        }
 
         $data = $request->validate([
             'marque' => 'sometimes|string|max:50',
@@ -69,66 +98,203 @@ class VehicleController extends Controller
 
         $vehicle->update($data);
 
-        return response()->json($vehicle);
+        return response()->json([
+            'message' => 'Véhicule mis à jour avec succès',
+            'vehicle' => $vehicle
+        ]);
     }
 
-   public function destroy(Vehicle $vehicle)
-{
-    // Optionnel : contrôle d'accès
-    // if (!Gate::allows('admin-action')) {
-    //     return response()->json(['message' => 'Accès non autorisé'], 403);
-    // }
+    /**
+     * Supprimer un véhicule
+     * Route: DELETE /api/vehicles/{vehicle}
+     * Accessible par : admin uniquement
+     */
+    public function destroy(Vehicle $vehicle)
+    {
+        if (!Gate::allows('admin-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé. Seuls les administrateurs peuvent supprimer des véhicules.'
+            ], 403);
+        }
 
-    $vehicle->delete();
+        $vehicle->delete();
 
-    // Renvoie un message pour le frontend
-    return response()->json([
-        'message' => 'Véhicule supprimé avec succès'
-    ], 200);
-}
-
-
-    // Dans VehicleController.php
-
-public function assignDriver(Request $request, Vehicle $vehicle)
-{
-    if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
-        return response()->json(['message' => 'Accès non autorisé'], 403);
+        return response()->json([
+            'message' => 'Véhicule supprimé avec succès'
+        ], 200);
     }
 
-    $data = $request->validate([
-        'driver_id' => 'required|exists:users,id'
-    ]);
-
-    $vehicle->update(['current_driver_id' => $data['driver_id']]);
-
-    return response()->json($vehicle);
-}
-
-public function updateMileage(Request $request, Vehicle $vehicle)
-{
-    $canUpdate = Gate::allows('admin-action') ||
-                 Gate::allows('manager-action') ||
-                 $vehicle->current_driver_id === auth()->id();
-
-    if (!$canUpdate) {
-        return response()->json(['message' => 'Accès non autorisé'], 403);
+    /**
+     * Liste simplifiée des véhicules (pour dropdowns)
+     * Route: GET /api/vehicles-list
+     * Accessible par : tous les utilisateurs authentifiés
+     */
+    public function list()
+    {
+        return response()->json(
+            Vehicle::select('id', 'license_plate', 'marque', 'model', 'status', 'current_driver_id')
+                ->with('currentDriver:id,name')
+                ->orderBy('license_plate')
+                ->get()
+        );
     }
 
-    $data = $request->validate([
-        'mileage' => 'required|integer|min:' . $vehicle->mileage
-    ]);
+    /**
+     * Détails complets d'un véhicule avec toutes les relations
+     * Route: GET /api/vehicles-details/{vehicle}
+     * Accessible par : admin, manager, accountant
+     */
+    public function detailsVehicle(Vehicle $vehicle)
+    {
+        if (!Gate::allows('manager-action') && !Gate::allows('accountant-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé.'
+            ], 403);
+        }
 
-    $vehicle->update(['mileage' => $data['mileage']]);
+        // Charger toutes les relations utiles
+        $vehicle->load([
+            'currentDriver',
+            'consumptions' => function ($query) {
+                $query->latest()->limit(10);
+            },
+            'maintenances' => function ($query) {
+                $query->latest()->limit(10);
+            }
+        ]);
 
-    return response()->json($vehicle);
-}
+        // Statistiques supplémentaires
+        $stats = [
+            'total_consumptions' => $vehicle->consumptions()->count(),
+            'total_fuel_cost' => $vehicle->consumptions()->sum('fuel_cost'),
+            'total_fuel_volume' => $vehicle->consumptions()->sum('fuel_volume'),
+            'total_maintenances' => $vehicle->maintenances()->count(),
+            'total_maintenance_cost' => $vehicle->maintenances()->sum('cost'),
+            'average_consumption' => $vehicle->consumptions()->avg('fuel_volume'),
+        ];
 
-// Liste vehicules pour consommation
-public function list()
-{
-    return response()->json(\App\Models\Vehicle::select('id', 'license_plate')->get());
-}
+        return response()->json([
+            'vehicle' => $vehicle,
+            'stats' => $stats
+        ]);
+    }
 
+    /**
+     * Assigner un chauffeur à un véhicule
+     * Route: POST /api/vehicles/{vehicle}/assign-driver
+     * Accessible par : admin, manager
+     */
+    public function assignDriver(Request $request, Vehicle $vehicle)
+    {
+        if (!Gate::allows('manager-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé. Seuls les administrateurs et managers peuvent assigner des chauffeurs.'
+            ], 403);
+        }
 
+        $data = $request->validate([
+            'driver_id' => 'required|exists:users,id'
+        ]);
+
+        // Vérifier que l'utilisateur est bien un chauffeur
+        $driver = \App\Models\User::find($data['driver_id']);
+        if (!$driver->isDriver()) {
+            return response()->json([
+                'message' => 'L\'utilisateur sélectionné n\'est pas un chauffeur.'
+            ], 422);
+        }
+
+        // Vérifier si le chauffeur n'est pas déjà assigné à un autre véhicule
+        $existingAssignment = Vehicle::where('current_driver_id', $data['driver_id'])
+            ->where('id', '!=', $vehicle->id)
+            ->first();
+
+        if ($existingAssignment) {
+            return response()->json([
+                'message' => 'Ce chauffeur est déjà assigné au véhicule ' . $existingAssignment->license_plate
+            ], 422);
+        }
+
+        $vehicle->update(['current_driver_id' => $data['driver_id']]);
+
+        return response()->json([
+            'message' => 'Chauffeur assigné avec succès',
+            'vehicle' => $vehicle->load('currentDriver')
+        ]);
+    }
+
+    /**
+     * Mettre à jour le kilométrage
+     * Route: PUT /api/vehicles/{vehicle}/update-mileage
+     * Accessible par : admin, manager, mechanic OU le chauffeur assigné
+     */
+    public function updateMileage(Request $request, Vehicle $vehicle)
+    {
+        $canUpdate = Gate::allows('admin-action') ||
+                     Gate::allows('manager-action') ||
+                     Gate::allows('mechanic-action') ||
+                     ($vehicle->current_driver_id === auth()->id() && Gate::allows('driver-action'));
+
+        if (!$canUpdate) {
+            return response()->json([
+                'message' => 'Accès non autorisé. Seul le chauffeur assigné, un mécanicien ou un administrateur peut modifier le kilométrage.'
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'mileage' => 'required|integer|min:' . $vehicle->mileage
+        ]);
+
+        $oldMileage = $vehicle->mileage;
+        $vehicle->update(['mileage' => $data['mileage']]);
+
+        return response()->json([
+            'message' => 'Kilométrage mis à jour avec succès',
+            'vehicle' => $vehicle,
+            'old_mileage' => $oldMileage,
+            'new_mileage' => $data['mileage'],
+            'difference' => $data['mileage'] - $oldMileage
+        ]);
+    }
+
+    /**
+     * Obtenir les véhicules disponibles (non assignés)
+     * Accessible par : admin, manager
+     */
+    public function available()
+    {
+        if (!Gate::allows('manager-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé.'
+            ], 403);
+        }
+
+        $vehicles = Vehicle::where('status', 'operational')
+            ->whereNull('current_driver_id')
+            ->select('id', 'license_plate', 'marque', 'model')
+            ->orderBy('license_plate')
+            ->get();
+
+        return response()->json($vehicles);
+    }
+
+    /**
+     * Obtenir les véhicules en maintenance
+     * Accessible par : admin, manager, mechanic
+     */
+    public function inMaintenance()
+    {
+        if (!Gate::allows('manager-action') && !Gate::allows('mechanic-action')) {
+            return response()->json([
+                'message' => 'Accès non autorisé.'
+            ], 403);
+        }
+
+        $vehicles = Vehicle::where('status', 'maintenance')
+            ->with('currentDriver:id,name')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return response()->json($vehicles);
+    }
 }

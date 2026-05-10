@@ -11,7 +11,27 @@ fleet-mgt-api/storage/logs/*.log
 fleet-mgt-api/storage/framework/cache/*
 fleet-mgt-api/storage/framework/sessions/*
 fleet-mgt-api/storage/framework/views/*
+fleet-mgt-api/database/database.sqlite
+
+# Production env
+.env.prod
+.env.production
+
+# Archives
+*.zip
+*.tar.gz
+
+# Windows WSL Zone.Identifier
+*:Zone.Identifier
+
+# IDE
+.idea/
+.vscode/
 
 # System
 .DS_Store
 Thumbs.db
+
+# Misc
+.gitignore.save
+adminer.php

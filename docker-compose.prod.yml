@@ -1,0 +1,51 @@
+services:
+  frontend:
+    build:
+      context: ./fleet-mgt-frontend
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        VITE_API_URL: /api
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO}/fleet-frontend:${IMAGE_TAG:-latest}
+    container_name: fleet_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./fleet-mgt-api
+      dockerfile: Dockerfile
+      target: prod
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_REPO}/fleet-api:${IMAGE_TAG:-latest}
+    container_name: fleet_api
+    env_file:
+      - .env.prod
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8
+    container_name: fleet_db
+    env_file:
+      - .env.prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${DB_USERNAME}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:

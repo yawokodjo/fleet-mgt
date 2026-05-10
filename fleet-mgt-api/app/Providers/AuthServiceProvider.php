@@ -1,43 +1,71 @@
 <?php
-// app/Providers/AuthServiceProvider.php
+
 namespace App\Providers;
-use Illuminate\Validation\Rules\Password;
+
 use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rules\Password;
 
 class AuthServiceProvider extends ServiceProvider
 {
-protected $policies = [];
+    // À utiliser plus tard si tu passes aux Policies
+    protected $policies = [];
 
-public function boot()
-{
-$this->registerPolicies();
+    public function boot(): void
+    {
+        $this->registerPolicies();
 
-Gate::define('manager-action', fn ($user) => $user->isAdmin() || $user->isManager());
-// Seuls les admins peuvent effectuer des actions administratives
-Gate::define('admin-action', fn (User $user) => $user->isAdmin());
+        /*
+        |--------------------------------------------------------------------------
+        | Gates par rôle
+        |--------------------------------------------------------------------------
+        */
 
-// Nouveaux rôles
-Gate::define('accountant-action', fn ($user) => $user->isAdmin() || $user->isAccountant());
-Gate::define('driver-action', fn ($user) => $user->isDriver());
+        // ADMIN uniquement
+        Gate::define('admin-action', function (User $user) {
+            return $user->isAdmin();
+        });
 
- // Nouveau rôle pour les mécaniciens
- Gate::define('mechanic-action', fn ($user) =>
- $user->isAdmin() ||
- $user->isManager() ||
- $user->role === 'mechanic');
-// L'utilisateur peut accéder/modifier son propre compte
-Gate::define('access-user', fn (User $auth, User $target) =>
-$auth->id === $target->id || $auth->isAdmin());
-Password::defaults(function () {
-    return Password::min(8)
-        ->mixedCase()
-        ->numbers()
-        ->symbols()
-        ->uncompromised(); // Vérifie contre les fuites de données connues
-});
+        // MANAGER (admin inclus)
+        Gate::define('manager-action', function (User $user) {
+            return $user->isAdmin() || $user->isManager();
+        });
 
+        // ACCOUNTANT (admin inclus)
+        Gate::define('accountant-action', function (User $user) {
+            return $user->isAdmin() || $user->isAccountant();
+        });
 
-}
+        // DRIVER uniquement
+        Gate::define('driver-action', function (User $user) {
+            return $user->isDriver();
+        });
+
+        // MECHANIC (admin + manager + mechanic)
+        Gate::define('mechanic-action', function (User $user) {
+            return $user->isAdmin()
+                || $user->isManager()
+                || $user->role === 'mechanic';
+        });
+
+        // Accès à son propre compte OU admin
+        Gate::define('access-user', function (User $auth, User $target) {
+            return $auth->id === $target->id || $auth->isAdmin();
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Politique globale de mot de passe (TRÈS BIEN 👍)
+        |--------------------------------------------------------------------------
+        */
+
+        Password::defaults(function () {
+            return Password::min(8)
+                ->mixedCase()     // majuscule + minuscule
+                ->numbers()       // chiffre
+                ->symbols()       // caractère spécial
+                ->uncompromised(); // pas dans les bases de mots de passe piratés
+        });
+    }
 }

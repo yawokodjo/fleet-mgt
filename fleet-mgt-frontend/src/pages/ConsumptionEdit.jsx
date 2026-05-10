@@ -11,7 +11,7 @@ export default function ConsumptionEdit() {
         fuel_volume: "",
         fuel_cost: "",
         vehicle_id: "",
-        driver_id: ""
+        driver_id: "",
     });
     const [vehicles, setVehicles] = useState([]);
     const [drivers, setDrivers] = useState([]);
@@ -22,9 +22,9 @@ export default function ConsumptionEdit() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Récupérer la consommation
+                // 🔹 Récupérer la consommation
                 const consumptionRes = await api.get(`/consumptions/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
                 const data = consumptionRes.data;
@@ -33,13 +33,17 @@ export default function ConsumptionEdit() {
                     fuel_volume: data.fuel_volume || "",
                     fuel_cost: data.fuel_cost || "",
                     vehicle_id: data.vehicle?.id || "",
-                    driver_id: data.driver?.id || ""
+                    driver_id: data.driver?.id || "",
                 });
 
-                // Récupérer véhicules et chauffeurs
+                // 🔹 Récupérer véhicules + chauffeurs
                 const [vehiclesRes, driversRes] = await Promise.all([
-                    api.get("/vehicles-list", { headers: { Authorization: `Bearer ${token}` } }),
-                    api.get("/drivers", { headers: { Authorization: `Bearer ${token}` } })
+                    api.get("/vehicles-list", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    api.get("/drivers", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
                 ]);
 
                 setVehicles(vehiclesRes.data);
@@ -67,7 +71,7 @@ export default function ConsumptionEdit() {
         e.preventDefault();
         try {
             await api.put(`/consumptions/${id}`, form, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
             alert("✅ Consommation mise à jour !");
             navigate("/consumptions");
@@ -77,79 +81,112 @@ export default function ConsumptionEdit() {
         }
     };
 
-    if (loading) return <p>Chargement...</p>;
+    if (loading)
+        return (
+            <div className="text-center mt-5">
+                <div className="spinner-border text-primary" role="status"></div>
+                <p className="mt-2">Chargement des données...</p>
+            </div>
+        );
 
     return (
-        <form onSubmit={handleSubmit} className="p-4 border rounded bg-gray-50 max-w-lg mx-auto">
-            <h3 className="text-lg font-semibold mb-2">Modifier la consommation</h3>
+        <div className="container py-4">
+            <div className="card shadow-sm mx-auto" style={{ maxWidth: "600px" }}>
+                <div className="card-header bg-primary text-white">
+                    <h5 className="mb-0">🛠 Modifier la consommation</h5>
+                </div>
+                <div className="card-body">
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-3">
+                            <label className="form-label">Date :</label>
+                            <input
+                                type="date"
+                                value={form.date}
+                                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                                className="form-control"
+                                required
+                            />
+                        </div>
 
-            <div className="mb-2">
-                <label>Date :</label>
-                <input
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="border p-1 rounded w-full"
-                    required
-                />
-            </div>
+                        <div className="mb-3">
+                            <label className="form-label">Véhicule :</label>
+                            <select
+                                value={form.vehicle_id}
+                                onChange={(e) =>
+                                    setForm({ ...form, vehicle_id: e.target.value })
+                                }
+                                className="form-select"
+                                required
+                            >
+                                <option value="">-- Choisir un véhicule --</option>
+                                {vehicles.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                        {v.license_plate}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-            <div className="mb-2">
-                <label>Véhicule :</label>
-                <select
-                    value={form.vehicle_id}
-                    onChange={(e) => setForm({ ...form, vehicle_id: e.target.value })}
-                    className="border p-1 rounded w-full"
-                    required
-                >
-                    <option value="">-- Choisir un véhicule --</option>
-                    {vehicles.map((v) => (
-                        <option key={v.id} value={v.id}>{v.license_plate}</option>
-                    ))}
-                </select>
-            </div>
+                        <div className="mb-3">
+                            <label className="form-label">Chauffeur :</label>
+                            <select
+                                value={form.driver_id}
+                                onChange={(e) =>
+                                    setForm({ ...form, driver_id: e.target.value })
+                                }
+                                className="form-select"
+                                required
+                            >
+                                <option value="">-- Choisir un chauffeur --</option>
+                                {drivers.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-            <div className="mb-2">
-                <label>Chauffeur :</label>
-                <select
-                    value={form.driver_id}
-                    onChange={(e) => setForm({ ...form, driver_id: e.target.value })}
-                    className="border p-1 rounded w-full"
-                    required
-                >
-                    <option value="">-- Choisir un chauffeur --</option>
-                    {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                </select>
-            </div>
+                        <div className="mb-3">
+                            <label className="form-label">Litres :</label>
+                            <input
+                                type="number"
+                                value={form.fuel_volume}
+                                onChange={(e) =>
+                                    setForm({ ...form, fuel_volume: e.target.value })
+                                }
+                                className="form-control"
+                                required
+                            />
+                        </div>
 
-            <div className="mb-2">
-                <label>Litres :</label>
-                <input
-                    type="number"
-                    value={form.fuel_volume}
-                    onChange={(e) => setForm({ ...form, fuel_volume: e.target.value })}
-                    className="border p-1 rounded w-full"
-                    required
-                />
-            </div>
+                        <div className="mb-3">
+                            <label className="form-label">Montant (FCFA) :</label>
+                            <input
+                                type="number"
+                                value={form.fuel_cost}
+                                onChange={(e) =>
+                                    setForm({ ...form, fuel_cost: e.target.value })
+                                }
+                                className="form-control"
+                                required
+                            />
+                        </div>
 
-            <div className="mb-2">
-                <label>Montant (FCFA) :</label>
-                <input
-                    type="number"
-                    value={form.fuel_cost}
-                    onChange={(e) => setForm({ ...form, fuel_cost: e.target.value })}
-                    className="border p-1 rounded w-full"
-                    required
-                />
+                        <div className="d-flex justify-content-between">
+                            <button type="submit" className="btn btn-success">
+                                💾 Mettre à jour
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => navigate("/consumptions")}
+                            >
+                                ↩ Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <div className="flex gap-2 mt-2">
-                <button type="submit" className="px-3 py-1 bg-green-600 text-white rounded">Mettre à jour</button>
-                <button type="button" onClick={() => navigate("/consumptions")} className="px-3 py-1 bg-gray-500 text-white rounded">Annuler</button>
-            </div>
-        </form>
+        </div>
     );
 }

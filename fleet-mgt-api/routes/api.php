@@ -6,16 +6,28 @@ use App\Http\Controllers\{
     MaintenanceController,
     ReportController,
     UserController,
-    VehicleController
+    VehicleController,
+    SearchController,
+    MessageController
 };
 use App\Http\Controllers\Auth\PasswordResetController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MessageController;
 
-// Route publique simple
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// ============================================================================
+// ROUTES PUBLIQUES
+// ============================================================================
+
+// Messages et recherche
 Route::get('/message', [MessageController::class, 'index']);
+Route::get('/search', [SearchController::class, 'search']);
 
-// Routes publiques pour l'authentification
+// Authentification
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
@@ -24,40 +36,66 @@ Route::get('/reset-password/{token}', function ($token) {
     return view('auth.reset-password', ['token' => $token]);
 })->name('password.reset');
 
-// Routes protégées (nécessitent auth:sanctum)
-Route::middleware('auth:sanctum')->group(function () {
+// ============================================================================
+// ROUTES PROTÉGÉES (Authentification requise)
+// ============================================================================
 
-    // Auth
+Route::middleware('auth:sanctum')->group(function () {
+    // ------------------------------------------------------------------------
+    // Auth & Profil
+    // ------------------------------------------------------------------------
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-
-    // Utilisateurs
-    Route::apiResource('users', UserController::class);
     Route::get('/profile', [UserController::class, 'profile']);
     Route::put('/profile', [UserController::class, 'updateProfile']);
-    Route::get('/drivers', [UserController::class, 'drivers']); // Liste des chauffeurs seulement
+    Route::put('/change-password', [UserController::class, 'changePassword']);
+    // ------------------------------------------------------------------------
+    // Utilisateurs
+    // ------------------------------------------------------------------------
+    Route::apiResource('users', UserController::class);
+    Route::get('/drivers', [UserController::class, 'drivers']); // Liste des chauffeurs uniquement
 
+    // ------------------------------------------------------------------------
     // Véhicules
+    // ------------------------------------------------------------------------
     Route::apiResource('vehicles', VehicleController::class);
+    Route::get('/vehicles-list', [VehicleController::class, 'list']); // Liste simple
+    Route::get('/vehicles-details/{vehicle}', [VehicleController::class, 'detailsVehicle']); // Détails complets
     Route::post('/vehicles/{vehicle}/assign-driver', [VehicleController::class, 'assignDriver']);
     Route::put('/vehicles/{vehicle}/update-mileage', [VehicleController::class, 'updateMileage']);
-    Route::get('/vehicles-details/{vehicle}', [VehicleController::class, 'detailsVehicle']);
-    Route::get('/vehicles-list', [VehicleController::class, 'list']); // Liste des véhicules
 
+    // ------------------------------------------------------------------------
     // Consommations
+    // ------------------------------------------------------------------------
     Route::apiResource('consumptions', ConsumptionController::class);
     Route::get('/vehicles/{vehicle}/consumption-report', [ConsumptionController::class, 'vehicleReport']);
-    Route::get('/consumptions/{id}', [ConsumptionController::class, 'show']);
-    Route::put('/consumptions/{id}', [ConsumptionController::class, 'update']);
 
+    // ------------------------------------------------------------------------
     // Maintenances
+    // ------------------------------------------------------------------------
     Route::apiResource('maintenances', MaintenanceController::class);
     Route::post('/maintenances/{maintenance}/complete', [MaintenanceController::class, 'markAsCompleted']);
-    Route::get('/maintenances/{id}', [MaintenanceController::class, 'show']);
-    Route::put('/maintenances/{id}', [MaintenanceController::class, 'update']);
+
+    // ------------------------------------------------------------------------
     // Rapports
+    // ------------------------------------------------------------------------
+    
+    // Routes spécifiques AVANT apiResource pour éviter les conflits
+    Route::prefix('reports')->group(function () {
+        // Génération automatique de rapports
+        Route::post('/generate', [ReportController::class, 'generateReport']);
+        
+        // Export de consommation (entre 2 dates)
+        Route::get('/exportBetweenDates', [ReportController::class, 'exportBetweenDates']);
+        
+        // Export de maintenance (entre 2 dates)
+        Route::get('/maintenanceBetweenDates', [ReportController::class, 'maintenanceBetweenDates']);
+        
+        // Routes héritées (à vérifier si utilisées)
+        // Route::get('/monthly-consumption', [ReportController::class, 'monthlyConsumptionReport']);
+        // Route::get('/export-monthly', [ReportController::class, 'exportMonthlyReport']);
+    });
+    
+    // CRUD standard des rapports
     Route::apiResource('reports', ReportController::class);
-    Route::post('/reports/generate', [ReportController::class, 'generateReport']);
-    Route::get('/reports/monthly-consumption', [ReportController::class, 'monthlyConsumptionReport']);
-    Route::get('/reports/export-monthly', [ReportController::class, 'exportMonthlyReport']);
 });

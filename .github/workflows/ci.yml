@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_call:   # permet d'être appelé par cd.yml comme gate
+
+jobs:
+  # ── Backend: Laravel ─────────────────────────────────────────────
+  backend:
+    name: Backend (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.2"]
+
+    defaults:
+      run:
+        working-directory: fleet-mgt-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_sqlite, gd, zip
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: fleet-mgt-api/vendor
+          key: composer-${{ hashFiles('fleet-mgt-api/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Check code style (Laravel Pint)
+        run: vendor/bin/pint --test
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: php artisan test --stop-on-failure
+
+  # ── Frontend: React ───────────────────────────────────────────────
+  frontend:
+    name: Frontend (Node 20)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: fleet-mgt-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fleet-mgt-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint src --max-warnings 0
+
+      - name: Build
+        run: npm run build

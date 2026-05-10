@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
-// Hook personnalisé pour accéder facilement au contexte
+// Hook personnalisé
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Chargement initial depuis localStorage
   useEffect(() => {
@@ -18,30 +21,78 @@ export function AuthProvider({ children }) {
       if (savedUser && savedToken) {
         setUser(JSON.parse(savedUser));
         setToken(savedToken);
+        console.log('✅ Utilisateur restauré depuis localStorage');
       }
     } catch (e) {
-      console.error("Erreur de parsing user :", e);
-      localStorage.clear(); // Nettoie si données corrompues
+      console.error("❌ Erreur de parsing user :", e);
+      localStorage.clear();
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   // Connexion
   const login = (userData, accessToken) => {
+    console.log('🔐 Tentative de connexion...', userData);
+
     setUser(userData);
     setToken(accessToken);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', accessToken);
+
+    console.log('✅ Connexion réussie, redirection vers /dashboard');
+
+    // Redirection vers le dashboard après connexion
+    navigate('/dashboard', { replace: true });
   };
 
   // Déconnexion
   const logout = () => {
+    console.log('👋 Déconnexion en cours...');
+
     setUser(null);
     setToken(null);
     localStorage.clear();
+
+    console.log('✅ Déconnexion réussie, redirection vers /');
+
+    // Redirection vers la page d'accueil après déconnexion
+    navigate('/', { replace: true });
   };
 
+  // Ne pas afficher le contenu tant que le chargement n'est pas terminé
+  if (loading) {
+    return (
+      <div
+        className="d-flex flex-column justify-content-center align-items-center"
+        style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        }}
+      >
+        <div
+          className="spinner-border text-white mb-3"
+          role="status"
+          style={{ width: '3rem', height: '3rem' }}
+        >
+          <span className="visually-hidden">Chargement...</span>
+        </div>
+        <p className="text-white fw-semibold">Chargement de l'application...</p>
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        token,
+        setToken,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

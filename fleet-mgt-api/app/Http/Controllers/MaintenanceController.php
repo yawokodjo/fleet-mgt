@@ -50,10 +50,12 @@ class MaintenanceController extends Controller
             'driver_id' => 'nullable|exists:users,id',
             'maintenance_type' => 'required|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
             'maintenance_company' => 'required|string|max:100',
-            'scheduled_date' => 'required|date',
+            'scheduled_date' => 'required|date|after_or_equal:today',
             'cost' => 'required|numeric|min:0',
             'description' => 'nullable|string'
-        ]);
+        ], [
+        'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
+     ]);
 
         $maintenance = Maintenance::create($data);
 
@@ -91,11 +93,13 @@ class MaintenanceController extends Controller
             'driver_id' => 'nullable|exists:users,id',
             'maintenance_type' => 'sometimes|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
             'maintenance_company' => 'sometimes|string|max:100',
-            'scheduled_date' => 'sometimes|date',
+            'scheduled_date' => 'sometimes|date |after_or_equal:today',
             'completed_date' => 'nullable|date',
             'cost' => 'sometimes|numeric|min:0',
             'description' => 'nullable|string',
             'status' => 'sometimes|in:planned,in_progress,completed,cancelled'
+        ], [
+        'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
         ]);
 
         $maintenance->update($data);

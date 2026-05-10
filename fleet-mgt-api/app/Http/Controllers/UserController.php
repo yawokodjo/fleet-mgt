@@ -1,174 +1,228 @@
 <?php
-// app/Http/Controllers/UserController.php
+
 namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
-    // Liste des utilisateurs (Admins seulement)
+    /**
+     * Liste des utilisateurs (Admin uniquement)
+     */
     public function index(Request $request)
     {
-        if (!Gate::allows('admin-action')) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        Gate::authorize('admin-action');
 
-        $per_page = $request->get('per_page', 15);
-        $users = User::withTrashed()->paginate($per_page);
+        $perPage = $request->get('per_page', 15);
 
-        return response()->json($users);
+        return response()->json(
+            User::withTrashed()->paginate($perPage)
+        );
     }
 
-    // Création d’un utilisateur (Admins seulement)
+    /**
+     * Créer un utilisateur (Admin uniquement)
+     */
     public function store(Request $request)
     {
-        if (!Gate::allows('admin-action')) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        Gate::authorize('admin-action');
 
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,manager,driver,accountant',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'role'     => 'required|in:admin,manager,driver,accountant,mechanic',
         ]);
 
-        $data['password'] = bcrypt($data['password']);
+        $data['password'] = Hash::make($data['password']);
 
         $user = User::create($data);
 
         return response()->json([
-            'message' => 'Utilisateur créé',
-            'user' => $user
+            'message' => 'Utilisateur créé avec succès',
+            'user'    => $user,
         ], 201);
     }
 
-    // Afficher un utilisateur
+    /**
+     * Afficher un utilisateur
+     */
     public function show($id)
     {
         $user = User::withTrashed()->findOrFail($id);
 
-        if (!Gate::allows('access-user', $user)) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        Gate::authorize('access-user', $user);
 
-        return response()->json(['user' => $user->load('vehicles')]);
+        return response()->json([
+            'user' => $user->load('vehicles')
+        ]);
     }
 
-    // Mettre à jour un utilisateur
+    /**
+     * Mettre à jour un utilisateur
+     */
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
-        if (!Gate::allows('access-user', $user)) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        Gate::authorize('access-user', $user);
 
         $data = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'password' => 'sometimes|string|min:8',
-            'role' => 'sometimes|in:admin,manager,driver,accountant',
+            'name'     => 'sometimes|string|max:255',
+            'email'    => [
+                'sometimes',
+                'email',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'password' => ['sometimes', 'confirmed', Password::defaults()],
+            'role'     => 'sometimes|in:admin,manager,driver,accountant,mechanic',
         ]);
 
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        }
-
-        // Seuls les admins peuvent modifier le rôle
+        // Seul l'admin peut modifier le rôle
         if (isset($data['role']) && !Gate::allows('admin-action')) {
             unset($data['role']);
+        }
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
         }
 
         $user->update($data);
 
         return response()->json([
             'message' => 'Utilisateur mis à jour',
-            'user' => $user
+            'user'    => $user,
         ]);
     }
 
-    // Supprimer (soft delete) un utilisateur
+    /**
+     * Supprimer (soft delete) un utilisateur
+     */
     public function destroy($id)
     {
-        if (!Gate::allows('admin-action')) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        Gate::authorize('admin-action');
 
-        $user = User::findOrFail($id);
-        $user->delete();
+        User::findOrFail($id)->delete();
 
-        return response()->json(['message' => 'Utilisateur désactivé']);
+        return response()->json([
+            'message' => 'Utilisateur désactivé'
+        ]);
     }
 
-    // Restaurer un utilisateur
+    /**
+     * Restaurer un utilisateur supprimé
+     */
     public function restore($id)
     {
-        if (!Gate::allows('admin-action')) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        Gate::authorize('admin-action');
 
         $user = User::withTrashed()->findOrFail($id);
         $user->restore();
 
         return response()->json([
             'message' => 'Utilisateur réactivé',
-            'user' => $user
+            'user'    => $user,
         ]);
     }
 
-    // Supprimer définitivement
+    /**
+     * Suppression définitive
+     */
     public function forceDelete($id)
     {
-        if (!Gate::allows('admin-action')) {
-            return response()->json(['message' => 'Non autorisé'], 403);
+        Gate::authorize('admin-action');
+
+        User::withTrashed()->findOrFail($id)->forceDelete();
+
+        return response()->json([
+            'message' => 'Utilisateur supprimé définitivement'
+        ]);
+    }
+
+    /**
+     * Profil de l'utilisateur connecté
+     */
+    public function profile(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    /**
+     * Mise à jour du profil personnel
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'password' => ['sometimes', 'confirmed', Password::defaults()],
+        ]);
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
         }
 
-        $user = User::withTrashed()->findOrFail($id);
-        $user->forceDelete();
+        $user->update($data);
 
-        return response()->json(['message' => 'Utilisateur supprimé définitivement'], 200);
-    }
-    // Récupérer le profil de l’utilisateur connecté
-public function profile(Request $request)
-{
-    return response()->json($request->user());
-}
-
-// Mettre à jour son profil
-public function updateProfile(Request $request)
-{
-    $user = $request->user();
-
-    $data = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => [
-            'required',
-            'email',
-            'max:255',
-            Rule::unique('users')->ignore($user->id),
-        ],
-        'password' => 'sometimes|string|min:8',
-    ]);
-
-    if (isset($data['password'])) {
-        $data['password'] = bcrypt($data['password']);
+        return response()->json([
+            'message' => 'Profil mis à jour avec succès',
+            'user'    => $user,
+        ]);
     }
 
-    $user->update($data);
+    /**
+     * Changer le mot de passe
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password'     => ['required', 'confirmed', Password::defaults()],
+        ]);
 
-    return response()->json([
-        'message' => 'Profil mis à jour avec succès !',
-        'user' => $user
-    ]);
-}
-//Trouver un chauffeur par son ID
-public function drivers()
-{
-    return response()->json(\App\Models\User::where('role', 'driver')->select('id', 'name')->get());
-}
+        $user = $request->user();
 
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Mot de passe actuel incorrect'
+            ], 401);
+        }
 
+        if (Hash::check($request->new_password, $user->password)) {
+            return response()->json([
+                'message' => 'Le nouveau mot de passe doit être différent'
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        return response()->json([
+            'message' => 'Mot de passe modifié avec succès'
+        ]);
+    }
+
+    /**
+     * Liste des chauffeurs
+     */
+    public function drivers()
+    {
+        return response()->json(
+            User::where('role', 'driver')
+                ->select('id', 'name')
+                ->get()
+        );
+    }
 }

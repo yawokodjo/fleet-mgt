@@ -5,7 +5,6 @@ import api from "../axios";
 export default function ConsumptionDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-
     const [consumption, setConsumption] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -26,44 +25,44 @@ export default function ConsumptionDetail() {
         fetchConsumption();
     }, [id, navigate]);
 
-    if (loading) return <p>Chargement consommation...</p>;
-    if (!consumption) return <p className="text-red-600">⚠️ Consommation introuvable.</p>;
+    if (loading) return <p className="text-center mt-5">Chargement de la consommation...</p>;
+    if (!consumption)
+        return <p className="text-danger text-center mt-5">⚠️ Consommation introuvable.</p>;
 
     return (
-        <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-xl">
-            <h2 className="text-2xl font-bold mb-4 text-center">Détails de la consommation</h2>
+        <div className="container mt-5">
+            <div className="card shadow p-4 border-0 rounded-4">
+                <h2 className="text-center mb-4">Détails de la consommation</h2>
 
-            <div className="space-y-2">
-                <p>
-                    <strong>Date :</strong> {consumption.date}
-                </p>
-                <p>
-                    <strong>Véhicule :</strong> {consumption.vehicle?.license_plate || "-"}
-                </p>
-                <p>
-                    <strong>Chauffeur :</strong> {consumption.driver?.name || "-"}
-                </p>
-                <p>
-                    <strong>Litres :</strong> {consumption.fuel_volume}
-                </p>
-                <p>
-                    <strong>Montant (FCFA) :</strong> {consumption.fuel_cost}
-                </p>
-            </div>
+                <ul className="list-group list-group-flush mb-3">
+                    <li className="list-group-item">
+                        <strong>Date :</strong> {consumption.date}
+                    </li>
+                    <li className="list-group-item">
+                        <strong>Véhicule :</strong> {consumption.vehicle?.license_plate || "-"}
+                    </li>
+                    <li className="list-group-item">
+                        <strong>Chauffeur :</strong> {consumption.driver?.name || "-"}
+                    </li>
+                    <li className="list-group-item">
+                        <strong>Litres :</strong> {consumption.fuel_volume}
+                    </li>
+                    <li className="list-group-item">
+                        <strong>Montant (FCFA) :</strong> {consumption.fuel_cost}
+                    </li>
+                </ul>
 
-            <div className="flex gap-2 mt-4">
-                <button
-                    className="px-3 py-1 bg-blue-500 text-white rounded"
-                    onClick={() => navigate(`/consumptions/${id}/edit`)}
-                >
-                    ✏ Modifier
-                </button>
-                <button
-                    className="px-3 py-1 bg-gray-500 text-white rounded"
-                    onClick={() => navigate("/consumptions")}
-                >
-                    🔙 Retour à la liste
-                </button>
+                <div className="d-flex justify-content-center gap-2 mt-3">
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => navigate(`/consumptions/${id}/edit`)}
+                    >
+                        ✏ Modifier
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => navigate("/consumptions")}>
+                        🔙 Retour à la liste
+                    </button>
+                </div>
             </div>
         </div>
     );

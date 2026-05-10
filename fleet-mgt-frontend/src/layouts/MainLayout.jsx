@@ -1,21 +1,24 @@
+import React from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
-import React from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function MainLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="d-flex flex-column min-vh-100 bg-light">
       {/* En-tête fixe */}
       <Header />
 
-      {/* Corps principal avec sidebar + contenu */}
-      <div className="flex flex-1">
-        {/* Menu latéral (affiché uniquement en desktop) */}
-        <Sidebar />
+      {/* Corps principal */}
+      <div className="d-flex flex-grow-1">
+        {/* Barre latérale */}
+        <div className="d-none d-md-block bg-white border-end" style={{ width: '250px' }}>
+          <Sidebar />
+        </div>
 
-        {/* Zone principale de contenu */}
-        <main className="flex-1 p-6 overflow-auto">
+        {/* Contenu principal */}
+        <main className="flex-grow-1 p-4 overflow-auto">
           {children}
         </main>
       </div>

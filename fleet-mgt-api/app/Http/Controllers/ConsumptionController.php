@@ -56,10 +56,12 @@ class ConsumptionController extends Controller
         $data = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
             'driver_id' => 'required|exists:users,id',
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'fuel_volume' => 'required|numeric|min:0.01',
             'fuel_cost' => 'required|numeric|min:0.01'
-        ]);
+        ], [
+        'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
+     ]);
 
         $consumption = Consumption::create($data);
 
@@ -95,10 +97,12 @@ class ConsumptionController extends Controller
         $data = $request->validate([
             'vehicle_id' => 'sometimes|exists:vehicles,id',
             'driver_id' => 'sometimes|exists:users,id',
-            'date' => 'sometimes|date',
+            'date' => 'sometimes|date |before_or_equal:today',
             'fuel_volume' => 'sometimes|numeric|min:0.01',
             'fuel_cost' => 'sometimes|numeric|min:0.01'
-        ]);
+        ], [
+        'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
+     ]);
 
         $consumption->update($data);
 

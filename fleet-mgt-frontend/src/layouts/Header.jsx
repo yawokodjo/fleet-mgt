@@ -1,46 +1,101 @@
-import React from 'react';
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import LiveSearch from "../components/LiveSearch";
+
 export default function Header() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  const handleSelectResult = (item) => {
+    console.log("Résultat sélectionné:", item);
+    setSearchQuery("");
+    setShowResults(false);
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowResults(value.length > 0); // Affiche les résultats si la recherche n'est pas vide
+  };
+
+  const handleBlur = () => {
+    // Délai pour permettre le clic sur un résultat avant de fermer
+    setTimeout(() => setShowResults(false), 200);
+  };
+
   return (
-    <header className="relative text-white bg-gray-800">
-      {/*<img
-        src="@/assets/road.jpg"
-        alt="Fond route"
-        className="absolute top-0 left-0 object-cover w-full h-52 opacity-30"
-      />*/}
-      <div className="relative z-10 flex items-center justify-between p-5 mt-5">
-        <div className="flex items-center space-x-4">
-          {/* Logo cliquable */}
+    <header className="text-white py-3" style={{ backgroundColor: '#001f3f' }}>
+      <div className="container">
+        {/* Desktop Layout */}
+        <div className="d-none d-lg-flex justify-content-between align-items-center">
           <a href="https://www.compassion.com/" target="_blank" rel="noopener noreferrer">
-            <img
-              src="/src/assets/logo-ci.png"
-              alt="Logo"
-              className="w-10 h-10 logo-ci"
-              width="120"
-              height="auto"
-            />
+            <img src="/src/assets/logo-ci.png" alt="Logo" width={50} height={50} />
           </a>
-          <motion.h1
-            className="text-center text-blue-500 font-bold text-xl sm:text-2xl lg:text-3xl"
-            initial={{ opacity: 0, y: -20 }}     // départ invisible et légèrement au-dessus
-            animate={{ opacity: 1, y: 0 }}       // apparition fluide
-            transition={{ duration: 0.8, ease: "easeOut" }} // durée et effet d’animation
-          >
+
+          <h1 className="text-center text-white fs-4 fw-bold m-0 flex-grow-1 mx-3">
             Gestion de Flotte Véhicule Compassion International Togo
-          </motion.h1>
+          </h1>
+
+          <div className="d-flex align-items-center gap-3">
+            <div className="position-relative" style={{ minWidth: '250px' }}>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="🔍 Rechercher..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => searchQuery && setShowResults(true)}
+                onBlur={handleBlur}
+              />
+              {showResults && (
+                <LiveSearch
+                  query={searchQuery}
+                  onSelectResult={handleSelectResult}
+                />
+              )}
+            </div>
+
+            <select className="form-select form-select-sm bg-secondary text-white border-0" style={{ width: 'auto' }}>
+              <option>FR</option>
+              <option>EN</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <select className="p-1 bg-gray-700 rounded">
-            <option>FR</option>
-            <option>EN</option>
-          </select>
-          <input
-            type="search"
-            placeholder="Rechercher…"
-            className="px-2 py-1 bg-gray-700 rounded"
-          />
+
+        {/* Mobile Layout */}
+        <div className="d-lg-none">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <a href="https://www.compassion.com/" target="_blank" rel="noopener noreferrer">
+              <img src="/src/assets/logo-ci.png" alt="Logo" width={40} height={40} />
+            </a>
+            <select className="form-select form-select-sm bg-secondary text-white border-0" style={{ width: 'auto' }}>
+              <option>FR</option>
+              <option>EN</option>
+            </select>
+          </div>
+
+          <h1 className="text-center text-white fs-6 fw-bold mb-2">
+            Gestion de Flotte - CI Togo
+          </h1>
+
+          <div className="position-relative">
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="🔍 Rechercher..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onFocus={() => searchQuery && setShowResults(true)}
+              onBlur={handleBlur}
+            />
+            {showResults && (
+              <LiveSearch
+                query={searchQuery}
+                onSelectResult={handleSelectResult}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </header >
+    </header>
   );
 }

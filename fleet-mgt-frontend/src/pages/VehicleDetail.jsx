@@ -1,68 +1,89 @@
-import { useParams, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import api from '../axios.js';
-import React from 'react';
+import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import api from "../axios.js";
+import React from "react";
 
 export default function VehicleDetail() {
   const { id } = useParams();
   const [vehicle, setVehicle] = useState(null);
 
   useEffect(() => {
-    api.get(`/vehicles/${id}`)
-      .then(res => setVehicle(res.data))
-      .catch(err => console.error("Erreur lors du chargement du véhicule :", err));
+    api
+      .get(`/vehicles/${id}`)
+      .then((res) => setVehicle(res.data))
+      .catch((err) =>
+        console.error("Erreur lors du chargement du véhicule :", err)
+      );
   }, [id]);
 
-  if (!vehicle) return <p className="text-center mt-6">Chargement...</p>;
+  if (!vehicle)
+    return <p className="text-center mt-4">Chargement du véhicule...</p>;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-white shadow-lg rounded-xl">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        {vehicle.marque} {vehicle.model}
-      </h2>
+    <div className="container mt-5">
+      <div className="card shadow-lg">
+        <div className="card-header bg-primary text-white text-center">
+          <h4>Détails du véhicule</h4>
+        </div>
 
-      <table className="w-full border border-gray-300 rounded-lg overflow-hidden">
-        <tbody>
-          <tr className="bg-gray-100">
-            <td className="px-4 py-2 font-semibold">Immatriculation:</td>
-            <td className="px-4 py-2">{vehicle.license_plate}</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-2 font-semibold">Kilométrage:</td>
-            <td className="px-4 py-2">{vehicle.mileage} km</td>
-          </tr>
-          <tr className="bg-gray-100">
-            <td className="px-4 py-2 font-semibold">Année:</td>
-            <td className="px-4 py-2">{vehicle.year}</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-2 font-semibold">Carburant:</td>
-            <td className="px-4 py-2">{vehicle.fuel_type}</td>
-          </tr>
-          <tr className="bg-gray-100">
-            <td className="px-4 py-2 font-semibold">Carte carburant:</td>
-            <td className="px-4 py-2">{vehicle.fuel_card || "N/A"}</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-2 font-semibold">Status:</td>
-            <td className="px-4 py-2">{vehicle.status}</td>
-          </tr>
-        </tbody>
-      </table>
+        <div className="card-body">
+          <h5 className="card-title text-center mb-4">
+            {vehicle.marque} {vehicle.model}
+          </h5>
 
-      <div className="mt-6 flex justify-between">
-        <Link
-          to="/vehicles"
-          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-        >
-          Retour à la liste
-        </Link>
-        <Link
-          to={`/vehicles/${id}/edit`}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-        >
-          Mettre à jour
-        </Link>
+          <table className="table table-bordered">
+            <tbody>
+              <tr>
+                <th>Immatriculation</th>
+                <td>{vehicle.license_plate}</td>
+              </tr>
+              <tr>
+                <th>Kilométrage</th>
+                <td>{vehicle.mileage} km</td>
+              </tr>
+              <tr>
+                <th>Année</th>
+                <td>{vehicle.year}</td>
+              </tr>
+              <tr>
+                <th>Type de carburant</th>
+                <td>{vehicle.fuel_type}</td>
+              </tr>
+              <tr>
+                <th>Carte carburant</th>
+                <td>{vehicle.fuel_card || "N/A"}</td>
+              </tr>
+              <tr>
+                <th>Statut</th>
+                <td>
+                  <span
+                    className={`badge ${vehicle.status === "operational"
+                        ? "bg-success"
+                        : vehicle.status === "maintenance"
+                          ? "bg-warning text-dark"
+                          : "bg-danger"
+                      }`}
+                  >
+                    {vehicle.status === "operational"
+                      ? "Opérationnel"
+                      : vehicle.status === "maintenance"
+                        ? "Maintenance"
+                        : "Hors service"}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="d-flex justify-content-between mt-4">
+            <Link to="/vehicles" className="btn btn-secondary">
+              ← Retour à la liste
+            </Link>
+            <Link to={`/vehicles/${id}/edit`} className="btn btn-primary">
+              ✏️ Modifier
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

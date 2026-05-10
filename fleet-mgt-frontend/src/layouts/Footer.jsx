@@ -1,12 +1,30 @@
-import React from 'react';
+import React from "react";
+
 export default function Footer() {
   return (
-    <footer className="py-4 mt-6 text-sm text-center text-gray-600 bg-gray-100">
-
-      <div className="space-x-3">
-        <p >© 2025 CITG Vehicle Fleet Manager | <a href="https://www.economie.gouv.fr/entreprises/reglement-general-protection-donnees-rgpd#" className="hover:underline">
-          Tous droits réservés </a> | <a href="mailto:yawo.kodjo@yahoo.com" >Nous joindre par mail</a></p>
-        <p>Téléphone :  <a href="tel:+22890807108">Notre numéro de téléphone portable</a></p>
+    <footer className="text-light py-4 mt-5" style={{ backgroundColor: '#001f3f' }}>
+      <div className="container text-center">
+        <p className="mb-2 small">
+          © 2025 <strong>CITG Vehicle Fleet Manager</strong>
+        </p>
+        <p className="mb-2 small">
+          <a
+            href="https://www.economie.gouv.fr/entreprises/reglement-general-protection-donnees-rgpd#"
+            className="text-light text-decoration-none me-3 text-primary underline"
+          >
+            Tous droits réservés
+          </a>
+          <a
+            href="mailto:yawo.kodjo@yahoo.com"
+            className="text-light text-decoration-none me-3 text-primary underline"
+          >
+            Nous joindre par mail
+          </a>
+          <a href="tel:+22890807108" className="text-light text-decoration-none text-primary underline">
+            Numero de telephone
+          </a>
+        </p>
+        <p className="mb-0 small">Gestion de flotte Compassion International Togo</p>
       </div>
     </footer>
   );
