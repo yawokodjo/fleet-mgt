@@ -21,6 +21,11 @@ fleet-mgt-api/database/database.sqlite
 *.zip
 *.tar.gz
 
+# Large binary assets (host externally)
+*.mp4
+*.mov
+*.avi
+
 # Windows WSL Zone.Identifier
 *:Zone.Identifier
 
