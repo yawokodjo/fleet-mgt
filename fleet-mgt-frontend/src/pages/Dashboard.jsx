@@ -86,6 +86,7 @@ export default function Dashboard() {
         document.removeEventListener(event, resetInactivityTimer);
       });
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logout]);
 
   const fetchWeather = async () => {
