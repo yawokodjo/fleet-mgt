@@ -167,23 +167,21 @@ class ReportController extends Controller
             return response()->json(['message' => 'Accès non autorisé'], 403);
         }
 
-        // Validation des paramètres
         $validated = $request->validate([
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
-            'order' => 'nullable|in:asc,desc',
-            'format' => 'nullable|in:json,pdf,excel',
+            'order'      => 'nullable|in:asc,desc',
+            'format'     => 'nullable|in:json,pdf,excel',
         ]);
 
-        $start = $validated['start_date'];
-        $end = $validated['end_date'];
-        $vehicleId = $request->input('vehicle_id');
-        $order = $request->input('order', 'asc');
-        $format = $request->input('format', 'json');
+        $start     = $validated['start_date'];
+        $end       = $validated['end_date'];
+        $vehicleId = $validated['vehicle_id'] ?? null;
+        $order     = $validated['order'] ?? 'asc';
+        $format    = $validated['format'] ?? 'json';
 
-        // Construction de la requête avec filtre véhicule
-        $query = Consumption::with('vehicle')
+        $query = Consumption::with(['vehicle', 'driver'])
             ->whereBetween('date', [$start, $end]);
 
         if ($vehicleId) {
@@ -192,38 +190,32 @@ class ReportController extends Controller
 
         $consumptions = $query->orderBy('date', $order)->get();
 
-        // Format JSON (pour affichage dans le tableau React)
         if ($format === 'json') {
             return response()->json([
                 'consumptions' => $consumptions->map(function ($c) {
-                    // Calcul du taux de consommation
-                    $consumptionRate = 0;
-                    if ($c->kilometers && $c->kilometers > 0 && $c->quantity) {
-                        $consumptionRate = round(($c->quantity / $c->kilometers) * 100, 2);
-                    }
+                    $costPerLiter = $c->fuel_volume > 0
+                        ? round($c->fuel_cost / $c->fuel_volume, 0)
+                        : null;
 
                     return [
-                        'id' => $c->id,
-                        'date' => $c->date,
-                        'vehicle' => $c->vehicle->license_plate ?? 'N/A',
-                        'vehicle_id' => $c->vehicle_id,
-                        'quantity' => $c->quantity,
-                        'unit_price' => $c->unit_price,
-                        'fuel_cost' => $c->fuel_cost,
-                        'kilometers' => $c->kilometers,
-                        'consumption_rate' => $consumptionRate > 0 ? $consumptionRate : null,
-                        'fuel_type' => $c->fuel_type,
-                        'station' => $c->station,
+                        'id'            => $c->id,
+                        'date'          => $c->date,
+                        'vehicle'       => $c->vehicle->license_plate ?? 'N/A',
+                        'vehicle_id'    => $c->vehicle_id,
+                        'driver'        => $c->driver->name ?? 'N/A',
+                        'fuel_volume'   => $c->fuel_volume,
+                        'fuel_cost'     => $c->fuel_cost,
+                        'cost_per_liter' => $costPerLiter,
                     ];
                 }),
                 'filters' => [
                     'start_date' => $start,
-                    'end_date' => $end,
+                    'end_date'   => $end,
                     'vehicle_id' => $vehicleId,
-                    'order' => $order,
+                    'order'      => $order,
                 ],
                 'totals' => [
-                    'total_fuel' => round($consumptions->sum('quantity'), 2),
+                    'total_fuel' => round($consumptions->sum('fuel_volume'), 2),
                     'total_cost' => $consumptions->sum('fuel_cost'),
                 ],
             ]);
@@ -265,23 +257,21 @@ class ReportController extends Controller
             return response()->json(['message' => 'Accès non autorisé'], 403);
         }
 
-        // Validation des paramètres
         $validated = $request->validate([
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
-            'order' => 'nullable|in:asc,desc',
-            'format' => 'nullable|in:json,pdf,excel',
+            'order'      => 'nullable|in:asc,desc',
+            'format'     => 'nullable|in:json,pdf,excel',
         ]);
 
-        $start = $validated['start_date'];
-        $end = $validated['end_date'];
-        $vehicleId = $request->input('vehicle_id');
-        $order = $request->input('order', 'asc');
-        $format = $request->input('format', 'json');
+        $start     = $validated['start_date'];
+        $end       = $validated['end_date'];
+        $vehicleId = $validated['vehicle_id'] ?? null;
+        $order     = $validated['order'] ?? 'asc';
+        $format    = $validated['format'] ?? 'json';
 
-        // Construction de la requête avec filtre véhicule
-        $query = Maintenance::with('vehicle')
+        $query = Maintenance::with(['vehicle', 'driver'])
             ->whereBetween('scheduled_date', [$start, $end]);
 
         if ($vehicleId) {
@@ -290,32 +280,31 @@ class ReportController extends Controller
 
         $maintenances = $query->orderBy('scheduled_date', $order)->get();
 
-        // Format JSON (pour affichage dans le tableau React)
         if ($format === 'json') {
             return response()->json([
                 'maintenances' => $maintenances->map(function ($m) {
                     return [
-                        'id' => $m->id,
-                        'date' => $m->scheduled_date,
-                        'vehicle' => $m->vehicle->license_plate ?? 'N/A',
-                        'vehicle_id' => $m->vehicle_id,
-                        'type' => $m->maintenance_type,
-                        'cost' => $m->cost,
-                        'kilometers' => $m->current_mileage ?? $m->vehicle->mileage ?? 0,
-                        'vendor' => $m->vendor ?? 'N/A',
-                        'status' => $m->status,
-                        'notes' => $m->notes ?? '',
+                        'id'             => $m->id,
+                        'date'           => $m->scheduled_date,
+                        'completed_date' => $m->completed_date,
+                        'vehicle'        => $m->vehicle->license_plate ?? 'N/A',
+                        'vehicle_id'     => $m->vehicle_id,
+                        'type'           => $m->maintenance_type,
+                        'company'        => $m->maintenance_company ?? 'N/A',
+                        'cost'           => $m->cost,
+                        'status'         => $m->status,
+                        'description'    => $m->description ?? '',
                     ];
                 }),
                 'filters' => [
                     'start_date' => $start,
-                    'end_date' => $end,
+                    'end_date'   => $end,
                     'vehicle_id' => $vehicleId,
-                    'order' => $order,
+                    'order'      => $order,
                 ],
                 'totals' => [
                     'total_cost' => $maintenances->sum('cost'),
-                    'count' => $maintenances->count(),
+                    'count'      => $maintenances->count(),
                 ],
             ]);
         }

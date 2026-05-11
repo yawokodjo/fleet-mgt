@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Table, Button, Form } from "react-bootstrap";
+import { Container, Row, Col, Table, Button, Form, Alert } from "react-bootstrap";
 import api from "../../axios";
 
 export default function ConsumptionReport() {
@@ -10,49 +10,48 @@ export default function ConsumptionReport() {
         vehicle_id: "",
     });
     const [data, setData] = useState([]);
+    const [totals, setTotals] = useState({ total_fuel: 0, total_cost: 0 });
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    // Charger la liste des véhicules
     useEffect(() => {
-        const fetchVehicles = async () => {
-            try {
-                const res = await api.get("/vehicles");
-                let vehs = Array.isArray(res.data)
-                    ? res.data
-                    : Array.isArray(res.data.data)
-                        ? res.data.data
-                        : Array.isArray(res.data.vehicles)
-                            ? res.data.vehicles
-                            : [];
-
-                // Trier par plaque
+        api.get("/vehicles-list")
+            .then((res) => {
+                const vehs = Array.isArray(res.data) ? res.data : [];
                 vehs.sort((a, b) => (a.license_plate || "").localeCompare(b.license_plate || ""));
                 setVehicles(vehs);
-            } catch (err) {
-                console.error("Erreur chargement véhicules :", err);
-                setVehicles([]);
-            }
-        };
-        fetchVehicles();
+            })
+            .catch(() => setVehicles([]));
     }, []);
 
-    const handleChange = (e) => {
-        setFilters({ ...filters, [e.target.name]: e.target.value });
+    const buildParams = () => {
+        const params = { order: filters.order, format: "json" };
+        if (filters.start_date) params.start_date = filters.start_date;
+        if (filters.end_date)   params.end_date   = filters.end_date;
+        if (filters.vehicle_id) params.vehicle_id = filters.vehicle_id;
+        return params;
     };
 
-    // Charger rapport filtré
+    const validate = () => {
+        if (!filters.start_date || !filters.end_date) {
+            setError("Veuillez sélectionner une date de début et une date de fin.");
+            return false;
+        }
+        setError("");
+        return true;
+    };
+
     const fetchReport = async () => {
+        if (!validate()) return;
         setLoading(true);
         try {
-            const res = await api.get("/reports/exportBetweenDates", {
-                params: { ...filters, format: "json" },
-            });
-            const consumptions = Array.isArray(res.data.consumptions) ? res.data.consumptions : [];
-            setData(consumptions);
+            const res = await api.get("/reports/exportBetweenDates", { params: buildParams() });
+            setData(res.data.consumptions ?? []);
+            setTotals(res.data.totals ?? { total_fuel: 0, total_cost: 0 });
         } catch (err) {
-            console.error("Erreur chargement du rapport :", err);
-            alert("Erreur lors du chargement du rapport !");
+            const msg = err.response?.data?.message || "Erreur lors du chargement du rapport.";
+            setError(msg);
             setData([]);
         } finally {
             setLoading(false);
@@ -60,163 +59,128 @@ export default function ConsumptionReport() {
     };
 
     const exportReport = async (format) => {
+        if (!validate()) return;
         try {
             const res = await api.get("/reports/exportBetweenDates", {
-                params: { ...filters, format },
+                params: { ...buildParams(), format },
                 responseType: "blob",
             });
-            const blob = new Blob([res.data]);
-            const url = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(new Blob([res.data]));
             const a = document.createElement("a");
             a.href = url;
-            a.download = `rapport_consommation.${format === "pdf" ? "pdf" : "xlsx"}`;
+            a.download = `rapport_consommation_${filters.start_date}_${filters.end_date}.${format === "pdf" ? "pdf" : "xlsx"}`;
             a.click();
+            URL.revokeObjectURL(url);
         } catch (err) {
-            console.error("Erreur export :", err);
-            alert("Erreur lors de l’export du rapport !");
+            // responseType blob : lire l'erreur comme JSON
+            if (err.response?.data instanceof Blob) {
+                const text = await err.response.data.text();
+                try {
+                    const json = JSON.parse(text);
+                    setError(json.message || "Erreur lors de l'export.");
+                } catch {
+                    setError("Erreur lors de l'export.");
+                }
+            } else {
+                setError("Erreur lors de l'export.");
+            }
         }
     };
-
-    const totalFuel = data.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const totalCost = data.reduce((sum, item) => sum + (item.fuel_cost || 0), 0);
 
     return (
         <Container className="mt-4">
             <Row className="mb-4">
                 <Col>
-                    <h3 className="text-primary text-center">
-                        🚗 Rapport de consommation des véhicules
-                    </h3>
+                    <h3 className="text-primary text-center">Rapport de consommation carburant</h3>
                 </Col>
             </Row>
 
-            {/* Filtres */}
+            {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
+
             <Form className="bg-light p-3 rounded shadow-sm mb-4">
                 <Row className="g-3 align-items-end">
                     <Col md={3}>
                         <Form.Group>
                             <Form.Label>Véhicule</Form.Label>
-                            <Form.Select
-                                name="vehicle_id"
-                                value={filters.vehicle_id}
-                                onChange={handleChange}
-                            >
+                            <Form.Select name="vehicle_id" value={filters.vehicle_id} onChange={(e) => setFilters({ ...filters, vehicle_id: e.target.value })}>
                                 <option value="">Tous les véhicules</option>
                                 {vehicles.map((v) => (
-                                    <option key={v.id} value={v.id}>
-                                        {v.license_plate}
-                                    </option>
+                                    <option key={v.id} value={v.id}>{v.license_plate}</option>
                                 ))}
                             </Form.Select>
                         </Form.Group>
                     </Col>
-
                     <Col md={3}>
                         <Form.Group>
-                            <Form.Label>Date début</Form.Label>
-                            <Form.Control
-                                type="date"
-                                name="start_date"
-                                value={filters.start_date}
-                                onChange={handleChange}
-                            />
+                            <Form.Label>Date début <span className="text-danger">*</span></Form.Label>
+                            <Form.Control type="date" value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
                         </Form.Group>
                     </Col>
-
                     <Col md={3}>
                         <Form.Group>
-                            <Form.Label>Date fin</Form.Label>
-                            <Form.Control
-                                type="date"
-                                name="end_date"
-                                value={filters.end_date}
-                                onChange={handleChange}
-                            />
+                            <Form.Label>Date fin <span className="text-danger">*</span></Form.Label>
+                            <Form.Control type="date" value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} />
                         </Form.Group>
                     </Col>
-
                     <Col md={2}>
                         <Form.Group>
                             <Form.Label>Ordre</Form.Label>
-                            <Form.Select
-                                name="order"
-                                value={filters.order}
-                                onChange={handleChange}
-                            >
+                            <Form.Select value={filters.order} onChange={(e) => setFilters({ ...filters, order: e.target.value })}>
                                 <option value="asc">Croissant</option>
                                 <option value="desc">Décroissant</option>
                             </Form.Select>
                         </Form.Group>
                     </Col>
-
                     <Col md={1}>
-                        <Button
-                            variant="primary"
-                            className="w-100"
-                            onClick={fetchReport}
-                            disabled={loading}
-                        >
+                        <Button variant="primary" className="w-100" onClick={fetchReport} disabled={loading}>
                             {loading ? "..." : "Filtrer"}
                         </Button>
                     </Col>
                 </Row>
             </Form>
 
-            {/* Tableau */}
             <div className="table-responsive shadow-sm">
                 <Table bordered hover className="align-middle text-center">
-                    <thead className="table-primary">
+                    <thead className="table-success">
                         <tr>
                             <th>Date</th>
-                            <th>Qté (L)</th>
-                            <th>PU (FCFA)</th>
-                            <th>Montant Total (FCFA)</th>
-                            <th>Kilométrage (Km)</th>
-                            <th>Taux de conso (L/100Km)</th>
+                            <th>Véhicule</th>
+                            <th>Conducteur</th>
+                            <th>Volume (L)</th>
+                            <th>Coût Total (FCFA)</th>
+                            <th>Coût / Litre (FCFA)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {data.length > 0 ? (
-                            data.map((item, index) => (
-                                <tr key={index}>
-                                    <td>{item.date}</td>
-                                    <td>{item.quantity}</td>
-                                    <td>{item.unit_price}</td>
-                                    <td>{item.fuel_cost?.toLocaleString()}</td>
-                                    <td>{item.kilometers}</td>
-                                    <td>{item.consumption_rate}</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="6" className="text-muted">
-                                    Aucun enregistrement trouvé
-                                </td>
+                        {data.length > 0 ? data.map((item, i) => (
+                            <tr key={i}>
+                                <td>{item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "-"}</td>
+                                <td>{item.vehicle}</td>
+                                <td>{item.driver}</td>
+                                <td>{Number(item.fuel_volume).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}</td>
+                                <td>{Number(item.fuel_cost).toLocaleString("fr-FR")}</td>
+                                <td>{item.cost_per_liter ? Number(item.cost_per_liter).toLocaleString("fr-FR") : "N/A"}</td>
                             </tr>
+                        )) : (
+                            <tr><td colSpan="6" className="text-muted">Aucun enregistrement trouvé</td></tr>
                         )}
                     </tbody>
                     {data.length > 0 && (
-                        <tfoot className="fw-bold bg-light">
+                        <tfoot className="fw-bold table-light">
                             <tr>
-                                <td>Total</td>
-                                <td>{totalFuel.toFixed(2)}</td>
+                                <td colSpan="3">Total</td>
+                                <td>{Number(totals.total_fuel).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} L</td>
+                                <td>{Number(totals.total_cost).toLocaleString("fr-FR")} FCFA</td>
                                 <td>-</td>
-                                <td>{totalCost.toLocaleString()} FCFA</td>
-                                <td colSpan="2">-</td>
                             </tr>
                         </tfoot>
                     )}
                 </Table>
             </div>
 
-            {/* Export */}
             <div className="mt-3 d-flex gap-2">
-                <Button variant="success" onClick={() => exportReport("excel")}>
-                    📗 Exporter Excel
-                </Button>
-                <Button variant="danger" onClick={() => exportReport("pdf")}>
-                    📕 Exporter PDF
-                </Button>
+                <Button variant="success" onClick={() => exportReport("excel")}>Exporter Excel</Button>
+                <Button variant="danger" onClick={() => exportReport("pdf")}>Exporter PDF</Button>
             </div>
         </Container>
     );
