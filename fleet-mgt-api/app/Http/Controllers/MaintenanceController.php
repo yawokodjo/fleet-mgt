@@ -10,12 +10,9 @@ class MaintenanceController extends Controller
 {
     public function index(Request $request)
     {
-        // Autorisation: admins, managers, mécaniciens
-        /*if (!Gate::allows('admin-action') &&
-            !Gate::allows('manager-action') &&
-            !Gate::allows('mechanic-action')) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('mechanic-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        }  */
+        }
 
         $query = Maintenance::with(['vehicle', 'driver']);
 
@@ -40,10 +37,9 @@ class MaintenanceController extends Controller
 
     public function store(Request $request)
     {
-        // Autorisation: admins, managers
-        /*if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
+        if (! Gate::allows('manager-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+        }
 
         $data = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
@@ -64,29 +60,22 @@ class MaintenanceController extends Controller
 
     public function show(Maintenance $maintenance)
     {
-        // Autorisation: admins, managers, mécaniciens, conducteur concerné
-        /*  $canView = Gate::allows('admin-action') ||
-                     Gate::allows('manager-action') ||
-                     Gate::allows('mechanic-action') ||
-                     ($maintenance->driver_id && $maintenance->driver_id === auth()->id());
+        $canView = Gate::allows('manager-action') ||
+                   Gate::allows('mechanic-action') ||
+                   ($maintenance->driver_id && $maintenance->driver_id === auth()->id());
 
-          if (!$canView) {
-              return response()->json(['message' => 'Accès non autorisé'], 403);
-          }*/
+        if (! $canView) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         return $maintenance->load(['vehicle', 'driver']);
     }
 
     public function update(Request $request, Maintenance $maintenance)
     {
-        // Autorisation: admins, managers, mécaniciens
-        /* $allowed = Gate::allows('admin-action') ||
-                    Gate::allows('manager-action') ||
-                    Gate::allows('mechanic-action');
-
-         if (!$allowed) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! Gate::allows('manager-action') && ! Gate::allows('mechanic-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $data = $request->validate([
             'vehicle_id' => 'sometimes|exists:vehicles,id',
@@ -109,10 +98,9 @@ class MaintenanceController extends Controller
 
     public function destroy(Maintenance $maintenance)
     {
-        // Autorisation: admins et managers seulement
-        /* if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! Gate::allows('manager-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $maintenance->delete();
 
@@ -122,14 +110,9 @@ class MaintenanceController extends Controller
     // Marquer une maintenance comme complétée
     public function markAsCompleted(Maintenance $maintenance)
     {
-        // Autorisation: mécaniciens, managers, admins
-        /*$allowed = Gate::allows('admin-action') ||
-                   Gate::allows('manager-action') ||
-                   Gate::allows('mechanic-action');
-
-        if (!$allowed) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('mechanic-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+        }
 
         $maintenance->markAsCompleted();
 

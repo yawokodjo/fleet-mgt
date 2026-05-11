@@ -20,9 +20,9 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-        /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-              return response()->json(['message' => 'Accès non autorisé'], 403);
-          } */
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $query = Report::with(['manager', 'vehicle', 'maintenance', 'consumption']);
 
@@ -52,9 +52,9 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
-        /* if (!Gate::any(['admin-action', 'manager-action'])) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! Gate::allows('manager-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $data = $request->validate([
             'vehicle_id' => 'nullable|exists:vehicles,id',
@@ -79,9 +79,9 @@ class ReportController extends Controller
      */
     public function show(Report $report)
     {
-        /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-              return response()->json(['message' => 'Accès non autorisé'], 403);
-          } */
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         return $report->load(['manager', 'vehicle', 'maintenance', 'consumption']);
     }
@@ -91,12 +91,12 @@ class ReportController extends Controller
      */
     public function update(Request $request, Report $report)
     {
-        /*  $canUpdate = Gate::allows('admin-action') ||
-                      (Gate::allows('manager-action') && $report->manager_id === auth()->id());
+        $canUpdate = Gate::allows('admin-action') ||
+                     (Gate::allows('manager-action') && $report->manager_id === auth()->id());
 
-         if (!$canUpdate) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! $canUpdate) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $data = $request->validate([
             'vehicle_id' => 'nullable|exists:vehicles,id',
@@ -119,12 +119,12 @@ class ReportController extends Controller
      */
     public function destroy(Report $report)
     {
-        /*  $canDelete = Gate::allows('admin-action') ||
-                      (Gate::allows('manager-action') && $report->manager_id === auth()->id());
+        $canDelete = Gate::allows('admin-action') ||
+                     (Gate::allows('manager-action') && $report->manager_id === auth()->id());
 
-         if (!$canDelete) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! $canDelete) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $report->delete();
 
@@ -136,9 +136,9 @@ class ReportController extends Controller
      */
     public function generateReport(Request $request)
     {
-        /* if (!Gate::any(['admin-action', 'manager-action'])) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! Gate::allows('manager-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $type = $request->input('type', 'monthly_summary');
         $startDate = $request->input('start_date', now()->startOfMonth());
@@ -163,9 +163,9 @@ class ReportController extends Controller
      */
     public function exportBetweenDates(Request $request)
     {
-        /*  if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-              return response()->json(['message' => 'Accès non autorisé'], 403);
-          } */
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         // Validation des paramètres
         $validated = $request->validate([
@@ -261,9 +261,9 @@ class ReportController extends Controller
      */
     public function maintenanceBetweenDates(Request $request)
     {
-        /* if (!Gate::any(['admin-action', 'manager-action', 'accountant-action'])) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         // Validation des paramètres
         $validated = $request->validate([

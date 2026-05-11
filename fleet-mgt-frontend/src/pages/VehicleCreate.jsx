@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../axios";
 
 export default function VehicleCreate() {
     const navigate = useNavigate();
@@ -28,11 +28,7 @@ export default function VehicleCreate() {
         setErrors({});
 
         try {
-            await axios.post("http://localhost:8000/api/vehicles", form, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
+            await api.post("/vehicles", form);
 
             alert("✅ Véhicule ajouté avec succès !");
             navigate("/vehicles");

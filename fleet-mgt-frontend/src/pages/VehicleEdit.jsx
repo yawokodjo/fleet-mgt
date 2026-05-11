@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../axios";
 
 export default function VehicleEdit() {
   const { id } = useParams();
@@ -20,19 +20,9 @@ export default function VehicleEdit() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const API_BASE_URL = "http://127.0.0.1:8000/api";
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    axios
-      .get(`${API_BASE_URL}/vehicles/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`/vehicles/${id}`)
       .then((res) => {
         setVehicle(res.data);
         setLoading(false);
@@ -40,12 +30,11 @@ export default function VehicleEdit() {
       .catch((err) => {
         console.error("Erreur lors du chargement :", err);
         setLoading(false);
-        if (err.response?.status === 401) navigate("/login");
         if (err.response?.status === 403) alert("Accès non autorisé !");
         if (err.response?.status === 500)
           alert("Erreur serveur, impossible de charger le véhicule.");
       });
-  }, [id, navigate, token]);
+  }, [id]);
 
   const handleChange = (e) => {
     setVehicle({ ...vehicle, [e.target.name]: e.target.value });
@@ -55,10 +44,8 @@ export default function VehicleEdit() {
     e.preventDefault();
     setErrors({});
 
-    axios
-      .put(`${API_BASE_URL}/vehicles/${id}`, vehicle, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .put(`/vehicles/${id}`, vehicle)
       .then(() => {
         alert("Véhicule mis à jour avec succès !");
         navigate("/vehicles");
@@ -66,12 +53,11 @@ export default function VehicleEdit() {
       .catch((err) => {
         if (err.response?.status === 422) {
           setErrors(err.response.data.errors || {});
-        } else if (err.response?.status === 401) {
-          alert("Session expirée. Veuillez vous reconnecter.");
-          navigate("/login");
+        } else if (err.response?.status === 403) {
+          alert("Accès non autorisé. Seuls les administrateurs et managers peuvent modifier un véhicule.");
         } else {
           console.error("Erreur lors de la mise à jour :", err);
-          alert("Une erreur est survenue lors de la mise à jour.");
+          alert(err.response?.data?.message || "Une erreur est survenue lors de la mise à jour.");
         }
       });
   };

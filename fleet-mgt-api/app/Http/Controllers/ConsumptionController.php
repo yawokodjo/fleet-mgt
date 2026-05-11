@@ -10,12 +10,9 @@ class ConsumptionController extends Controller
 {
     public function index(Request $request)
     {
-        // Autorisation: admins, managers, comptables
-        /*if (!Gate::allows('admin-action') &&
-            !Gate::allows('manager-action') &&
-            !Gate::allows('accountant-action')) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        } */
+        }
 
         $query = Consumption::with(['vehicle', 'driver']);
 
@@ -43,14 +40,11 @@ class ConsumptionController extends Controller
 
     public function store(Request $request)
     {
-        // Autorisation: admins, managers, conducteurs
-        /* $allowed = Gate::allows('admin-action') ||
-                    Gate::allows('manager-action') ||
-                    Gate::allows('driver-action');
+        $allowed = Gate::allows('manager-action') || Gate::allows('driver-action');
 
-         if (!$allowed) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         }*/
+        if (! $allowed) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         $data = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
@@ -69,29 +63,22 @@ class ConsumptionController extends Controller
 
     public function show(Consumption $consumption)
     {
-        // Autorisation: admins, managers, comptables, ou conducteur concerné
-        /*$canView = Gate::allows('admin-action') ||
-                   Gate::allows('manager-action') ||
+        $canView = Gate::allows('manager-action') ||
                    Gate::allows('accountant-action') ||
                    $consumption->driver_id === auth()->id();
 
-        if (!$canView) {
+        if (! $canView) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+        }
 
         return $consumption->load(['vehicle', 'driver']);
     }
 
     public function update(Request $request, Consumption $consumption)
     {
-        // Autorisation: admins, managers, comptables
-        /*$allowed = Gate::allows('admin-action') ||
-                   Gate::allows('manager-action') ||
-                   Gate::allows('accountant-action');
-
-        if (!$allowed) {
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+        }
 
         $data = $request->validate([
             'vehicle_id' => 'sometimes|exists:vehicles,id',
@@ -110,24 +97,20 @@ class ConsumptionController extends Controller
 
     public function destroy(Consumption $consumption)
     {
-        // Autorisation: admins et managers seulement
-        /* if (!Gate::allows('admin-action') && !Gate::allows('manager-action')) {
+        if (! Gate::allows('manager-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
-        }*/
+        }
 
         $consumption->delete();
 
         return response()->json(null, 204);
     }
 
-    // Rapport de consommation pour un véhicule
     public function vehicleReport($vehicleId)
     {
-        /* if (!Gate::allows('admin-action') &&
-             !Gate::allows('manager-action') &&
-             !Gate::allows('accountant-action')) {
-             return response()->json(['message' => 'Accès non autorisé'], 403);
-         } */
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
 
         return Consumption::where('vehicle_id', $vehicleId)
             ->selectRaw('SUM(fuel_volume) as total_volume, SUM(fuel_cost) as total_cost,
