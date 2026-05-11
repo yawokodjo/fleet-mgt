@@ -1,5 +1,5 @@
 # ─── Stage: vendor ────────────────────────────────────────────────
-FROM composer:2 AS vendor
+FROM composer:2-php8.2 AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
