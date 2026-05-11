@@ -25,7 +25,7 @@ CMD ["dockerize", "-wait", "tcp://db:3306", "-timeout", "30s", \
 FROM php:8.2-fpm AS prod
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev libzip-dev zip \
-    nginx supervisor \
+    nginx supervisor ca-certificates \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql gd zip opcache \
     && rm -rf /var/lib/apt/lists/*
