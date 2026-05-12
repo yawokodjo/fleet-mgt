@@ -50,36 +50,62 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
         return $this->data;
     }
 
-    // Colonnes : N° | Date prévue | Date réalisée | Véhicule | Type | Société | Coût | Statut | Description
     public function headings(): array
     {
+        /*
+         * Ordre unifié avec le PDF — 10 colonnes dans les deux cas, Coût toujours en col G (7)
+         * Véhicule unique  : N° | Date prévue | Date réalisée | Type | Société | Kilométrage | Coût | Statut | Description | Document
+         * Multi-véhicules  : N° | Date prévue | Date réalisée | Véhicule | Type | Société | Coût | Statut | Description | Document
+         */
+        if ($this->vehicleId) {
+            return [
+                'N°', 'Date prévue', 'Date réalisée',
+                'Type de maintenance', 'Société / Atelier', 'Kilométrage (km)',
+                'Coût (FCFA)', 'Statut', 'Description', 'Document',
+            ];
+        }
         return [
-            'N°',
-            'Date prévue',
-            'Date réalisée',
-            'Véhicule',
-            'Type de maintenance',
-            'Société / Atelier',
-            'Coût (FCFA)',
-            'Statut',
-            'Description',
+            'N°', 'Date prévue', 'Date réalisée',
+            'Véhicule', 'Type de maintenance', 'Société / Atelier',
+            'Coût (FCFA)', 'Statut', 'Description', 'Document',
         ];
     }
 
     public function map($maintenance): array
     {
+        $status = $this->getStatusLabel($maintenance->status);
+
+        if (! $this->vehicleId) {
+            // Multi-véhicules : N° | Date prévue | Date réalisée | Véhicule | Type | Société | Coût | Statut | Description | Document
+            return [
+                $this->rowNumber++,
+                \Carbon\Carbon::parse($maintenance->scheduled_date)->format('d/m/Y'),
+                $maintenance->completed_date
+                    ? \Carbon\Carbon::parse($maintenance->completed_date)->format('d/m/Y') : 'N/A',
+                $maintenance->vehicle->license_plate ?? 'N/A',
+                $maintenance->maintenance_type ?? 'N/A',
+                $maintenance->maintenance_company ?? 'N/A',
+                number_format($maintenance->cost ?? 0, 0, ',', ' '),
+                $status,
+                $maintenance->description ?? '',
+                $maintenance->document_path ? 'Oui' : '—',
+            ];
+        }
+
+        // Véhicule unique : N° | Date prévue | Date réalisée | Type | Société | Kilométrage | Coût | Statut | Description | Document
         return [
             $this->rowNumber++,
             \Carbon\Carbon::parse($maintenance->scheduled_date)->format('d/m/Y'),
             $maintenance->completed_date
-                ? \Carbon\Carbon::parse($maintenance->completed_date)->format('d/m/Y')
-                : 'N/A',
-            $maintenance->vehicle->license_plate ?? 'N/A',
+                ? \Carbon\Carbon::parse($maintenance->completed_date)->format('d/m/Y') : 'N/A',
             $maintenance->maintenance_type ?? 'N/A',
             $maintenance->maintenance_company ?? 'N/A',
+            $maintenance->mileage_at_service
+                ? number_format($maintenance->mileage_at_service, 0, ',', ' ').' km' : '—',
             number_format($maintenance->cost ?? 0, 0, ',', ' '),
-            $this->getStatusLabel($maintenance->status),
+            $status,
             $maintenance->description ?? '',
+            $maintenance->document_path ? 'Oui' : '—',
         ];
     }
 
@@ -113,15 +139,20 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
 
-            $sheet->getStyle('A2:C'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('G2:G'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('H2:H'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            for ($i = 2; $i <= $lastRow; $i++) {
+                if ($i % 2 === 0) {
+                    $sheet->getStyle('A'.$i.':'.$lastColumn.$i)->applyFromArray([
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8F9FA']],
+                    ]);
+                }
+            }
         }
 
         // Ligne de total
         $totalRow  = $lastRow + 1;
         $totalCost = $this->data->sum('cost');
 
+        // Coût est toujours en colonne G (7) dans les deux layouts
         $sheet->setCellValue('A'.$totalRow, 'TOTAL');
         $sheet->setCellValue('G'.$totalRow, number_format($totalCost, 0, ',', ' ').' FCFA');
 
@@ -180,16 +211,9 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
 
     public function columnWidths(): array
     {
-        return [
-            'A' => 6,
-            'B' => 14,
-            'C' => 14,
-            'D' => 15,
-            'E' => 22,
-            'F' => 25,
-            'G' => 16,
-            'H' => 12,
-            'I' => 40,
-        ];
+        if ($this->vehicleId) {
+            return ['A' => 5, 'B' => 13, 'C' => 13, 'D' => 20, 'E' => 22, 'F' => 14, 'G' => 14, 'H' => 11, 'I' => 35, 'J' => 10];
+        }
+        return ['A' => 5, 'B' => 13, 'C' => 13, 'D' => 14, 'E' => 20, 'F' => 22, 'G' => 14, 'H' => 11, 'I' => 35, 'J' => 10];
     }
 }

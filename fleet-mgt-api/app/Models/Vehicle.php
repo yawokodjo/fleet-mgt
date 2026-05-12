@@ -17,6 +17,7 @@ class Vehicle extends Model
         'mileage',
         'status',
         'current_driver_id',
+        'document_path',
     ];
 
     protected $casts = [

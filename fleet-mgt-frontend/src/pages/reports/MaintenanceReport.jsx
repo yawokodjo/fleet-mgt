@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Table, Button, Form, Alert } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import api from "../../axios";
 
 export default function MaintenanceReport() {
-    const [filters, setFilters] = useState({
-        start_date: "",
-        end_date: "",
-        order: "asc",
-        vehicle_id: "",
-    });
+    const { t, i18n } = useTranslation();
+    const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+
+    const [filters, setFilters] = useState({ start_date: "", end_date: "", order: "asc", vehicle_id: "" });
     const [data, setData] = useState([]);
     const [totals, setTotals] = useState({ total_cost: 0, count: 0 });
     const [vehicles, setVehicles] = useState([]);
@@ -35,7 +34,7 @@ export default function MaintenanceReport() {
 
     const validate = () => {
         if (!filters.start_date || !filters.end_date) {
-            setError("Veuillez sélectionner une date de début et une date de fin.");
+            setError(t('reports.date_error'));
             return false;
         }
         setError("");
@@ -50,8 +49,7 @@ export default function MaintenanceReport() {
             setData(res.data.maintenances ?? []);
             setTotals(res.data.totals ?? { total_cost: 0, count: 0 });
         } catch (err) {
-            const msg = err.response?.data?.message || "Erreur lors du chargement du rapport.";
-            setError(msg);
+            setError(err.response?.data?.message || t('reports.load_error'));
             setData([]);
         } finally {
             setLoading(false);
@@ -74,27 +72,26 @@ export default function MaintenanceReport() {
         } catch (err) {
             if (err.response?.data instanceof Blob) {
                 const text = await err.response.data.text();
-                try {
-                    const json = JSON.parse(text);
-                    setError(json.message || "Erreur lors de l'export.");
-                } catch {
-                    setError("Erreur lors de l'export.");
-                }
+                try { setError(JSON.parse(text).message || t('reports.export_error')); }
+                catch { setError(t('reports.export_error')); }
             } else {
-                setError("Erreur lors de l'export.");
+                setError(t('reports.export_error'));
             }
         }
     };
 
     const statusLabel = (s) => ({
-        planned: "Planifié", in_progress: "En cours", completed: "Terminé", cancelled: "Annulé",
+        planned: t('reports.status_planned'),
+        in_progress: t('reports.status_in_progress'),
+        completed: t('reports.status_completed'),
+        cancelled: t('reports.status_cancelled'),
     }[s] ?? s);
 
     return (
         <Container className="mt-4">
             <Row className="mb-4">
                 <Col>
-                    <h3 className="text-primary text-center">Rapport de maintenance des véhicules</h3>
+                    <h3 className="text-primary text-center">{t('reports.maintenance_report_title')}</h3>
                 </Col>
             </Row>
 
@@ -104,9 +101,9 @@ export default function MaintenanceReport() {
                 <Row className="g-3 align-items-end">
                     <Col md={3}>
                         <Form.Group>
-                            <Form.Label>Véhicule</Form.Label>
+                            <Form.Label>{t('reports.col_vehicle')}</Form.Label>
                             <Form.Select value={filters.vehicle_id} onChange={(e) => setFilters({ ...filters, vehicle_id: e.target.value })}>
-                                <option value="">Tous les véhicules</option>
+                                <option value="">{t('reports.all_vehicles')}</option>
                                 {vehicles.map((v) => (
                                     <option key={v.id} value={v.id}>{v.license_plate}</option>
                                 ))}
@@ -115,28 +112,28 @@ export default function MaintenanceReport() {
                     </Col>
                     <Col md={3}>
                         <Form.Group>
-                            <Form.Label>Date début <span className="text-danger">*</span></Form.Label>
+                            <Form.Label>{t('reports.start_date')} <span className="text-danger">*</span></Form.Label>
                             <Form.Control type="date" value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
                         </Form.Group>
                     </Col>
                     <Col md={3}>
                         <Form.Group>
-                            <Form.Label>Date fin <span className="text-danger">*</span></Form.Label>
+                            <Form.Label>{t('reports.end_date')} <span className="text-danger">*</span></Form.Label>
                             <Form.Control type="date" value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} />
                         </Form.Group>
                     </Col>
                     <Col md={2}>
                         <Form.Group>
-                            <Form.Label>Ordre</Form.Label>
+                            <Form.Label>{t('reports.order')}</Form.Label>
                             <Form.Select value={filters.order} onChange={(e) => setFilters({ ...filters, order: e.target.value })}>
-                                <option value="asc">Croissant</option>
-                                <option value="desc">Décroissant</option>
+                                <option value="asc">{t('reports.order_asc')}</option>
+                                <option value="desc">{t('reports.order_desc')}</option>
                             </Form.Select>
                         </Form.Group>
                     </Col>
                     <Col md={1}>
                         <Button variant="primary" className="w-100" onClick={fetchReport} disabled={loading}>
-                            {loading ? "..." : "Filtrer"}
+                            {loading ? "..." : t('reports.filter_btn')}
                         </Button>
                     </Col>
                 </Row>
@@ -146,37 +143,37 @@ export default function MaintenanceReport() {
                 <Table bordered hover className="align-middle text-center">
                     <thead className="table-primary">
                         <tr>
-                            <th>Date prévue</th>
-                            <th>Date réalisée</th>
-                            <th>Véhicule</th>
-                            <th>Type</th>
-                            <th>Société / Atelier</th>
-                            <th>Coût (FCFA)</th>
-                            <th>Statut</th>
-                            <th>Description</th>
+                            <th>{t('reports.col_planned_date')}</th>
+                            <th>{t('reports.col_completed_date')}</th>
+                            <th>{t('reports.col_vehicle')}</th>
+                            <th>{t('reports.col_type')}</th>
+                            <th>{t('reports.col_company')}</th>
+                            <th>{t('reports.col_cost')}</th>
+                            <th>{t('reports.col_status')}</th>
+                            <th>{t('reports.col_description')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {data.length > 0 ? data.map((item, i) => (
                             <tr key={i}>
-                                <td>{item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "-"}</td>
-                                <td>{item.completed_date ? new Date(item.completed_date).toLocaleDateString("fr-FR") : "-"}</td>
+                                <td>{item.date ? new Date(item.date).toLocaleDateString(locale) : "-"}</td>
+                                <td>{item.completed_date ? new Date(item.completed_date).toLocaleDateString(locale) : "-"}</td>
                                 <td>{item.vehicle}</td>
                                 <td>{item.type}</td>
                                 <td>{item.company}</td>
-                                <td>{Number(item.cost).toLocaleString("fr-FR")}</td>
+                                <td>{Number(item.cost).toLocaleString(locale)}</td>
                                 <td>{statusLabel(item.status)}</td>
                                 <td className="text-start">{item.description}</td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="8" className="text-muted">Aucun enregistrement trouvé</td></tr>
+                            <tr><td colSpan="8" className="text-muted">{t('reports.no_records')}</td></tr>
                         )}
                     </tbody>
                     {data.length > 0 && (
                         <tfoot className="fw-bold table-light">
                             <tr>
-                                <td colSpan="5">Total ({totals.count} maintenance{totals.count > 1 ? "s" : ""})</td>
-                                <td>{Number(totals.total_cost).toLocaleString("fr-FR")} FCFA</td>
+                                <td colSpan="5">{t('reports.maintenance_total', { count: totals.count })}</td>
+                                <td>{Number(totals.total_cost).toLocaleString(locale)} FCFA</td>
                                 <td colSpan="2">-</td>
                             </tr>
                         </tfoot>
@@ -185,8 +182,8 @@ export default function MaintenanceReport() {
             </div>
 
             <div className="mt-3 d-flex gap-2">
-                <Button variant="success" onClick={() => exportReport("excel")}>Exporter Excel</Button>
-                <Button variant="danger" onClick={() => exportReport("pdf")}>Exporter PDF</Button>
+                <Button variant="success" onClick={() => exportReport("excel")}>{t('reports.export_excel_btn')}</Button>
+                <Button variant="danger" onClick={() => exportReport("pdf")}>{t('reports.export_pdf_btn')}</Button>
             </div>
         </Container>
     );

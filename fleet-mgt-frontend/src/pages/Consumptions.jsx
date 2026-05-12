@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../axios";
 
 export default function Consumptions() {
@@ -9,12 +10,12 @@ export default function Consumptions() {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Fermer le menu si on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -63,19 +64,19 @@ export default function Consumptions() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette consommation ?")) {
+    if (!window.confirm(t('consumptions.delete_confirm'))) {
       setSelectedConsumption(null);
       return;
     }
 
     try {
       await api.delete(`/consumptions/${selectedConsumption.id}`);
-      alert("✅ Consommation supprimée avec succès !");
+      alert(t('consumptions.delete_success'));
       fetchData();
       setSelectedConsumption(null);
     } catch (err) {
       console.error(err);
-      alert("❌ Erreur lors de la suppression !");
+      alert(t('common.error'));
       setSelectedConsumption(null);
     }
   };
@@ -110,7 +111,7 @@ export default function Consumptions() {
     return (
       <div className="text-center mt-5">
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Chargement...</span>
+          <span className="visually-hidden">{t('common.loading')}</span>
         </div>
       </div>
     );
@@ -119,12 +120,12 @@ export default function Consumptions() {
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-primary fw-bold mb-0">⛽ Liste des Consommations</h2>
+        <h2 className="text-primary fw-bold mb-0">{t('consumptions.list_title')}</h2>
         <button
           className="btn btn-success"
           onClick={() => navigate("/consumptions/create")}
         >
-          ➕ Ajouter une consommation
+          {t('consumptions.add_btn')}
         </button>
       </div>
 
@@ -132,11 +133,11 @@ export default function Consumptions() {
         <table className="table table-bordered table-hover align-middle">
           <thead className="table-light text-center">
             <tr>
-              <th>Date</th>
-              <th>Véhicule</th>
-              <th>Chauffeur</th>
-              <th>Litres</th>
-              <th>Montant (FCFA)</th>
+              <th>{t('consumptions.date')}</th>
+              <th>{t('consumptions.vehicle')}</th>
+              <th>{t('consumptions.driver')}</th>
+              <th>{t('consumptions.liters_short')}</th>
+              <th>{t('consumptions.amount_short')}</th>
             </tr>
           </thead>
           <tbody>
@@ -145,7 +146,7 @@ export default function Consumptions() {
                 <tr
                   key={c.id}
                   onClick={(e) => handleRowClick(e, c)}
-                  title="Cliquez pour afficher les actions disponibles (Voir, Modifier, Supprimer)"
+                  title={t('vehicles.click_hint')}
                   style={{
                     cursor: 'pointer',
                     backgroundColor: selectedConsumption?.id === c.id ? '#0d6efd' : 'transparent',
@@ -201,7 +202,7 @@ export default function Consumptions() {
               <tr>
                 <td colSpan="5" className="text-center text-muted py-5">
                   <div className="fs-1 mb-3">⛽</div>
-                  <p className="mb-0">Aucune consommation enregistrée.</p>
+                  <p className="mb-0">{t('consumptions.no_consumptions')}</p>
                 </td>
               </tr>
             )}
@@ -209,7 +210,6 @@ export default function Consumptions() {
         </table>
       </div>
 
-      {/* Menu contextuel */}
       {selectedConsumption && (
         <div
           ref={menuRef}
@@ -231,7 +231,7 @@ export default function Consumptions() {
             }}
           >
             <div className="card-header bg-primary text-white py-2">
-              <small className="fw-bold">Actions disponibles</small>
+              <small className="fw-bold">{t('common.actions')}</small>
             </div>
             <div className="list-group list-group-flush">
               <button
@@ -252,8 +252,8 @@ export default function Consumptions() {
                   👁️
                 </div>
                 <div className="flex-grow-1">
-                  <strong className="d-block">Voir</strong>
-                  <small className="text-muted">Détails de la consommation</small>
+                  <strong className="d-block">{t('common.view')}</strong>
+                  <small className="text-muted">{t('common.view_details')}</small>
                 </div>
               </button>
 
@@ -275,8 +275,8 @@ export default function Consumptions() {
                   ✏️
                 </div>
                 <div className="flex-grow-1">
-                  <strong className="d-block">Modifier</strong>
-                  <small className="text-muted">Éditer les informations</small>
+                  <strong className="d-block">{t('common.edit')}</strong>
+                  <small className="text-muted">{t('common.edit_info')}</small>
                 </div>
               </button>
 
@@ -298,8 +298,8 @@ export default function Consumptions() {
                   🗑️
                 </div>
                 <div className="flex-grow-1">
-                  <strong className="d-block">Supprimer</strong>
-                  <small className="text-muted">Retirer définitivement</small>
+                  <strong className="d-block">{t('common.delete')}</strong>
+                  <small className="text-muted">{t('common.delete_permanently')}</small>
                 </div>
               </button>
             </div>
@@ -307,7 +307,6 @@ export default function Consumptions() {
         </div>
       )}
 
-      {/* CSS pour l'animation */}
       <style>{`
         @keyframes fadeIn {
           from {

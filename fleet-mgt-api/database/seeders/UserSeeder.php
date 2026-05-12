@@ -9,43 +9,30 @@ use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $users = [
-            [
-                'name' => 'Admin User',
-                'email' => 'admin@example.com',
-                'role' => 'admin',
-            ],
-            [
-                'name' => 'Manager User',
-                'email' => 'manager@example.com',
-                'role' => 'manager',
-            ],
-            [
-                'name' => 'Driver User',
-                'email' => 'driver@example.com',
-                'role' => 'driver',
-            ],
-            [
-                'name' => 'Accountant User',
-                'email' => 'accountant@example.com',
-                'role' => 'accountant',
-            ],
+            ['name' => 'Kwame Adama',     'email' => 'admin@citg.tg',      'role' => 'admin'],
+            ['name' => 'Kossi Mensah',    'email' => 'mensah@citg.tg',     'role' => 'manager'],
+            ['name' => 'Afi Dossou',      'email' => 'dossou@citg.tg',     'role' => 'manager'],
+            ['name' => 'Edem Agbeko',     'email' => 'agbeko@citg.tg',     'role' => 'driver'],
+            ['name' => 'Kodjo Attiogbe', 'email' => 'attiogbe@citg.tg',   'role' => 'driver'],
+            ['name' => 'Yao Kpodzro',    'email' => 'kpodzro@citg.tg',    'role' => 'driver'],
+            ['name' => 'Abla Soglo',     'email' => 'soglo@citg.tg',      'role' => 'driver'],
+            ['name' => 'Mawuli Kpoti',   'email' => 'kpoti@citg.tg',      'role' => 'accountant'],
         ];
 
-        foreach ($users as $user) {
-            User::create([
-                'name' => $user['name'],
-                'email' => $user['email'],
-                'email_verified_at' => now(),
-                'password' => Hash::make('password'), // mot de passe par défaut
-                'role' => $user['role'],
-                'remember_token' => Str::random(10),
-            ]);
+        foreach ($users as $data) {
+            User::firstOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name'              => $data['name'],
+                    'email_verified_at' => now(),
+                    'password'          => Hash::make('Password123!'),
+                    'role'              => $data['role'],
+                    'remember_token'    => Str::random(10),
+                ]
+            );
         }
     }
 }

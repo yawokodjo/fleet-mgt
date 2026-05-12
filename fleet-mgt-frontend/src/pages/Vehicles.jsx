@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../axios';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function Vehicles() {
   const [vehicles, setVehicles] = useState([]);
@@ -9,6 +10,7 @@ export default function Vehicles() {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchVehicles();
@@ -35,7 +37,7 @@ export default function Vehicles() {
       setVehicles(res.data);
     } catch (err) {
       console.error('Erreur lors du chargement des véhicules :', err);
-      alert('Impossible de charger la liste des véhicules.');
+      alert(t('vehicles.load_error'));
     } finally {
       setLoading(false);
     }
@@ -64,19 +66,19 @@ export default function Vehicles() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Voulez-vous vraiment supprimer ce véhicule ?')) {
+    if (!window.confirm(t('vehicles.delete_confirm'))) {
       setSelectedVehicle(null);
       return;
     }
 
     try {
       const res = await api.delete(`/vehicles/${selectedVehicle.id}`);
-      alert(res.data.message || 'Véhicule supprimé avec succès !');
+      alert(res.data.message || t('vehicles.delete_success'));
       fetchVehicles();
       setSelectedVehicle(null);
     } catch (err) {
       console.error('Erreur lors de la suppression :', err);
-      alert('Impossible de supprimer ce véhicule.');
+      alert(t('vehicles.delete_error'));
       setSelectedVehicle(null);
     }
   };
@@ -85,7 +87,7 @@ export default function Vehicles() {
     return (
       <div className="text-center mt-5">
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Chargement...</span>
+          <span className="visually-hidden">{t('common.loading')}</span>
         </div>
       </div>
     );
@@ -94,14 +96,9 @@ export default function Vehicles() {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-primary fw-bold mb-0">
-          🚗 Liste des véhicules
-        </h2>
-        <button
-          className="btn btn-success"
-          onClick={() => navigate("/vehicles/create")}
-        >
-          ➕ Ajouter un véhicule
+        <h2 className="text-primary fw-bold mb-0">{t('vehicles.list_title')}</h2>
+        <button className="btn btn-success" onClick={() => navigate("/vehicles/create")}>
+          {t('vehicles.add_btn')}
         </button>
       </div>
 
@@ -109,9 +106,9 @@ export default function Vehicles() {
         <table className="table table-bordered table-hover align-middle">
           <thead className="table-light text-center">
             <tr>
-              <th>Marque</th>
-              <th>Modèle</th>
-              <th>Immatriculation</th>
+              <th>{t('vehicles.brand')}</th>
+              <th>{t('vehicles.model')}</th>
+              <th>{t('vehicles.license_plate')}</th>
             </tr>
           </thead>
           <tbody>
@@ -121,7 +118,7 @@ export default function Vehicles() {
                   key={vehicle.id}
                   className="text-center"
                   onClick={(e) => handleRowClick(e, vehicle)}
-                  title="Cliquez pour afficher les actions disponibles (Voir, Modifier, Supprimer)"
+                  title={t('vehicles.click_hint')}
                   style={{
                     cursor: 'pointer',
                     backgroundColor: selectedVehicle?.id === vehicle.id ? '#0d6efd' : 'transparent',
@@ -159,7 +156,7 @@ export default function Vehicles() {
               <tr>
                 <td colSpan="3" className="text-center text-muted py-5">
                   <div className="fs-1 mb-3">🚫</div>
-                  <p className="mb-0">Aucun véhicule trouvé.</p>
+                  <p className="mb-0">{t('vehicles.no_vehicles')}</p>
                 </td>
               </tr>
             )}
@@ -189,75 +186,28 @@ export default function Vehicles() {
             }}
           >
             <div className="card-header bg-primary text-white py-2">
-              <small className="fw-bold">Actions disponibles</small>
+              <small className="fw-bold">{t('common.actions')}</small>
             </div>
             <div className="list-group list-group-flush">
-              <button
-                onClick={handleView}
-                className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3"
-                style={{ border: 'none', cursor: 'pointer' }}
-              >
-                <div
-                  className="d-flex align-items-center justify-content-center"
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#0d6efd',
-                    borderRadius: '8px',
-                    fontSize: '1.2rem'
-                  }}
-                >
-                  👁️
-                </div>
+              <button onClick={handleView} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
+                <div className="d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: '#0d6efd', borderRadius: '8px', fontSize: '1.2rem' }}>👁️</div>
                 <div className="flex-grow-1">
-                  <strong className="d-block">Voir</strong>
-                  <small className="text-muted">Détails du véhicule</small>
+                  <strong className="d-block">{t('common.view')}</strong>
+                  <small className="text-muted">{t('common.view_details')}</small>
                 </div>
               </button>
-
-              <button
-                onClick={handleEdit}
-                className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3"
-                style={{ border: 'none', cursor: 'pointer' }}
-              >
-                <div
-                  className="d-flex align-items-center justify-content-center"
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#ffc107',
-                    borderRadius: '8px',
-                    fontSize: '1.2rem'
-                  }}
-                >
-                  ✏️
-                </div>
+              <button onClick={handleEdit} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
+                <div className="d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: '#ffc107', borderRadius: '8px', fontSize: '1.2rem' }}>✏️</div>
                 <div className="flex-grow-1">
-                  <strong className="d-block">Modifier</strong>
-                  <small className="text-muted">Éditer les informations</small>
+                  <strong className="d-block">{t('common.edit')}</strong>
+                  <small className="text-muted">{t('common.edit_info')}</small>
                 </div>
               </button>
-
-              <button
-                onClick={handleDelete}
-                className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3"
-                style={{ border: 'none', cursor: 'pointer' }}
-              >
-                <div
-                  className="d-flex align-items-center justify-content-center"
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#dc3545',
-                    borderRadius: '8px',
-                    fontSize: '1.2rem'
-                  }}
-                >
-                  🗑️
-                </div>
+              <button onClick={handleDelete} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
+                <div className="d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: '#dc3545', borderRadius: '8px', fontSize: '1.2rem' }}>🗑️</div>
                 <div className="flex-grow-1">
-                  <strong className="d-block">Supprimer</strong>
-                  <small className="text-muted">Retirer définitivement</small>
+                  <strong className="d-block">{t('common.delete')}</strong>
+                  <small className="text-muted">{t('common.delete_permanently')}</small>
                 </div>
               </button>
             </div>

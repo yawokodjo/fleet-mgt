@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Form, InputGroup, Modal, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../axios';
 
 export default function Users() {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
+    const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+
     const [users, setUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,28 +19,17 @@ export default function Users() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // Charger les utilisateurs
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    useEffect(() => { fetchUsers(); }, []);
 
-    // Filtrer les utilisateurs
     useEffect(() => {
         let filtered = users;
-
-        // Filtre par rôle
-        if (filterRole !== 'all') {
-            filtered = filtered.filter(user => user.role === filterRole);
-        }
-
-        // Filtre par recherche
+        if (filterRole !== 'all') filtered = filtered.filter(u => u.role === filterRole);
         if (searchTerm) {
-            filtered = filtered.filter(user =>
-                user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.email.toLowerCase().includes(searchTerm.toLowerCase())
+            filtered = filtered.filter(u =>
+                u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.email.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-
         setFilteredUsers(filtered);
     }, [searchTerm, filterRole, users]);
 
@@ -48,8 +41,8 @@ export default function Users() {
             setUsers(usersData);
             setFilteredUsers(usersData);
         } catch (err) {
-            console.error('Erreur chargement utilisateurs:', err);
-            setError('Erreur lors du chargement des utilisateurs');
+            console.error(err);
+            setError(t('users.load_error'));
         } finally {
             setLoading(false);
         }
@@ -57,48 +50,38 @@ export default function Users() {
 
     const handleDelete = async () => {
         if (!userToDelete) return;
-
         try {
             await api.delete(`/users/${userToDelete.id}`);
-            setSuccess(`Utilisateur ${userToDelete.name} supprimé avec succès`);
+            setSuccess(t('users.delete_success', { name: userToDelete.name }));
             setShowDeleteModal(false);
             setUserToDelete(null);
             fetchUsers();
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            console.error('Erreur suppression:', err);
-            setError(err.response?.data?.message || 'Erreur lors de la suppression');
+            console.error(err);
+            setError(err.response?.data?.message || t('users.delete_error'));
             setShowDeleteModal(false);
         }
     };
 
     const getRoleBadge = (role) => {
         const roleConfig = {
-            admin: { bg: 'danger', icon: '👑', label: 'Administrateur' },
-            manager: { bg: 'primary', icon: '👨‍💼', label: 'Gestionnaire' },
-            driver: { bg: 'success', icon: '🚗', label: 'Chauffeur' },
-            accountant: { bg: 'info', icon: '📊', label: 'Comptable' }
+            admin: { bg: 'danger', icon: '👑', label: t('users.badge_admin') },
+            manager: { bg: 'primary', icon: '👨‍💼', label: t('users.badge_manager') },
+            driver: { bg: 'success', icon: '🚗', label: t('users.badge_driver') },
+            accountant: { bg: 'info', icon: '📊', label: t('users.badge_accountant') }
         };
-
         const config = roleConfig[role?.toLowerCase()] || { bg: 'secondary', icon: '👤', label: role };
-        return (
-            <Badge bg={config.bg} className="px-3 py-2">
-                {config.icon} {config.label}
-            </Badge>
-        );
+        return <Badge bg={config.bg} className="px-3 py-2">{config.icon} {config.label}</Badge>;
     };
 
-    const getRoleStats = () => {
-        return {
-            total: users.length,
-            admin: users.filter(u => u.role === 'admin').length,
-            manager: users.filter(u => u.role === 'manager').length,
-            driver: users.filter(u => u.role === 'driver').length,
-            accountant: users.filter(u => u.role === 'accountant').length
-        };
+    const stats = {
+        total: users.length,
+        admin: users.filter(u => u.role === 'admin').length,
+        manager: users.filter(u => u.role === 'manager').length,
+        driver: users.filter(u => u.role === 'driver').length,
+        accountant: users.filter(u => u.role === 'accountant').length
     };
-
-    const stats = getRoleStats();
 
     if (loading) {
         return (
@@ -111,37 +94,27 @@ export default function Users() {
     return (
         <div style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            minHeight: '100vh',
-            paddingTop: '2rem',
-            paddingBottom: '3rem'
+            minHeight: '100vh', paddingTop: '2rem', paddingBottom: '3rem'
         }}>
             <Container fluid>
-                {/* En-tête */}
                 <Row className="mb-4">
                     <Col>
                         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <div>
                                 <h1 className="text-white fw-bold mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-                                    👥 Gestion des Utilisateurs
+                                    {t('users.title')}
                                 </h1>
-                                <p className="text-white opacity-75 mb-0">
-                                    Gérez les comptes et les accès de votre équipe
-                                </p>
+                                <p className="text-white opacity-75 mb-0">{t('users.subtitle')}</p>
                             </div>
-                            <Button
-                                size="lg"
-                                variant="light"
-                                className="shadow-lg"
+                            <Button size="lg" variant="light" className="shadow-lg"
                                 style={{ borderRadius: '15px', fontWeight: '600' }}
-                                onClick={() => navigate('/users/create')}
-                            >
-                                ➕ Nouvel utilisateur
+                                onClick={() => navigate('/users/create')}>
+                                {t('users.new_user')}
                             </Button>
                         </div>
                     </Col>
                 </Row>
 
-                {/* Messages */}
                 {success && (
                     <Alert variant="success" dismissible onClose={() => setSuccess('')} className="shadow-sm">
                         ✅ {success}
@@ -153,102 +126,64 @@ export default function Users() {
                     </Alert>
                 )}
 
-                {/* Statistiques - Ligne unique avec 5 cartes compactes */}
                 <Row className="g-3 mb-4">
-                    <Col xs={6} sm={4} md className="d-flex">
-                        <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
-                            <Card.Body className="text-center p-3">
-                                <div style={{ fontSize: '1.8rem' }}>👥</div>
-                                <h4 className="fw-bold mb-0">{stats.total}</h4>
-                                <small className="text-muted">Total</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={6} sm={4} md className="d-flex">
-                        <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
-                            <Card.Body className="text-center p-3">
-                                <div style={{ fontSize: '1.8rem' }}>👑</div>
-                                <h4 className="fw-bold mb-0">{stats.admin}</h4>
-                                <small className="text-muted">Admins</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={6} sm={4} md className="d-flex">
-                        <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
-                            <Card.Body className="text-center p-3">
-                                <div style={{ fontSize: '1.8rem' }}>👨‍💼</div>
-                                <h4 className="fw-bold mb-0">{stats.manager}</h4>
-                                <small className="text-muted">Managers</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={6} sm={6} md className="d-flex">
-                        <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
-                            <Card.Body className="text-center p-3">
-                                <div style={{ fontSize: '1.8rem' }}>🚗</div>
-                                <h4 className="fw-bold mb-0">{stats.driver}</h4>
-                                <small className="text-muted">Chauffeurs</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col xs={12} sm={6} md className="d-flex">
-                        <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
-                            <Card.Body className="text-center p-3">
-                                <div style={{ fontSize: '1.8rem' }}>📊</div>
-                                <h4 className="fw-bold mb-0">{stats.accountant}</h4>
-                                <small className="text-muted">Comptables</small>
-                            </Card.Body>
-                        </Card>
-                    </Col>
+                    {[
+                        { icon: '👥', count: stats.total, label: t('users.total') },
+                        { icon: '👑', count: stats.admin, label: t('users.admins') },
+                        { icon: '👨‍💼', count: stats.manager, label: t('users.managers') },
+                        { icon: '🚗', count: stats.driver, label: t('users.drivers') },
+                        { icon: '📊', count: stats.accountant, label: t('users.accountants') },
+                    ].map(({ icon, count, label }) => (
+                        <Col key={label} xs={6} sm={4} md className="d-flex">
+                            <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
+                                <Card.Body className="text-center p-3">
+                                    <div style={{ fontSize: '1.8rem' }}>{icon}</div>
+                                    <h4 className="fw-bold mb-0">{count}</h4>
+                                    <small className="text-muted">{label}</small>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    ))}
                 </Row>
 
-                {/* Filtres et recherche */}
                 <Card className="border-0 shadow-lg mb-4" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.95)' }}>
                     <Card.Body className="p-4">
                         <Row className="g-3">
                             <Col md={6}>
                                 <InputGroup>
-                                    <InputGroup.Text style={{ background: 'transparent', border: '2px solid #e9ecef' }}>
-                                        🔍
-                                    </InputGroup.Text>
+                                    <InputGroup.Text style={{ background: 'transparent', border: '2px solid #e9ecef' }}>🔍</InputGroup.Text>
                                     <Form.Control
-                                        type="text"
-                                        placeholder="Rechercher par nom ou email..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        type="text" placeholder={t('users.search_placeholder')}
+                                        value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                                         style={{ border: '2px solid #e9ecef', borderLeft: 'none' }}
                                     />
                                 </InputGroup>
                             </Col>
                             <Col md={6}>
-                                <Form.Select
-                                    value={filterRole}
-                                    onChange={(e) => setFilterRole(e.target.value)}
-                                    style={{ border: '2px solid #e9ecef' }}
-                                >
-                                    <option value="all">📋 Tous les rôles</option>
-                                    <option value="admin">👑 Administrateurs</option>
-                                    <option value="manager">👨‍💼 Gestionnaires</option>
-                                    <option value="driver">🚗 Chauffeurs</option>
-                                    <option value="accountant">📊 Comptables</option>
+                                <Form.Select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}
+                                    style={{ border: '2px solid #e9ecef' }}>
+                                    <option value="all">{t('users.all_roles')}</option>
+                                    <option value="admin">{t('users.role_admin_filter')}</option>
+                                    <option value="manager">{t('users.role_manager_filter')}</option>
+                                    <option value="driver">{t('users.role_driver_filter')}</option>
+                                    <option value="accountant">{t('users.role_accountant_filter')}</option>
                                 </Form.Select>
                             </Col>
                         </Row>
                     </Card.Body>
                 </Card>
 
-                {/* Tableau des utilisateurs */}
                 <Card className="border-0 shadow-lg" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.95)' }}>
                     <Card.Body className="p-4">
                         <div className="table-responsive">
                             <Table hover className="align-middle">
                                 <thead>
                                     <tr>
-                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>Utilisateur</th>
-                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>Email</th>
-                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>Rôle</th>
-                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>Date création</th>
-                                        <th className="border-0 text-muted text-uppercase text-center" style={{ fontSize: '0.75rem' }}>Actions</th>
+                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>{t('users.user_col')}</th>
+                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>{t('users.email_col')}</th>
+                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>{t('users.role_col')}</th>
+                                        <th className="border-0 text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>{t('users.creation_date')}</th>
+                                        <th className="border-0 text-muted text-uppercase text-center" style={{ fontSize: '0.75rem' }}>{t('users.actions_col')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -257,18 +192,11 @@ export default function Users() {
                                             <tr key={user.id}>
                                                 <td>
                                                     <div className="d-flex align-items-center gap-3">
-                                                        <div
-                                                            className="d-flex align-items-center justify-content-center"
-                                                            style={{
-                                                                width: '45px',
-                                                                height: '45px',
-                                                                borderRadius: '50%',
-                                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                                color: 'white',
-                                                                fontWeight: 'bold',
-                                                                fontSize: '1.2rem'
-                                                            }}
-                                                        >
+                                                        <div className="d-flex align-items-center justify-content-center" style={{
+                                                            width: '45px', height: '45px', borderRadius: '50%',
+                                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                            color: 'white', fontWeight: 'bold', fontSize: '1.2rem'
+                                                        }}>
                                                             {user.name.charAt(0).toUpperCase()}
                                                         </div>
                                                         <div>
@@ -281,30 +209,20 @@ export default function Users() {
                                                 <td>{getRoleBadge(user.role)}</td>
                                                 <td>
                                                     {user.created_at
-                                                        ? new Date(user.created_at).toLocaleDateString('fr-FR')
-                                                        : 'N/A'
-                                                    }
+                                                        ? new Date(user.created_at).toLocaleDateString(locale)
+                                                        : 'N/A'}
                                                 </td>
                                                 <td className="text-center">
                                                     <div className="d-flex gap-2 justify-content-center">
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            size="sm"
+                                                        <Button variant="outline-primary" size="sm"
                                                             style={{ borderRadius: '10px' }}
-                                                            onClick={() => navigate(`/users/${user.id}/edit`)}
-                                                        >
-                                                            ✏️ Modifier
+                                                            onClick={() => navigate(`/users/${user.id}/edit`)}>
+                                                            ✏️ {t('common.edit')}
                                                         </Button>
-                                                        <Button
-                                                            variant="outline-danger"
-                                                            size="sm"
+                                                        <Button variant="outline-danger" size="sm"
                                                             style={{ borderRadius: '10px' }}
-                                                            onClick={() => {
-                                                                setUserToDelete(user);
-                                                                setShowDeleteModal(true);
-                                                            }}
-                                                        >
-                                                            🗑️ Supprimer
+                                                            onClick={() => { setUserToDelete(user); setShowDeleteModal(true); }}>
+                                                            🗑️ {t('common.delete')}
                                                         </Button>
                                                     </div>
                                                 </td>
@@ -314,7 +232,7 @@ export default function Users() {
                                         <tr>
                                             <td colSpan="5" className="text-center text-muted py-5">
                                                 <div style={{ fontSize: '3rem' }}>👥</div>
-                                                <p className="mb-0">Aucun utilisateur trouvé</p>
+                                                <p className="mb-0">{t('users.no_users')}</p>
                                             </td>
                                         </tr>
                                     )}
@@ -325,23 +243,22 @@ export default function Users() {
                 </Card>
             </Container>
 
-            {/* Modal de confirmation de suppression */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton style={{ borderBottom: 'none' }}>
-                    <Modal.Title>⚠️ Confirmer la suppression</Modal.Title>
+                    <Modal.Title>{t('users.delete_modal_title')}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{userToDelete?.name}</strong> ?</p>
+                    <p>{t('users.delete_confirm', { name: userToDelete?.name })}</p>
                     <Alert variant="warning" className="mb-0">
-                        <small>⚠️ Cette action est irréversible</small>
+                        <small>⚠️ {t('common.irreversible')}</small>
                     </Alert>
                 </Modal.Body>
                 <Modal.Footer style={{ borderTop: 'none' }}>
                     <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)}>
-                        Annuler
+                        {t('common.cancel')}
                     </Button>
                     <Button variant="danger" onClick={handleDelete}>
-                        🗑️ Supprimer
+                        🗑️ {t('common.delete')}
                     </Button>
                 </Modal.Footer>
             </Modal>

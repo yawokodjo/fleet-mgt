@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Consumption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class ConsumptionController extends Controller
 {
@@ -16,17 +17,14 @@ class ConsumptionController extends Controller
 
         $query = Consumption::with(['vehicle', 'driver']);
 
-        // Filtre par véhicule
         if ($request->has('vehicle_id')) {
             $query->where('vehicle_id', $request->vehicle_id);
         }
 
-        // Filtre par conducteur
         if ($request->has('driver_id')) {
             $query->where('driver_id', $request->driver_id);
         }
 
-        // Filtre par date
         if ($request->has('start_date')) {
             $query->where('date', '>=', $request->start_date);
         }
@@ -47,18 +45,26 @@ class ConsumptionController extends Controller
         }
 
         $data = $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'driver_id' => 'required|exists:users,id',
-            'date' => 'required|date|before_or_equal:today',
+            'vehicle_id'  => 'required|exists:vehicles,id',
+            'driver_id'   => 'required|exists:users,id',
+            'date'        => 'required|date|before_or_equal:today',
             'fuel_volume' => 'required|numeric|min:0.01',
-            'fuel_cost' => 'required|numeric|min:0.01',
+            'fuel_cost'   => 'required|numeric|min:0.01',
+            'mileage'     => 'nullable|integer|min:0',
+            'document'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
             'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
         ]);
 
+        if ($request->hasFile('document')) {
+            $data['document_path'] = $request->file('document')
+                ->store('documents/consumptions', 'public');
+        }
+        unset($data['document']);
+
         $consumption = Consumption::create($data);
 
-        return response()->json($consumption, 201);
+        return response()->json($consumption->load(['vehicle', 'driver']), 201);
     }
 
     public function show(Consumption $consumption)
@@ -71,7 +77,12 @@ class ConsumptionController extends Controller
             return response()->json(['message' => 'Accès non autorisé'], 403);
         }
 
-        return $consumption->load(['vehicle', 'driver']);
+        $c = $consumption->load(['vehicle', 'driver']);
+        $c->document_url = $c->document_path
+            ? Storage::disk('public')->url($c->document_path)
+            : null;
+
+        return $c;
     }
 
     public function update(Request $request, Consumption $consumption)
@@ -81,24 +92,39 @@ class ConsumptionController extends Controller
         }
 
         $data = $request->validate([
-            'vehicle_id' => 'sometimes|exists:vehicles,id',
-            'driver_id' => 'sometimes|exists:users,id',
-            'date' => 'sometimes|date |before_or_equal:today',
+            'vehicle_id'  => 'sometimes|exists:vehicles,id',
+            'driver_id'   => 'sometimes|exists:users,id',
+            'date'        => 'sometimes|date|before_or_equal:today',
             'fuel_volume' => 'sometimes|numeric|min:0.01',
-            'fuel_cost' => 'sometimes|numeric|min:0.01',
+            'fuel_cost'   => 'sometimes|numeric|min:0.01',
+            'mileage'     => 'nullable|integer|min:0',
+            'document'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
             'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
         ]);
 
+        if ($request->hasFile('document')) {
+            if ($consumption->document_path) {
+                Storage::disk('public')->delete($consumption->document_path);
+            }
+            $data['document_path'] = $request->file('document')
+                ->store('documents/consumptions', 'public');
+        }
+        unset($data['document']);
+
         $consumption->update($data);
 
-        return response()->json($consumption);
+        return response()->json($consumption->load(['vehicle', 'driver']));
     }
 
     public function destroy(Consumption $consumption)
     {
         if (! Gate::allows('manager-action')) {
             return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
+
+        if ($consumption->document_path) {
+            Storage::disk('public')->delete($consumption->document_path);
         }
 
         $consumption->delete();
@@ -116,6 +142,5 @@ class ConsumptionController extends Controller
             ->selectRaw('SUM(fuel_volume) as total_volume, SUM(fuel_cost) as total_cost,
                      CASE WHEN SUM(fuel_volume) > 0 THEN SUM(fuel_cost)/SUM(fuel_volume) ELSE 0 END as avg_cost_per_liter')
             ->first();
-
     }
 }

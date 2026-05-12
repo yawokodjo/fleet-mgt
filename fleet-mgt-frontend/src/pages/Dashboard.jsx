@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import api from "../axios";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
   const [stats, setStats] = useState({
     vehicles: 0,
     maintenances: 0,
@@ -129,20 +132,14 @@ export default function Dashboard() {
   };
 
   const formatDate = () => {
-    const options = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    };
-    return currentTime.toLocaleDateString('fr-FR', options);
+    return currentTime.toLocaleDateString(locale, {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
   };
 
   const formatTime = () => {
-    return currentTime.toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+    return currentTime.toLocaleTimeString(locale, {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
   };
 
@@ -182,41 +179,17 @@ export default function Dashboard() {
   };
 
   const statCards = [
-    {
-      title: 'Véhicules',
-      value: stats.vehicles,
-      icon: '🚗',
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      route: '/vehicles'
-    },
-    {
-      title: 'Maintenances',
-      value: stats.maintenances,
-      icon: '🔧',
-      color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      route: '/maintenances'
-    },
-    {
-      title: 'Consommations',
-      value: stats.consumptions,
-      icon: '⛽',
-      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      route: '/consumptions'
-    },
-    {
-      title: 'Chauffeurs',
-      value: stats.drivers,
-      icon: '👥',
-      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      route: '/users'
-    }
+    { title: t('dashboard.vehicles'), value: stats.vehicles, icon: '🚗', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', route: '/vehicles' },
+    { title: t('dashboard.maintenances'), value: stats.maintenances, icon: '🔧', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', route: '/maintenances' },
+    { title: t('dashboard.consumptions'), value: stats.consumptions, icon: '⛽', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', route: '/consumptions' },
+    { title: t('dashboard.drivers'), value: stats.drivers, icon: '👥', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', route: '/users' },
   ];
 
   const quickActions = [
-    { title: 'Ajouter un véhicule', icon: '🚗', route: '/vehicles/create', color: '#667eea' },
-    { title: 'Nouvelle maintenance', icon: '🔧', route: '/maintenances/create', color: '#f5576c' },
-    { title: 'Nouvelle consommation', icon: '⛽', route: '/consumptions/create', color: '#00f2fe' },
-    { title: 'Voir les rapports', icon: '📊', route: '/reports', color: '#43e97b' }
+    { title: t('dashboard.add_vehicle'), icon: '🚗', route: '/vehicles/create', color: '#667eea' },
+    { title: t('dashboard.new_maintenance'), icon: '🔧', route: '/maintenances/create', color: '#f5576c' },
+    { title: t('dashboard.new_consumption'), icon: '⛽', route: '/consumptions/create', color: '#00f2fe' },
+    { title: t('dashboard.view_reports'), icon: '📊', route: '/reports', color: '#43e97b' },
   ];
 
   if (loading) {
@@ -291,19 +264,15 @@ export default function Dashboard() {
                 <div className="d-flex align-items-start gap-3">
                   <div style={{ fontSize: '2rem' }}>⏰</div>
                   <div className="flex-grow-1">
-                    <h5 className="fw-bold mb-2">Inactivité détectée</h5>
+                    <h5 className="fw-bold mb-2">{t('dashboard.inactivity_title')}</h5>
                     <p className="mb-3">
-                      Vous serez déconnecté dans <strong>{countdown} secondes</strong> pour des raisons de sécurité.
+                      {t('dashboard.inactivity_msg_1')} <strong>{countdown}</strong> {t('dashboard.inactivity_msg_2')}
                     </p>
                     <button
                       className="btn btn-light w-100 fw-bold"
-                      onClick={() => {
-                        setShowInactivityWarning(false);
-                        setCountdown(60);
-                        // Le simple clic réinitialisera le timer via les event listeners
-                      }}
+                      onClick={() => { setShowInactivityWarning(false); setCountdown(60); }}
                     >
-                      ✓ Je suis toujours là
+                      {t('dashboard.still_here')}
                     </button>
                   </div>
                 </div>
@@ -316,10 +285,10 @@ export default function Dashboard() {
           <Col lg={8}>
             <div className="text-white">
               <h2 className="fw-bold mb-2">
-                👋 Bienvenue, {user?.name || 'Utilisateur'} !
+                {t('dashboard.welcome', { name: user?.name || '' })}
               </h2>
               <p className="opacity-75 mb-0">
-                Voici un aperçu de votre système de gestion de flotte
+                {t('dashboard.subtitle')}
               </p>
             </div>
           </Col>
@@ -372,7 +341,7 @@ export default function Dashboard() {
                           💧 {weather.humidity}%
                         </small>
                         <small className="opacity-75">
-                          🌡️ Ressenti {weather.feelsLike}°C
+                          🌡️ {t('dashboard.feels_like')} {weather.feelsLike}°C
                         </small>
                       </div>
                     </>
@@ -420,7 +389,7 @@ export default function Dashboard() {
                       {card.icon}
                     </div>
                     <span className="badge bg-light text-dark">
-                      Voir tout →
+                      {t('common.see_all')}
                     </span>
                   </div>
                   <h3 className="fw-bold mb-2">{card.value}</h3>
@@ -442,7 +411,7 @@ export default function Dashboard() {
               }}
             >
               <Card.Body className="p-4">
-                <h5 className="fw-bold mb-4">⚡ Actions rapides</h5>
+                <h5 className="fw-bold mb-4">{t('dashboard.quick_actions')}</h5>
                 <Row className="g-3">
                   {quickActions.map((action, index) => (
                     <Col key={index} xs={12} sm={6} md={3}>
@@ -491,64 +460,26 @@ export default function Dashboard() {
             >
               <Card.Body className="p-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                  <h5 className="fw-bold mb-0">📋 Activité récente</h5>
-                  <span className="badge bg-primary">Nouveau</span>
+                  <h5 className="fw-bold mb-0">{t('dashboard.recent_activity')}</h5>
+                  <span className="badge bg-primary">{t('common.new')}</span>
                 </div>
                 <div className="d-flex flex-column gap-3">
-                  <div className="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
-                    <div
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        borderRadius: '10px',
-                        fontSize: '1.2rem'
-                      }}
-                    >
-                      🚗
+                  {[
+                    { icon: '🚗', grad: '#667eea 0%, #764ba2 100%', label: t('dashboard.vehicle_added'), time: t('dashboard.hours_ago_2') },
+                    { icon: '🔧', grad: '#f093fb 0%, #f5576c 100%', label: t('dashboard.maintenance_scheduled'), time: t('dashboard.hours_ago_5') },
+                    { icon: '⛽', grad: '#4facfe 0%, #00f2fe 100%', label: t('dashboard.consumption_recorded'), time: t('dashboard.yesterday') },
+                  ].map((item, i) => (
+                    <div key={i} className="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
+                      <div className="d-flex align-items-center justify-content-center"
+                        style={{ width: '40px', height: '40px', background: `linear-gradient(135deg, ${item.grad})`, borderRadius: '10px', fontSize: '1.2rem' }}>
+                        {item.icon}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="fw-semibold">{item.label}</div>
+                        <small className="text-muted">{item.time}</small>
+                      </div>
                     </div>
-                    <div className="flex-grow-1">
-                      <div className="fw-semibold">Nouveau véhicule ajouté</div>
-                      <small className="text-muted">Il y a 2 heures</small>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
-                    <div
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                        borderRadius: '10px',
-                        fontSize: '1.2rem'
-                      }}
-                    >
-                      🔧
-                    </div>
-                    <div className="flex-grow-1">
-                      <div className="fw-semibold">Maintenance programmée</div>
-                      <small className="text-muted">Il y a 5 heures</small>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
-                    <div
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                        borderRadius: '10px',
-                        fontSize: '1.2rem'
-                      }}
-                    >
-                      ⛽
-                    </div>
-                    <div className="flex-grow-1">
-                      <div className="fw-semibold">Consommation enregistrée</div>
-                      <small className="text-muted">Hier</small>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </Card.Body>
             </Card>
@@ -563,11 +494,11 @@ export default function Dashboard() {
               }}
             >
               <Card.Body className="p-4">
-                <h5 className="fw-bold mb-4">📊 Statistiques du mois</h5>
+                <h5 className="fw-bold mb-4">{t('dashboard.monthly_stats')}</h5>
                 <div className="d-flex flex-column gap-4">
                   <div>
                     <div className="d-flex justify-content-between mb-2">
-                      <span className="text-muted">Taux d'utilisation</span>
+                      <span className="text-muted">{t('dashboard.utilization_rate')}</span>
                       <span className="fw-bold">75%</span>
                     </div>
                     <div
@@ -589,7 +520,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <div className="d-flex justify-content-between mb-2">
-                      <span className="text-muted">Maintenances effectuées</span>
+                      <span className="text-muted">{t('dashboard.maintenances_done')}</span>
                       <span className="fw-bold">60%</span>
                     </div>
                     <div
@@ -611,7 +542,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <div className="d-flex justify-content-between mb-2">
-                      <span className="text-muted">Consommation carburant</span>
+                      <span className="text-muted">{t('dashboard.fuel_consumption')}</span>
                       <span className="fw-bold">82%</span>
                     </div>
                     <div

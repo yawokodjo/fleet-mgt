@@ -17,12 +17,15 @@ class Maintenance extends Model
         'cost',
         'description',
         'status',
+        'mileage_at_service',
+        'document_path',
     ];
 
     protected $casts = [
-        'scheduled_date' => 'datetime',
-        'completed_date' => 'datetime',
-        'cost' => 'decimal:2',
+        'scheduled_date'     => 'datetime',
+        'completed_date'     => 'datetime',
+        'cost'               => 'decimal:2',
+        'mileage_at_service' => 'integer',
     ];
 
     // Relation avec le véhicule

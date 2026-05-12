@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class VehicleController extends Controller
@@ -41,16 +42,23 @@ class VehicleController extends Controller
         }
 
         $data = $request->validate([
-            'marque' => 'required|string|max:50',
-            'model' => 'required|string|max:50',
-            'license_plate' => 'required|string|unique:vehicles|max:20',
-            'year' => 'required|integer|min:1900|max:'.(date('Y') + 1),
-            'fuel_type' => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
-            'fuel_card' => 'nullable|string|max:50',
-            'mileage' => 'required|integer|min:0',
-            'status' => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id' => 'nullable|exists:users,id',
+            'marque'             => 'required|string|max:50',
+            'model'              => 'required|string|max:50',
+            'license_plate'      => 'required|string|unique:vehicles|max:20',
+            'year'               => 'required|integer|min:1900|max:'.(date('Y') + 1),
+            'fuel_type'          => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
+            'fuel_card'          => 'nullable|string|max:50',
+            'mileage'            => 'required|integer|min:0',
+            'status'             => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
+            'current_driver_id'  => 'nullable|exists:users,id',
+            'document'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
+
+        if ($request->hasFile('document')) {
+            $data['document_path'] = $request->file('document')
+                ->store('documents/vehicles', 'public');
+        }
+        unset($data['document']);
 
         $vehicle = Vehicle::create($data);
 
@@ -86,16 +94,26 @@ class VehicleController extends Controller
         }
 
         $data = $request->validate([
-            'marque' => 'sometimes|string|max:50',
-            'model' => 'sometimes|string|max:50',
-            'license_plate' => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
-            'year' => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
-            'fuel_type' => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
-            'fuel_card' => 'nullable|string|max:50',
-            'mileage' => 'sometimes|integer|min:0',
-            'status' => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
+            'marque'            => 'sometimes|string|max:50',
+            'model'             => 'sometimes|string|max:50',
+            'license_plate'     => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
+            'year'              => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
+            'fuel_type'         => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
+            'fuel_card'         => 'nullable|string|max:50',
+            'mileage'           => 'sometimes|integer|min:0',
+            'status'            => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
             'current_driver_id' => 'nullable|exists:users,id',
+            'document'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
+
+        if ($request->hasFile('document')) {
+            if ($vehicle->document_path) {
+                Storage::disk('public')->delete($vehicle->document_path);
+            }
+            $data['document_path'] = $request->file('document')
+                ->store('documents/vehicles', 'public');
+        }
+        unset($data['document']);
 
         $vehicle->update($data);
 
