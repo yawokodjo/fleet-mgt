@@ -1,242 +1,304 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Container, Navbar, Nav, Button, Row, Col, Card } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import logoCI from '../assets/logo-ci.png';
+import carVideo from '../assets/voiture-video.mp4';
+
+const fadeUp = { hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0 } };
+const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
+
+const FEATURES = [
+    {
+        icon: <svg width="34" height="34" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0zM3 6h18M5 10h14M4 6l1.5-3h13L20 6" /></svg>,
+        titleKey: 'home.feat_vehicles_title',
+        descKey: 'home.feat_vehicles_desc',
+        color: '#0d6efd',
+    },
+    {
+        icon: <svg width="34" height="34" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18M7 16l4-4 4 4 4-4" /></svg>,
+        titleKey: 'home.feat_consumption_title',
+        descKey: 'home.feat_consumption_desc',
+        color: '#198754',
+    },
+    {
+        icon: <svg width="34" height="34" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.77 3.77z" /></svg>,
+        titleKey: 'home.feat_maintenance_title',
+        descKey: 'home.feat_maintenance_desc',
+        color: '#fd7e14',
+    },
+];
+
+function HelpModal({ onClose }) {
+    const { t } = useTranslation();
+    return (
+        <div style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }} onClick={onClose}>
+            <motion.div
+                initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={e => e.stopPropagation()}
+                style={{
+                    background: '#141b2d', borderRadius: '18px', padding: '2rem',
+                    maxWidth: '440px', width: '100%',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                }}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#fff' }}>{t('home.help_title')}</h3>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+                </div>
+                {[
+                    { title: t('home.help_access'),  desc: t('home.help_access_desc'),  icon: '🔑' },
+                    { title: t('home.help_forgot'),   desc: t('home.help_forgot_desc'),   icon: '🔒' },
+                    { title: t('home.help_contact'),  desc: t('home.help_contact_desc'),  icon: '📧' },
+                ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.2rem' }}>
+                        <div style={{ fontSize: '1.4rem', flexShrink: 0, marginTop: '2px' }}>{item.icon}</div>
+                        <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#e0e6f0', marginBottom: '0.25rem' }}>{item.title}</div>
+                            <div style={{ fontSize: '0.82rem', color: '#7a90b5', lineHeight: 1.55 }}>{item.desc}</div>
+                        </div>
+                    </div>
+                ))}
+                <button onClick={onClose} style={{
+                    marginTop: '0.5rem', width: '100%', background: 'rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(255,255,255,0.12)', borderRadius: '9px', padding: '0.55rem',
+                    color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600,
+                }}>
+                    {t('home.help_close')}
+                </button>
+            </motion.div>
+        </div>
+    );
+}
 
 export default function Home() {
     const navigate = useNavigate();
-    const { t } = useTranslation();
-    const [activeSection, setActiveSection] = useState('home');
+    const { t, i18n } = useTranslation();
+    const [showHelp, setShowHelp] = useState(false);
+    const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
+    const [contactSent, setContactSent] = useState(false);
 
-    const scrollToSection = (sectionId) => {
-        setActiveSection(sectionId);
-        const element = document.getElementById(sectionId);
-        if (element) element.scrollIntoView({ behavior: 'smooth' });
+    const toggleLang = () => i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
+
+    const handleContact = (e) => {
+        e.preventDefault();
+        setContactSent(true);
+        setContactForm({ name: '', email: '', subject: '', message: '' });
+        setTimeout(() => setContactSent(false), 5000);
     };
 
-    const features = [
-        { icon: '🚗', title: t('home.feature_1_title'), desc: t('home.feature_1_desc') },
-        { icon: '⛽', title: t('home.feature_2_title'), desc: t('home.feature_2_desc') },
-        { icon: '🔧', title: t('home.feature_3_title'), desc: t('home.feature_3_desc') },
-        { icon: '👥', title: t('home.feature_4_title'), desc: t('home.feature_4_desc') },
-        { icon: '📊', title: t('home.feature_5_title'), desc: t('home.feature_5_desc') },
-        { icon: '🔔', title: t('home.feature_6_title'), desc: t('home.feature_6_desc') },
-    ];
-
-    const aboutStats = [
-        { number: '500+', label: t('home.stat_vehicles') },
-        { number: '100+', label: t('home.stat_companies') },
-        { number: '98%', label: t('home.stat_sat_rate') },
-        { number: '24/7', label: t('home.stat_support_247') },
-    ];
-
-    const dashboardFeatures = [
-        t('home.dashboard_f1'),
-        t('home.dashboard_f2'),
-        t('home.dashboard_f3'),
-    ];
+    const btnBase = {
+        border: 'none', borderRadius: '9px', cursor: 'pointer',
+        fontWeight: 600, fontSize: '0.88rem', transition: 'all 0.18s',
+    };
 
     return (
-        <div style={{ overflowX: 'hidden' }}>
-            <Navbar expand="lg" fixed="top" style={{
-                background: 'rgba(255,255,255,0.95)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                padding: '1rem 0'
-            }}>
-                <Container>
-                    <Navbar.Brand className="d-flex align-items-center gap-2 fw-bold" style={{ fontSize: '1.5rem' }}>
-                        <span style={{ fontSize: '2rem' }}>🚗</span>
-                        <span style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-                        }}>FleetPro</span>
-                    </Navbar.Brand>
-                    <Navbar.Toggle aria-controls="navbar-nav" />
-                    <Navbar.Collapse id="navbar-nav">
-                        <Nav className="mx-auto">
-                            {[
-                                { id: 'home', label: t('home.nav_home') },
-                                { id: 'features', label: t('home.nav_features') },
-                                { id: 'about', label: t('home.nav_about') },
-                                { id: 'contact', label: t('home.nav_contact') },
-                            ].map(({ id, label }) => (
-                                <Nav.Link key={id} onClick={() => scrollToSection(id)} className="fw-semibold mx-2"
-                                    style={{ color: activeSection === id ? '#667eea' : '#333' }}>
-                                    {label}
-                                </Nav.Link>
-                            ))}
-                        </Nav>
-                        <div className="d-flex gap-2">
-                            <Button variant="outline-primary" onClick={() => navigate('/login')}
-                                style={{ borderRadius: '10px', fontWeight: '600', borderWidth: '2px' }}>
-                                {t('home.sign_in')}
-                            </Button>
-                            <Button onClick={() => navigate('/register')}
-                                style={{
-                                    borderRadius: '10px',
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    border: 'none', fontWeight: '600'
-                                }}>
-                                {t('home.sign_up')}
-                            </Button>
-                        </div>
-                    </Navbar.Collapse>
-                </Container>
-            </Navbar>
+        <div style={{ minHeight: '100vh', background: '#0a0f1a', color: '#fff', overflowX: 'hidden' }}>
+            <AnimatePresence>{showHelp && <HelpModal onClose={() => setShowHelp(false)} />}</AnimatePresence>
 
-            {/* Hero */}
-            <section id="home" style={{
-                minHeight: '100vh',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex', alignItems: 'center',
-                paddingTop: '80px', position: 'relative', overflow: 'hidden'
+            {/* ── Navbar ── */}
+            <nav style={{
+                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.7rem 2rem',
+                background: 'rgba(10,15,26,0.8)',
+                backdropFilter: 'blur(14px)',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
             }}>
-                <div style={{ position: 'absolute', width: '300px', height: '300px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', top: '-100px', right: '-100px' }} />
-                <div style={{ position: 'absolute', width: '200px', height: '200px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', bottom: '50px', left: '50px' }} />
-                <Container style={{ position: 'relative', zIndex: 1 }}>
-                    <Row className="align-items-center">
-                        <Col lg={6} className="text-white mb-5 mb-lg-0">
-                            <h1 className="display-3 fw-bold mb-4" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>
-                                {t('home.hero_title')}
-                            </h1>
-                            <p className="fs-4 mb-4 opacity-90">{t('home.hero_subtitle')}</p>
-                            <div className="d-flex gap-3 flex-wrap">
-                                <Button size="lg" onClick={() => navigate('/register')} style={{
-                                    borderRadius: '12px', padding: '12px 30px',
-                                    background: 'white', color: '#667eea', border: 'none', fontWeight: '600'
-                                }}>{t('home.hero_start')}</Button>
-                                <Button size="lg" variant="outline-light" onClick={() => scrollToSection('features')} style={{
-                                    borderRadius: '12px', padding: '12px 30px', fontWeight: '600', borderWidth: '2px'
-                                }}>{t('home.hero_learn')}</Button>
-                            </div>
-                            <Row className="mt-5">
-                                <Col xs={4}><h3 className="fw-bold">500+</h3><p className="opacity-75">{t('home.stat_vehicles')}</p></Col>
-                                <Col xs={4}><h3 className="fw-bold">98%</h3><p className="opacity-75">{t('home.stat_satisfaction')}</p></Col>
-                                <Col xs={4}><h3 className="fw-bold">24/7</h3><p className="opacity-75">{t('home.stat_support')}</p></Col>
-                            </Row>
-                        </Col>
-                        <Col lg={6} className="d-none d-lg-block">
-                            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '20px', padding: '40px', backdropFilter: 'blur(10px)' }}>
-                                <div style={{ background: 'white', borderRadius: '15px', padding: '30px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-                                    <div className="text-center mb-4"><span style={{ fontSize: '4rem' }}>📊</span></div>
-                                    <h4 className="text-center fw-bold mb-4">{t('home.dashboard_preview')}</h4>
-                                    <div className="d-flex flex-column gap-3">
-                                        {dashboardFeatures.map((feature, i) => (
-                                            <div key={i} className="d-flex align-items-center gap-3 p-3 bg-light rounded">
-                                                <span style={{
-                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                    width: '40px', height: '40px', borderRadius: '50%',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: 'white', fontWeight: 'bold', flexShrink: 0
-                                                }}>✓</span>
-                                                <span className="fw-semibold">{feature}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                    <img src={logoCI} alt="CI" style={{ height: '36px', objectFit: 'contain' }} />
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.2, color: '#e0e6f0' }}>
+                        {t('home.app_name_line1')}<br />
+                        <span style={{ fontWeight: 400, fontSize: '0.78rem', color: '#6e85b0' }}>{t('home.app_name_line2')}</span>
+                    </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    {/* Language toggle */}
+                    <button
+                        onClick={toggleLang}
+                        style={{ ...btnBase, background: 'rgba(255,255,255,0.08)', color: '#c8d8f0', padding: '0.45rem 0.9rem', border: '1px solid rgba(255,255,255,0.12)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                    >
+                        {i18n.language === 'fr' ? 'EN' : 'FR'}
+                    </button>
+
+                    {/* Help button */}
+                    <button
+                        onClick={() => setShowHelp(true)}
+                        title={t('home.help_title')}
+                        style={{ ...btnBase, background: 'rgba(255,255,255,0.08)', color: '#c8d8f0', padding: '0.45rem 0.8rem', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 700 }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.14)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                    >
+                        ?
+                    </button>
+
+                    {/* Sign in */}
+                    <button
+                        onClick={() => navigate('/login')}
+                        style={{ ...btnBase, background: '#0d6efd', color: '#fff', padding: '0.5rem 1.3rem', boxShadow: '0 0 16px rgba(13,110,253,0.35)' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#0b5ed7'; e.currentTarget.style.boxShadow = '0 0 22px rgba(13,110,253,0.55)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = '#0d6efd'; e.currentTarget.style.boxShadow = '0 0 16px rgba(13,110,253,0.35)'; }}
+                    >
+                        {t('home.sign_in')}
+                    </button>
+                </div>
+            </nav>
+
+            {/* ── Hero ── */}
+            <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <video autoPlay muted loop playsInline style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.42)' }}>
+                    <source src={carVideo} type="video/mp4" />
+                </video>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,15,26,0.25) 0%, rgba(10,15,26,0.7) 100%)' }} />
+
+                <motion.div initial="hidden" animate="visible" variants={stagger}
+                    style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 1.5rem', maxWidth: '780px' }}>
+                    <motion.div variants={fadeUp} transition={{ duration: 0.55 }}>
+                        <img src={logoCI} alt="CI" style={{ height: '58px', marginBottom: '1.4rem', filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.5))' }} />
+                    </motion.div>
+                    <motion.h1 variants={fadeUp} transition={{ duration: 0.6 }}
+                        style={{ fontSize: 'clamp(2rem, 5vw, 3.4rem)', fontWeight: 800, lineHeight: 1.15, marginBottom: '1.1rem', textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+                        {t('home.hero_title')}
+                    </motion.h1>
+                    <motion.p variants={fadeUp} transition={{ duration: 0.6 }}
+                        style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: '#c2d4ee', marginBottom: '2rem', lineHeight: 1.7 }}>
+                        {t('home.hero_subtitle')}
+                    </motion.p>
+                    <motion.div variants={fadeUp} transition={{ duration: 0.6 }}>
+                        <button onClick={() => navigate('/login')} style={{
+                            ...btnBase, background: '#0d6efd', color: '#fff',
+                            padding: '0.85rem 2.5rem', fontSize: '1.05rem', fontWeight: 700,
+                            boxShadow: '0 4px 24px rgba(13,110,253,0.5)',
+                        }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(13,110,253,0.65)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(13,110,253,0.5)'; }}>
+                            {t('home.hero_cta')}
+                        </button>
+                    </motion.div>
+                </motion.div>
+
+                <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.6 }}
+                    style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 1, color: 'rgba(255,255,255,0.35)' }}>
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </motion.div>
+            </section>
+
+            {/* ── Features ── */}
+            <section style={{ padding: '5.5rem 1.5rem', background: '#0d1320' }}>
+                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={stagger}
+                    style={{ maxWidth: '1000px', margin: '0 auto' }}>
+                    <motion.div variants={fadeUp} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                        <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.3rem)', fontWeight: 800, marginBottom: '0.7rem' }}>{t('home.features_title')}</h2>
+                        <p style={{ color: '#7a90b5', fontSize: '1rem', maxWidth: '480px', margin: '0 auto' }}>{t('home.features_subtitle')}</p>
+                    </motion.div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.4rem' }}>
+                        {FEATURES.map((f, i) => (
+                            <motion.div key={i} variants={fadeUp} transition={{ duration: 0.5 }}
+                                style={{ background: '#141b2d', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '1.75rem', cursor: 'default' }}
+                                whileHover={{ y: -6, boxShadow: `0 12px 36px rgba(0,0,0,0.35)`, borderColor: f.color + '44' }}>
+                                <div style={{ width: '58px', height: '58px', borderRadius: '14px', marginBottom: '1.1rem', background: f.color + '1a', color: f.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {f.icon}
                                 </div>
-                            </div>
-                        </Col>
-                    </Row>
-                </Container>
-            </section>
-
-            {/* Features */}
-            <section id="features" style={{ padding: '100px 0', background: '#f8f9fa' }}>
-                <Container>
-                    <div className="text-center mb-5">
-                        <h2 className="display-4 fw-bold mb-3">{t('home.features_title')}</h2>
-                        <p className="fs-5 text-muted">{t('home.features_subtitle')}</p>
-                    </div>
-                    <Row className="g-4">
-                        {features.map((feature, index) => (
-                            <Col key={index} md={6} lg={4}>
-                                <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: '15px', transition: 'transform 0.3s, box-shadow 0.3s', cursor: 'pointer' }}
-                                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-10px)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)'; }}>
-                                    <Card.Body className="p-4">
-                                        <div className="mb-3 d-flex align-items-center justify-content-center" style={{
-                                            width: '60px', height: '60px',
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            borderRadius: '15px', fontSize: '1.8rem'
-                                        }}>{feature.icon}</div>
-                                        <h5 className="fw-bold mb-3">{feature.title}</h5>
-                                        <p className="text-muted mb-0">{feature.desc}</p>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
+                                <h3 style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: '0.5rem' }}>{t(f.titleKey)}</h3>
+                                <p style={{ color: '#7a90b5', fontSize: '0.9rem', lineHeight: 1.65, margin: 0 }}>{t(f.descKey)}</p>
+                            </motion.div>
                         ))}
-                    </Row>
-                </Container>
-            </section>
-
-            {/* About */}
-            <section id="about" style={{ padding: '100px 0', background: 'white' }}>
-                <Container>
-                    <Row className="align-items-center">
-                        <Col lg={6} className="mb-5 mb-lg-0">
-                            <h2 className="display-4 fw-bold mb-4">{t('home.about_title')}</h2>
-                            <p className="fs-5 text-muted mb-4">{t('home.about_p1')}</p>
-                            <p className="text-muted mb-4">{t('home.about_p2')}</p>
-                            <Button size="lg" onClick={() => navigate('/register')} style={{
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                border: 'none', fontWeight: '600'
-                            }}>{t('home.about_join')}</Button>
-                        </Col>
-                        <Col lg={6}>
-                            <Row className="g-4">
-                                {aboutStats.map((stat, i) => (
-                                    <Col key={i} xs={6}>
-                                        <Card className="border-0 shadow-sm text-center p-4" style={{ borderRadius: '15px' }}>
-                                            <h2 className="fw-bold mb-2" style={{
-                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-                                            }}>{stat.number}</h2>
-                                            <p className="text-muted mb-0">{stat.label}</p>
-                                        </Card>
-                                    </Col>
-                                ))}
-                            </Row>
-                        </Col>
-                    </Row>
-                </Container>
-            </section>
-
-            {/* Contact */}
-            <section id="contact" style={{
-                padding: '100px 0',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-            }}>
-                <Container>
-                    <div className="text-center text-white">
-                        <h2 className="display-4 fw-bold mb-4">{t('home.contact_title')}</h2>
-                        <p className="fs-5 mb-5 opacity-90">{t('home.contact_subtitle')}</p>
-                        <div className="d-flex gap-3 justify-content-center flex-wrap">
-                            <Button size="lg" onClick={() => navigate('/register')} style={{
-                                borderRadius: '12px', padding: '15px 40px',
-                                background: 'white', color: '#667eea', border: 'none', fontWeight: '600'
-                            }}>{t('home.contact_start')}</Button>
-                            <Button size="lg" variant="outline-light" onClick={() => navigate('/login')} style={{
-                                borderRadius: '12px', padding: '15px 40px', fontWeight: '600', borderWidth: '2px'
-                            }}>{t('home.contact_login')}</Button>
-                        </div>
                     </div>
-                </Container>
+                </motion.div>
             </section>
 
-            <footer style={{ background: '#1a1a1a', color: 'white', padding: '40px 0' }}>
-                <Container>
-                    <Row>
-                        <Col md={6} className="mb-3 mb-md-0">
-                            <h5 className="fw-bold mb-3">FleetPro</h5>
-                            <p className="text-muted mb-0">{t('home.footer_desc')}</p>
-                        </Col>
-                        <Col md={6} className="text-md-end">
-                            <p className="text-muted mb-0">{t('home.footer_rights')}</p>
-                        </Col>
-                    </Row>
-                </Container>
+            {/* ── Contact ── */}
+            <section style={{ padding: '5.5rem 1.5rem', background: '#0a0f1a' }}>
+                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={stagger}
+                    style={{ maxWidth: '960px', margin: '0 auto' }}>
+                    <motion.div variants={fadeUp} transition={{ duration: 0.6 }} style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                        <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.3rem)', fontWeight: 800, marginBottom: '0.7rem' }}>{t('home.contact_title')}</h2>
+                        <p style={{ color: '#7a90b5', fontSize: '1rem', maxWidth: '480px', margin: '0 auto' }}>{t('home.contact_subtitle')}</p>
+                    </motion.div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                        {/* Contact info */}
+                        <motion.div variants={fadeUp} transition={{ duration: 0.55 }}>
+                            <div style={{ background: '#141b2d', borderRadius: '16px', padding: '1.75rem', border: '1px solid rgba(255,255,255,0.07)', height: '100%' }}>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem', color: '#c8d8f0' }}>Compassion International Togo</h4>
+                                {[
+                                    { icon: '📧', label: 'Email', value: t('home.contact_email_val'), href: `mailto:${t('home.contact_email_val')}` },
+                                    { icon: '📞', label: 'Téléphone', value: t('home.contact_phone_val'), href: null },
+                                ].map((item, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.25rem', alignItems: 'flex-start' }}>
+                                        <div style={{ fontSize: '1.3rem', flexShrink: 0, marginTop: '1px' }}>{item.icon}</div>
+                                        <div>
+                                            <div style={{ fontSize: '0.72rem', color: '#4a6080', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '3px' }}>{item.label}</div>
+                                            {item.href
+                                                ? <a href={item.href} style={{ color: '#4d9fff', fontWeight: 500, fontSize: '0.92rem', textDecoration: 'none' }}>{item.value}</a>
+                                                : <span style={{ color: '#c8d8f0', fontWeight: 500, fontSize: '0.92rem' }}>{item.value}</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* Contact form */}
+                        <motion.div variants={fadeUp} transition={{ duration: 0.55 }}>
+                            <form onSubmit={handleContact} style={{ background: '#141b2d', borderRadius: '16px', padding: '1.75rem', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                {contactSent && (
+                                    <div style={{ background: '#0f3d20', border: '1px solid #198754', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem', color: '#75e09a', fontSize: '0.88rem' }}>
+                                        ✓ {t('home.contact_sent')}
+                                    </div>
+                                )}
+                                {[
+                                    { name: 'name',    label: t('home.contact_name'),        type: 'text',  placeholder: 'Jean Dupont' },
+                                    { name: 'email',   label: t('home.contact_email_label'),  type: 'email', placeholder: 'jean@example.com' },
+                                    { name: 'subject', label: t('home.contact_subject'),      type: 'text',  placeholder: t('home.contact_subject') },
+                                ].map(field => (
+                                    <div key={field.name} style={{ marginBottom: '0.9rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#7a90b5', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{field.label}</label>
+                                        <input
+                                            type={field.type} required placeholder={field.placeholder}
+                                            value={contactForm[field.name]}
+                                            onChange={e => setContactForm(p => ({ ...p, [field.name]: e.target.value }))}
+                                            style={{ width: '100%', background: '#0d1320', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: '9px', padding: '0.55rem 0.9rem', color: '#e0e6f0', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' }}
+                                            onFocus={e => e.target.style.borderColor = '#0d6efd'}
+                                            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                                        />
+                                    </div>
+                                ))}
+                                <div style={{ marginBottom: '1.1rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#7a90b5', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{t('home.contact_message')}</label>
+                                    <textarea
+                                        required rows={4} placeholder={t('home.contact_message_ph')}
+                                        value={contactForm.message}
+                                        onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))}
+                                        style={{ width: '100%', background: '#0d1320', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: '9px', padding: '0.55rem 0.9rem', color: '#e0e6f0', fontSize: '0.88rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                                        onFocus={e => e.target.style.borderColor = '#0d6efd'}
+                                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                                    />
+                                </div>
+                                <button type="submit" style={{ ...btnBase, width: '100%', background: 'linear-gradient(135deg, #0d6efd, #0b5ed7)', color: '#fff', padding: '0.7rem', fontSize: '0.92rem', boxShadow: '0 4px 18px rgba(13,110,253,0.35)' }}>
+                                    {t('home.contact_send')}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                </motion.div>
+            </section>
+
+            {/* ── Footer ── */}
+            <footer style={{ padding: '1.5rem 2rem', background: '#060a12', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <img src={logoCI} alt="CI" style={{ height: '26px', objectFit: 'contain' }} />
+                    <span style={{ color: '#3a4d66', fontSize: '0.8rem' }}>Compassion International Togo</span>
+                </div>
+                <span style={{ color: '#263040', fontSize: '0.78rem' }}>{t('home.footer_rights')}</span>
             </footer>
         </div>
     );

@@ -3,7 +3,10 @@ import api from '../axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { Container, Row, Col, Form, Button, Alert, InputGroup, ProgressBar, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
+import { motion } from 'framer-motion';
+import logoCI from '../assets/logo-ci.png';
+import carImg from '../assets/voiture.jpg';
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
@@ -12,7 +15,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [remainingAttempts, setRemainingAttempts] = useState(3);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -23,46 +26,20 @@ export default function Login() {
   useEffect(() => {
     if (isBlocked && blockEndTime) {
       const interval = setInterval(() => {
-        const now = new Date();
-        const diff = Math.max(0, Math.floor((blockEndTime - now) / 1000));
+        const diff = Math.max(0, Math.floor((blockEndTime - new Date()) / 1000));
         setRemainingTime(diff);
-        if (diff === 0) {
-          setIsBlocked(false);
-          setBlockEndTime(null);
-          setRemainingAttempts(3);
-          setError('');
-        }
+        if (diff === 0) { setIsBlocked(false); setBlockEndTime(null); setRemainingAttempts(3); setError(''); }
       }, 1000);
       return () => clearInterval(interval);
     }
   }, [isBlocked, blockEndTime]);
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const handleChange = e => {
-    setCredentials(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setCredentials(p => ({ ...p, [e.target.name]: e.target.value }));
     if (error) setError('');
   };
-
-  const getPasswordStrength = (password) => {
-    if (!password) return { strength: 0, label: '', color: '', variant: '' };
-    let strength = 0;
-    if (password.length >= 8) strength += 25;
-    if (password.length >= 12) strength += 10;
-    if (/[a-z]/.test(password)) strength += 15;
-    if (/[A-Z]/.test(password)) strength += 15;
-    if (/[0-9]/.test(password)) strength += 15;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 20;
-    if (strength < 40) return { strength, label: t('login.strength_weak'), color: '#dc3545', variant: 'danger' };
-    if (strength < 70) return { strength, label: t('login.strength_medium'), color: '#ffc107', variant: 'warning' };
-    return { strength, label: t('login.strength_strong'), color: '#28a745', variant: 'success' };
-  };
-
-  const passwordStrength = getPasswordStrength(credentials.password);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -73,237 +50,186 @@ export default function Login() {
       login(res.data.user, res.data.access_token);
       setRemainingAttempts(3);
     } catch (err) {
-      const errorData = err.response?.data;
-      const errorCode = errorData?.code;
-      if (errorCode === 'ACCOUNT_BLOCKED') {
+      const d = err.response?.data;
+      if (d?.code === 'ACCOUNT_BLOCKED') {
         setIsBlocked(true);
-        const blockedUntil = new Date(errorData.blocked_until || Date.now() + 300000);
-        setBlockEndTime(blockedUntil);
-        setRemainingTime(errorData.remaining_seconds || 300);
-        setError(errorData.message || t('login.blocked_title'));
-      } else if (errorCode === 'ACCOUNT_DELETED') {
+        setBlockEndTime(new Date(d.blocked_until || Date.now() + 300000));
+        setRemainingTime(d.remaining_seconds || 300);
+        setError(d.message || t('login.blocked_title'));
+      } else if (d?.code === 'ACCOUNT_DELETED') {
         setShowDeleteModal(true);
-        setError('');
-      } else if (errorCode === 'INVALID_PASSWORD') {
-        const remaining = errorData.remaining_attempts || 0;
-        setRemainingAttempts(remaining);
-        setError(errorData.message || `${t('login.remaining_attempts')} ${remaining}`);
+      } else if (d?.code === 'INVALID_PASSWORD') {
+        setRemainingAttempts(d.remaining_attempts || 0);
+        setError(d.message || t('login.remaining_attempts'));
       } else {
-        setError(errorData?.message || t('login.error_title'));
-        setRemainingAttempts(3);
+        setError(d?.message || t('login.error_title'));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRedirectToRegister = () => {
-    setShowDeleteModal(false);
-    navigate('/register');
+  const inp = {
+    width: '100%', background: '#f8faff',
+    border: '1.5px solid #e2e8f0', borderRadius: '10px',
+    padding: '0.65rem 0.95rem', fontSize: '0.92rem', color: '#1e293b',
+    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.18s',
   };
+  const inpFocus = { borderColor: '#0d6efd' };
+  const inpBlur  = { borderColor: '#e2e8f0' };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', backgroundColor: '#f0f2f5' }}>
-      <Container fluid>
-        <Row style={{ minHeight: '100vh' }}>
-          {/* Left side */}
-          <Col
-            lg={7}
-            className="d-none d-lg-block p-0"
-            style={{
-              backgroundImage: 'url("https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              position: 'relative'
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'linear-gradient(135deg, rgba(102,126,234,0.9) 0%, rgba(118,75,162,0.9) 100%)',
-              display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '4rem'
-            }}>
-              <div className="text-white">
-                <h1 className="display-3 fw-bold mb-4" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-                  {t('login.fleet_title')}
-                </h1>
-                <p className="fs-4 mb-4" style={{ maxWidth: '500px' }}>
-                  {t('login.fleet_subtitle')}
-                </p>
-                <div className="d-flex flex-column gap-3" style={{ maxWidth: '400px' }}>
-                  {[
-                    { icon: '📊', title: t('login.realtime_title'), desc: t('login.realtime_desc') },
-                    { icon: '🔧', title: t('login.maintenance_title'), desc: t('login.maintenance_desc') },
-                    { icon: '📈', title: t('login.reports_title'), desc: t('login.reports_desc') },
-                  ].map((item, i) => (
-                    <div key={i} className="d-flex align-items-center gap-3">
-                      <div style={{
-                        width: '50px', height: '50px',
-                        background: 'rgba(255,255,255,0.2)', borderRadius: '10px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
-                      }}>
-                        {item.icon}
-                      </div>
-                      <div>
-                        <strong className="d-block">{item.title}</strong>
-                        <small className="opacity-75">{item.desc}</small>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Col>
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'system-ui, sans-serif' }}>
 
-          {/* Right side - Form */}
-          <Col lg={5} className="d-flex align-items-center justify-content-center p-4" style={{ backgroundColor: '#ffffff' }}>
-            <div style={{ width: '100%', maxWidth: '450px' }}>
-              <div className="text-center mb-4 d-lg-none">
-                <div className="mx-auto mb-3 d-flex align-items-center justify-content-center" style={{
-                  width: '80px', height: '80px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '50%', fontSize: '2.5rem'
+      {/* Left — image panel */}
+      <div className="d-none d-lg-flex" style={{ flex: '1.1', position: 'relative', overflow: 'hidden', flexDirection: 'column', justifyContent: 'flex-end' }}>
+        <img src={carImg} alt="Fleet" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, rgba(0,20,50,0.55) 0%, rgba(0,10,30,0.82) 100%)' }} />
+        <div style={{ position: 'relative', zIndex: 1, padding: '3rem' }}>
+          <img src={logoCI} alt="CI" style={{ height: '52px', marginBottom: '1.5rem', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }} />
+          <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.9rem', lineHeight: 1.2, marginBottom: '0.75rem' }}>
+            Gestion de Flotte<br />Véhicule
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.95rem', maxWidth: '360px', lineHeight: 1.65, marginBottom: '2rem' }}>
+            Suivez, planifiez et optimisez votre parc automobile — tout en un seul espace.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxWidth: '340px' }}>
+            {[
+              { icon: '🚗', text: 'Suivi en temps réel de vos véhicules' },
+              { icon: '⛽', text: 'Analyse de la consommation carburant' },
+              { icon: '🔧', text: 'Maintenance planifiée & historique' },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '38px', height: '38px', background: 'rgba(255,255,255,0.12)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>{item.icon}</div>
+                <span style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.88rem' }}>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right — form */}
+      <div style={{ flex: 1, minWidth: '340px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', padding: '2rem' }}>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} style={{ width: '100%', maxWidth: '400px' }}>
+
+          {/* Mobile logo */}
+          <div className="d-flex d-lg-none justify-content-center mb-4">
+            <img src={logoCI} alt="CI" style={{ height: '44px' }} />
+          </div>
+
+          {/* Language toggle */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem', gap: '0.4rem' }}>
+            {['fr', 'en'].map(lang => (
+              <button key={lang} onClick={() => i18n.changeLanguage(lang)}
+                style={{ padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', border: '1.5px solid', transition: 'all 0.15s',
+                  background: i18n.language === lang ? '#0d6efd' : 'transparent',
+                  color:      i18n.language === lang ? '#fff'    : '#64748b',
+                  borderColor: i18n.language === lang ? '#0d6efd' : '#e2e8f0',
                 }}>
-                  🚗
-                </div>
-              </div>
+                {lang.toUpperCase()}
+              </button>
+            ))}
+          </div>
 
-              <div className="mb-5">
-                <h2 className="fw-bold mb-2">{t('login.welcome')}</h2>
-                <p className="text-muted mb-0">{t('login.subtitle')}</p>
-              </div>
+          <h2 style={{ fontWeight: 800, fontSize: '1.55rem', color: '#0f172a', marginBottom: '0.4rem' }}>{t('login.welcome')}</h2>
+          <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '2rem' }}>{t('login.subtitle')}</p>
 
-              {isBlocked && (
-                <Alert variant="danger" className="border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
-                  <div className="text-center">
-                    <div className="fs-1 mb-3">🔒</div>
-                    <strong className="d-block mb-2">{t('login.blocked_title')}</strong>
-                    <p className="mb-2">{t('login.blocked_too_many')}</p>
-                    <div className="fs-3 fw-bold text-danger mb-2">{formatTime(remainingTime)}</div>
-                    <small className="text-muted">{t('login.blocked_remaining')}</small>
-                  </div>
-                </Alert>
-              )}
+          {/* Blocked alert */}
+          {isBlocked && (
+            <div style={{ background: '#fff0f0', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '1.1rem', marginBottom: '1.25rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>🔒</div>
+              <strong style={{ color: '#dc2626', display: 'block', marginBottom: '0.3rem' }}>{t('login.blocked_title')}</strong>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#dc2626' }}>{formatTime(remainingTime)}</div>
+              <small style={{ color: '#94a3b8' }}>{t('login.blocked_remaining')}</small>
+            </div>
+          )}
 
-              {error && !isBlocked && (
-                <Alert variant="danger" className="border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
-                  <div className="d-flex align-items-center">
-                    <span className="fs-4 me-3">❌</span>
-                    <div className="flex-grow-1">
-                      <strong>{t('login.error_title')}</strong>
-                      <p className="mb-0 small">{error}</p>
-                    </div>
-                  </div>
-                  {remainingAttempts < 3 && remainingAttempts > 0 && (
-                    <div className="mt-2 pt-2 border-top">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <small className="fw-bold">{t('login.remaining_attempts')}</small>
-                        <div className="d-flex gap-1">
-                          {[...Array(3)].map((_, i) => (
-                            <div key={i} style={{
-                              width: '12px', height: '12px', borderRadius: '50%',
-                              backgroundColor: i < remainingAttempts ? '#28a745' : '#dc3545'
-                            }} />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </Alert>
-              )}
-
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-4">
-                  <Form.Label className="fw-semibold">{t('login.email_label')}</Form.Label>
-                  <Form.Control
-                    type="email" name="email" value={credentials.email}
-                    onChange={handleChange} placeholder="exemple@email.com"
-                    disabled={loading || isBlocked} required size="lg"
-                    style={{ borderRadius: '12px', border: '2px solid #e9ecef' }}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">{t('login.password_label')}</Form.Label>
-                  <InputGroup>
-                    <Form.Control
-                      type={showPassword ? 'text' : 'password'} name="password"
-                      value={credentials.password} onChange={handleChange}
-                      placeholder={t('login.password_placeholder')}
-                      disabled={loading || isBlocked} required size="lg"
-                      style={{ borderRadius: '12px 0 0 12px', border: '2px solid #e9ecef', borderRight: 'none' }}
-                    />
-                    <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)}
-                      disabled={loading || isBlocked}
-                      style={{ borderRadius: '0 12px 12px 0', border: '2px solid #e9ecef', borderLeft: 'none' }}>
-                      {showPassword ? '👁️' : '👁️‍🗨️'}
-                    </Button>
-                  </InputGroup>
-                </Form.Group>
-
-                {credentials.password && (
-                  <div className="mb-4">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <small className="text-muted">{t('login.password_strength')}</small>
-                      <small className="fw-bold" style={{ color: passwordStrength.color }}>{passwordStrength.label}</small>
-                    </div>
-                    <ProgressBar now={passwordStrength.strength} variant={passwordStrength.variant} style={{ height: '6px', borderRadius: '10px' }} />
+          {/* Error */}
+          {error && !isBlocked && (
+            <div style={{ background: '#fff0f0', border: '1.5px solid #fca5a5', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+              <span style={{ color: '#dc2626', fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
+              <div>
+                <strong style={{ fontSize: '0.85rem', color: '#dc2626' }}>{t('login.error_title')}</strong>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#7f1d1d' }}>{error}</p>
+                {remainingAttempts < 3 && remainingAttempts > 0 && (
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', background: i < remainingAttempts ? '#16a34a' : '#dc2626' }} />
+                    ))}
                   </div>
                 )}
-
-                <Button type="submit" size="lg" className="w-100 mb-3"
-                  disabled={loading || isBlocked}
-                  style={{
-                    borderRadius: '12px',
-                    background: isBlocked ? '#6c757d' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none', fontWeight: '600', padding: '12px'
-                  }}>
-                  {loading ? (<><span className="spinner-border spinner-border-sm me-2" />{t('login.signing_in')}</>) :
-                   isBlocked ? t('login.account_locked') : t('login.sign_in')}
-                </Button>
-
-                <div className="text-center mb-4">
-                  <Link to="/forgot-password" className="text-decoration-none" style={{ color: '#667eea', fontWeight: '600' }}>
-                    {t('login.forgot_password')}
-                  </Link>
-                </div>
-
-                <hr className="my-4" />
-
-                <div className="text-center">
-                  <p className="text-muted mb-2">{t('login.no_account')}</p>
-                  <Link to="/register" className="btn btn-outline-secondary w-100"
-                    style={{ borderRadius: '12px', fontWeight: '600', borderWidth: '2px' }}>
-                    {t('login.create_account')}
-                  </Link>
-                </div>
-              </Form>
-
-              <p className="text-center text-muted mt-4 mb-2 small">{t('login.copyright')}</p>
-
-              <div className="text-center p-3 rounded-3" style={{ background: '#f8f9fa', border: '1px dashed #dee2e6' }}>
-                <small className="text-muted d-flex align-items-center justify-content-center gap-2">
-                  <span style={{ fontSize: '1rem' }}>🔒</span>
-                  <span>{t('login.security_note_1')} <strong>{t('login.security_note_2')}</strong></span>
-                </small>
               </div>
             </div>
-          </Col>
-        </Row>
-      </Container>
+          )}
 
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>{t('login.email_label')}</label>
+              <input type="email" name="email" value={credentials.email} onChange={handleChange}
+                placeholder="exemple@ci.org" disabled={loading || isBlocked} required
+                style={inp} onFocus={e => Object.assign(e.target.style, inpFocus)} onBlur={e => Object.assign(e.target.style, inpBlur)} />
+            </div>
+
+            <div style={{ marginBottom: '1.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>{t('login.password_label')}</label>
+              <div style={{ position: 'relative' }}>
+                <input type={showPassword ? 'text' : 'password'} name="password" value={credentials.password} onChange={handleChange}
+                  placeholder="••••••••" disabled={loading || isBlocked} required
+                  style={{ ...inp, paddingRight: '2.8rem' }}
+                  onFocus={e => Object.assign(e.target.style, inpFocus)} onBlur={e => Object.assign(e.target.style, inpBlur)} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} disabled={loading || isBlocked}
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#94a3b8' }}>
+                  {showPassword ? '👁️' : '🔒'}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading || isBlocked} style={{
+              width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none', cursor: loading || isBlocked ? 'not-allowed' : 'pointer',
+              background: isBlocked ? '#94a3b8' : 'linear-gradient(135deg, #0d6efd, #0b5ed7)',
+              color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+              boxShadow: isBlocked ? 'none' : '0 4px 16px rgba(13,110,253,0.4)',
+              transition: 'opacity 0.2s',
+            }}>
+              {loading ? <><span className="spinner-border spinner-border-sm me-2" />{t('login.signing_in')}</> :
+               isBlocked ? t('login.account_locked') : t('login.sign_in')}
+            </button>
+
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <Link to="/forgot-password" style={{ color: '#0d6efd', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}>
+                {t('login.forgot_password')}
+              </Link>
+            </div>
+
+            <div style={{ margin: '1.5rem 0', borderTop: '1px solid #f1f5f9', position: 'relative' }}>
+              <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: '#fff', padding: '0 0.75rem', color: '#94a3b8', fontSize: '0.78rem' }}>ou</span>
+            </div>
+
+            <Link to="/register" style={{
+              display: 'block', textAlign: 'center', padding: '0.65rem', borderRadius: '10px',
+              border: '1.5px solid #e2e8f0', color: '#374151', fontWeight: 600, fontSize: '0.88rem',
+              textDecoration: 'none', transition: 'border-color 0.18s, background 0.18s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#0d6efd'; e.currentTarget.style.background = '#f0f5ff'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'transparent'; }}>
+              {t('login.create_account')}
+            </Link>
+          </form>
+
+          <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '1.5rem' }}>{t('login.copyright')}</p>
+        </motion.div>
+      </div>
+
+      {/* Deleted account modal */}
       <Modal show={showDeleteModal} onHide={() => {}} centered backdrop="static">
         <Modal.Body className="text-center p-5">
-          <div className="fs-1 mb-3">⚠️</div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
           <h4 className="fw-bold mb-3">{t('login.deleted_title')}</h4>
           <p className="text-muted mb-4">{t('login.deleted_msg')}</p>
-          <Button variant="primary" size="lg" className="w-100" onClick={handleRedirectToRegister}
-            style={{
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              border: 'none', fontWeight: '600'
-            }}>
+          <button className="btn btn-primary w-100" style={{ borderRadius: '10px', fontWeight: 700, background: 'linear-gradient(135deg,#0d6efd,#0b5ed7)', border: 'none' }}
+            onClick={() => { setShowDeleteModal(false); navigate('/register'); }}>
             {t('login.create_new_account')}
-          </Button>
+          </button>
         </Modal.Body>
       </Modal>
     </div>

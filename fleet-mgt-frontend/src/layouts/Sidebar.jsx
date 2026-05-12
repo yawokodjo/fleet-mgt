@@ -1,229 +1,185 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import "bootstrap/dist/css/bootstrap.min.css";
+import logoCI from "../assets/logo-ci.png";
+
+const NAV_GROUPS = [
+    {
+        label: null,
+        links: [
+            { to: "/dashboard", labelKey: "nav.dashboard", icon: <DashIcon /> },
+            { to: "/vehicles",  labelKey: "nav.vehicles",  icon: <CarIcon /> },
+            { to: "/consumptions", labelKey: "nav.consumptions", icon: <FuelIcon /> },
+            { to: "/maintenances", labelKey: "nav.maintenances", icon: <WrenchIcon /> },
+        ],
+    },
+    {
+        labelKey: "nav.reports_group",
+        links: [
+            { to: "/reports",              labelKey: "nav.reports",              icon: <ChartIcon /> },
+            { to: "/reports/consumption",  labelKey: "nav.consumption_report",   icon: <TrendIcon /> },
+            { to: "/reports/maintenance",  labelKey: "nav.maintenance_report",   icon: <ToolIcon /> },
+        ],
+    },
+    {
+        labelKey: "nav.admin_group",
+        links: [
+            { to: "/users",   labelKey: "nav.users",   icon: <UsersIcon /> },
+            { to: "/profile", labelKey: "nav.profile", icon: <PersonIcon /> },
+        ],
+    },
+];
+
+/* ── SVG icons ── */
+function DashIcon()    { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>; }
+function CarIcon()     { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 17H3v-3.5a1 1 0 0 1 .1-.45l2.4-5.6A1 1 0 0 1 6.4 7h11.2a1 1 0 0 1 .9.55l2.4 5.6a1 1 0 0 1 .1.45V17h-2m-14 0h14m-14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>; }
+function FuelIcon()    { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 22V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5h1a2 2 0 0 1 2 2v4a1 1 0 0 0 2 0v-6l-3-3"/><rect x="5" y="8" width="6" height="4" rx="1"/></svg>; }
+function WrenchIcon()  { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/></svg>; }
+function ChartIcon()   { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 20V10m-6 10V4M6 20v-6"/></svg>; }
+function TrendIcon()   { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>; }
+function ToolIcon()    { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>; }
+function UsersIcon()   { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
+function PersonIcon()  { return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; }
+function HamburgerIcon({ open }) {
+    return open
+        ? <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        : <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+}
+
+const SIDEBAR_BG   = "linear-gradient(180deg, #06101e 0%, #0b1a30 60%, #091526 100%)";
+const ACTIVE_BG    = "rgba(13,110,253,0.18)";
+const ACTIVE_COLOR = "#4d9fff";
+const HOVER_BG     = "rgba(255,255,255,0.05)";
+const TEXT_MUTED   = "rgba(255,255,255,0.38)";
+const TEXT_NORMAL  = "rgba(255,255,255,0.78)";
 
 export default function Sidebar() {
-  const [open, setOpen] = useState(false);
-  const [showMore, setShowMore] = useState(false);
-  const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const { t } = useTranslation();
 
-  const mainLinks = [
-    { to: "/", icon: "🏠", labelKey: "nav.home", color: "#4CAF50" },
-    { to: "/dashboard", icon: "📊", labelKey: "nav.dashboard", color: "#4CAF50" },
-    { to: "/vehicles", icon: "🚗", labelKey: "nav.vehicles", color: "#2196F3" },
-  ];
+    return (
+        <>
+            <style>{`
+                @media (min-width: 768px) {
+                    .sb-panel { transform: translateX(0) !important; }
+                }
+                .sb-link {
+                    display: flex; align-items: center; gap: 12px;
+                    padding: 10px 16px; border-radius: 10px; margin: 2px 8px;
+                    text-decoration: none; font-size: 0.88rem; font-weight: 500;
+                    color: ${TEXT_NORMAL}; transition: background 0.18s, color 0.18s;
+                    cursor: pointer;
+                }
+                .sb-link:hover { background: ${HOVER_BG}; color: #fff; }
+                .sb-link.active { background: ${ACTIVE_BG}; color: ${ACTIVE_COLOR}; }
+                .sb-link .sb-icon { flex-shrink: 0; opacity: 0.75; transition: opacity 0.18s; }
+                .sb-link:hover .sb-icon, .sb-link.active .sb-icon { opacity: 1; }
+                .sb-group-label {
+                    font-size: 0.67rem; font-weight: 700; letter-spacing: 1.2px;
+                    text-transform: uppercase; color: ${TEXT_MUTED};
+                    padding: 6px 24px 4px; margin-top: 8px;
+                }
+                .sb-scroll::-webkit-scrollbar { width: 4px; }
+                .sb-scroll::-webkit-scrollbar-track { background: transparent; }
+                .sb-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+            `}</style>
 
-  const moreLinks = [
-    { to: "/consumptions", icon: "⛽", labelKey: "nav.consumptions", color: "#FF9800" },
-    { to: "/maintenances", icon: "🔧", labelKey: "nav.maintenances", color: "#9C27B0" },
-    { to: "/reports", icon: "📊", labelKey: "nav.reports", color: "#00BCD4" },
-    { to: "/reports/consumption", icon: "📈", labelKey: "nav.consumption_report", color: "#FF5722" },
-    { to: "/reports/maintenance", icon: "🧰", labelKey: "nav.maintenance_report", color: "#795548" },
-    { to: "/users", icon: "👥", labelKey: "nav.users", color: "#E91E63" },
-    { to: "/profile", icon: "👤", labelKey: "nav.profile", color: "#607D8B" },
-    { to: "/debug-auth", icon: "🛠️", labelKey: "nav.debug", color: "#673AB7" },
-  ];
+            {/* Hamburger — visible only on mobile, fixed top-left */}
+            <button
+                onClick={() => setOpen(!open)}
+                className="d-md-none"
+                style={{
+                    position: 'fixed', top: '12px', left: '12px', zIndex: 1100,
+                    background: '#0d6efd', border: 'none', color: '#fff',
+                    borderRadius: '10px', width: '40px', height: '40px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(13,110,253,0.4)',
+                    cursor: 'pointer',
+                }}
+            >
+                <HamburgerIcon open={open} />
+            </button>
 
-  return (
-    <>
-      <style>{`
-        .sidebar-link {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow: hidden;
-        }
-        .sidebar-link:hover {
-          transform: translateX(8px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .sidebar-link.active {
-          transform: translateX(8px);
-          box-shadow: 0 6px 16px rgba(33, 150, 243, 0.3);
-        }
-        .sidebar-link::before {
-          content: '';
-          position: absolute;
-          left: 0; top: 0;
-          height: 100%; width: 4px;
-          background: currentColor;
-          transform: scaleY(0);
-          transition: transform 0.3s ease;
-        }
-        .sidebar-link:hover::before,
-        .sidebar-link.active::before { transform: scaleY(1); }
-        .icon-wrapper {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px; height: 36px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-          backdrop-filter: blur(10px);
-          transition: all 0.3s ease;
-        }
-        .sidebar-link:hover .icon-wrapper { transform: rotate(10deg) scale(1.1); }
-        .sidebar-link.active .icon-wrapper {
-          background: rgba(255,255,255,0.2);
-          box-shadow: 0 0 20px rgba(255,255,255,0.3);
-        }
-        .more-button {
-          transition: all 0.3s ease;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border: none; color: white; margin: 8px 0;
-        }
-        .more-button:hover {
-          transform: scale(1.02);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        .sidebar-container {
-          background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-          box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
-          overflow: hidden;
-        }
-        .sidebar-content {
-          height: 100%; overflow-y: auto; overflow-x: hidden; direction: rtl;
-        }
-        .sidebar-inner { direction: ltr; }
-        .sidebar-content::-webkit-scrollbar { width: 8px; }
-        .sidebar-content::-webkit-scrollbar-track {
-          background: rgba(0,0,0,0.05); border-radius: 10px; margin: 10px 0;
-        }
-        .sidebar-content::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-          border-radius: 10px;
-        }
-        .sidebar-content { scrollbar-width: thin; scrollbar-color: #667eea rgba(0,0,0,0.05); }
-        .menu-title {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          font-weight: 700; letter-spacing: 1px;
-          text-transform: uppercase; font-size: 0.9rem; margin-bottom: 1.5rem;
-        }
-        .collapse-animation { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .hamburger-btn {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border: none;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-          transition: all 0.3s ease;
-        }
-        .hamburger-btn:hover { transform: scale(1.05); }
-        .sidebar-footer-icon { font-size: 1.5rem; animation: pulse 2s ease-in-out infinite; }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-      `}</style>
+            {/* Overlay */}
+            {open && (
+                <div
+                    className="d-md-none"
+                    onClick={() => setOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 1050,
+                        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)',
+                    }}
+                />
+            )}
 
-      <button
-        className="hamburger-btn btn btn-primary d-md-none m-2 rounded-3"
-        onClick={() => setOpen(!open)}
-      >
-        ☰ Menu
-      </button>
+            {/* Sidebar panel */}
+            <div
+                style={{
+                    width: '240px',
+                    position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1060,
+                    background: SIDEBAR_BG,
+                    display: 'flex', flexDirection: 'column',
+                    borderRight: '1px solid rgba(255,255,255,0.06)',
+                    transform: `translateX(${open ? '0' : '-100%'})`,
+                    transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1)',
+                }}
+                className="sb-panel d-md-block"
+            >
+                {/* Logo */}
+                <div style={{
+                    padding: '1.1rem 1.25rem 0.9rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.07)',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                }}>
+                    <img src={logoCI} alt="CI" style={{ height: '34px', objectFit: 'contain' }} />
+                    <div>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+                            CI Togo
+                        </div>
+                        <div style={{ fontSize: '0.65rem', color: TEXT_MUTED, lineHeight: 1.2 }}>
+                            Gestion de Flotte
+                        </div>
+                    </div>
+                </div>
 
-      <div
-        className={`sidebar-container border-end position-fixed h-100 d-flex flex-column ${open ? "start-0" : "-start-100"} d-md-flex`}
-        style={{ width: "260px", transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)", zIndex: 1050 }}
-      >
-        <div className="sidebar-content flex-grow-1">
-          <div className="sidebar-inner">
-            <div className="p-3">
-              <div className="text-center mb-4">
-                <div className="menu-title">{t('nav.navigation')}</div>
-                <div style={{ width: "40px", height: "3px", background: "linear-gradient(90deg, #667eea, #764ba2)", margin: "0 auto", borderRadius: "2px" }} />
-              </div>
+                {/* Nav */}
+                <nav className="sb-scroll flex-grow-1" style={{ overflowY: 'auto', overflowX: 'hidden', paddingTop: '0.5rem', paddingBottom: '1rem' }}>
+                    {NAV_GROUPS.map((group, gi) => (
+                        <div key={gi}>
+                            {group.labelKey && (
+                                <div className="sb-group-label">{t(group.labelKey)}</div>
+                            )}
+                            {group.links.map(link => (
+                                <NavLink
+                                    key={link.to}
+                                    to={link.to}
+                                    end={link.to === "/"}
+                                    className={({ isActive }) => `sb-link${isActive ? ' active' : ''}`}
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <span className="sb-icon">{link.icon}</span>
+                                    <span>{t(link.labelKey)}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    ))}
+                </nav>
+
+                {/* Footer */}
+                <div style={{
+                    padding: '0.9rem 1.25rem',
+                    borderTop: '1px solid rgba(255,255,255,0.07)',
+                    fontSize: '0.7rem', color: TEXT_MUTED,
+                }}>
+                    <div style={{ fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginBottom: '2px' }}>
+                        Compassion International Togo
+                    </div>
+                    <div>© 2025 • v1.0</div>
+                </div>
             </div>
 
-            <nav className="nav flex-column px-3 pb-3">
-              {mainLinks.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) =>
-                    `sidebar-link nav-link d-flex align-items-center mb-2 p-3 rounded-3 text-decoration-none ${isActive ? "active text-white" : "text-dark"}`
-                  }
-                  style={({ isActive }) => ({
-                    background: isActive ? `linear-gradient(135deg, ${link.color}, ${link.color}dd)` : "transparent",
-                  })}
-                  onClick={() => setOpen(false)}
-                >
-                  <div className="icon-wrapper me-3">
-                    <span style={{ fontSize: "1.2rem" }}>{link.icon}</span>
-                  </div>
-                  <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>{t(link.labelKey)}</span>
-                </NavLink>
-              ))}
-
-              <button
-                className="more-button btn w-100 d-flex align-items-center justify-content-between p-3 rounded-3"
-                onClick={() => setShowMore(!showMore)}
-              >
-                <div className="d-flex align-items-center">
-                  <span className="me-2" style={{ fontSize: "1.1rem" }}>📑</span>
-                  <span style={{ fontWeight: 500 }}>
-                    {showMore ? t('nav.see_less') : t('nav.see_more')}
-                  </span>
-                </div>
-                <span style={{ transition: "transform 0.3s ease", transform: showMore ? "rotate(180deg)" : "rotate(0deg)", fontSize: "1.2rem" }}>▼</span>
-              </button>
-
-              {showMore && (
-                <div className="collapse-animation">
-                  {moreLinks.map((link, index) => (
-                    <NavLink
-                      key={link.to}
-                      to={link.to}
-                      className={({ isActive }) =>
-                        `sidebar-link nav-link d-flex align-items-center mb-2 p-3 rounded-3 text-decoration-none ${isActive ? "active text-white" : "text-dark"}`
-                      }
-                      style={({ isActive }) => ({
-                        background: isActive ? `linear-gradient(135deg, ${link.color}, ${link.color}dd)` : "transparent",
-                        animationDelay: `${index * 0.05}s`,
-                        paddingLeft: "1.5rem",
-                      })}
-                      onClick={() => setOpen(false)}
-                    >
-                      <div className="icon-wrapper me-3">
-                        <span style={{ fontSize: "1.1rem" }}>{link.icon}</span>
-                      </div>
-                      <span style={{ fontWeight: 500, fontSize: "0.9rem" }}>{t(link.labelKey)}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </nav>
-          </div>
-        </div>
-
-        <div className="text-light py-4 mt-5" style={{ backgroundColor: '#001f3f' }}>
-          <div className="text-center">
-            <div className="sidebar-footer-icon mb-4">🚗</div>
-            <p className="mb-4" style={{ fontSize: "0.85rem", fontWeight: 600, color: '#ffffff', letterSpacing: '0.5px' }}>
-              CI Togo Vehicle Fleet
-            </p>
-            <p className="mb-0" style={{ fontSize: "0.75rem", color: '#ffffff' }}>
-              © 2025 • Version 1.0.0
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {open && (
-        <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-md-none"
-          onClick={() => setOpen(false)}
-          style={{ zIndex: 1040, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", transition: "all 0.3s ease" }}
-        />
-      )}
-
-      <div className="d-none d-md-block" style={{ width: "260px" }} />
-    </>
-  );
+            {/* Spacer so content doesn't hide under fixed sidebar on desktop */}
+            <div className="d-none d-md-block flex-shrink-0" style={{ width: '240px' }} />
+        </>
+    );
 }

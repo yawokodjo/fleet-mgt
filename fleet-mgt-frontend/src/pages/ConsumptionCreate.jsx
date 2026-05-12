@@ -1,150 +1,211 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import api from "../axios";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import api from '../axios';
+
+const ACCENT = '#198754';
+
+const inp = (err) => ({
+    width: '100%', background: err ? '#fff8f8' : '#f8fff9',
+    border: `1.5px solid ${err ? '#fca5a5' : '#e2e8f0'}`, borderRadius: '10px',
+    padding: '0.62rem 0.9rem', fontSize: '0.88rem', color: '#1e293b',
+    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.18s',
+});
+const Label = ({ children }) => (
+    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+        {children}
+    </label>
+);
+const Err = ({ msg }) => msg ? <p style={{ fontSize: '0.76rem', color: '#dc2626', marginTop: '4px', marginBottom: 0 }}>{msg}</p> : null;
 
 export default function ConsumptionCreate() {
-    const [form, setForm] = useState({ date: "", fuel_volume: "", fuel_cost: "", vehicle_id: "", driver_id: "", mileage: "" });
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+    const token = localStorage.getItem('token');
+    const today = new Date().toISOString().split('T')[0];
+
+    const [form, setForm] = useState({ date: '', fuel_volume: '', fuel_cost: '', vehicle_id: '', driver_id: '', mileage: '' });
     const [documentFile, setDocumentFile] = useState(null);
     const [vehicles, setVehicles] = useState([]);
     const [drivers, setDrivers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState(null);
+    const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});
-    const navigate = useNavigate();
-    const { t } = useTranslation();
-    const token = localStorage.getItem("token");
-    const today = new Date().toISOString().split('T')[0];
+    const [success, setSuccess] = useState(false);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [vehiclesRes, driversRes] = await Promise.all([
-                    api.get("/vehicles-list", { headers: { Authorization: `Bearer ${token}` } }),
-                    api.get("/drivers", { headers: { Authorization: `Bearer ${token}` } }),
-                ]);
-                setVehicles(vehiclesRes.data);
-                setDrivers(driversRes.data);
-            } catch (err) {
-                if (err.response?.status === 401) { alert(t('common.session_expired')); navigate("/login"); }
-                else alert(t('common.error'));
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [navigate, token, t]);
+        Promise.all([
+            api.get('/vehicles-list', { headers: { Authorization: `Bearer ${token}` } }),
+            api.get('/drivers',       { headers: { Authorization: `Bearer ${token}` } }),
+        ]).then(([v, d]) => { setVehicles(v.data); setDrivers(d.data); })
+          .catch(() => alert(t('common.error')))
+          .finally(() => setLoading(false));
+    }, [token, t]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
-        if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+    const handleChange = e => {
+        setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+        if (errors[e.target.name]) setErrors(p => ({ ...p, [e.target.name]: null }));
     };
 
-    const validateForm = () => {
-        const newErrors = {};
-        if (!form.date) newErrors.date = t('common.error');
-        else if (form.date > today) newErrors.date = t('consumptions.date_future_error');
-        if (!form.vehicle_id) newErrors.vehicle_id = t('common.error');
-        if (!form.driver_id) newErrors.driver_id = t('common.error');
-        if (!form.fuel_volume || parseFloat(form.fuel_volume) <= 0) newErrors.fuel_volume = t('common.error');
-        if (!form.fuel_cost || parseFloat(form.fuel_cost) <= 0) newErrors.fuel_cost = t('common.error');
-        if (form.mileage && parseInt(form.mileage) < 0) newErrors.mileage = t('common.error');
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+    const validate = () => {
+        const errs = {};
+        if (!form.date) errs.date = t('common.error');
+        else if (form.date > today) errs.date = t('consumptions.date_future_error');
+        if (!form.vehicle_id) errs.vehicle_id = t('common.error');
+        if (!form.driver_id)  errs.driver_id  = t('common.error');
+        if (!form.fuel_volume || parseFloat(form.fuel_volume) <= 0) errs.fuel_volume = t('common.error');
+        if (!form.fuel_cost   || parseFloat(form.fuel_cost)   <= 0) errs.fuel_cost   = t('common.error');
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async e => {
         e.preventDefault();
-        if (!validateForm()) return;
+        if (!validate()) return;
+        setSaving(true);
         try {
             const payload = new FormData();
-            payload.append('date', form.date);
-            payload.append('vehicle_id', form.vehicle_id);
-            payload.append('driver_id', form.driver_id);
+            payload.append('date',        form.date);
+            payload.append('vehicle_id',  form.vehicle_id);
+            payload.append('driver_id',   form.driver_id);
             payload.append('fuel_volume', parseFloat(form.fuel_volume));
-            payload.append('fuel_cost', parseFloat(form.fuel_cost));
-            if (form.mileage) payload.append('mileage', parseInt(form.mileage));
-            if (documentFile) payload.append('document', documentFile);
-
-            await api.post("/consumptions", payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setMessage(t('consumptions.add_success'));
-            setTimeout(() => navigate("/consumptions"), 2000);
-        } catch (err) {
-            console.error(err);
-            alert(t('common.error'));
-        }
+            payload.append('fuel_cost',   parseFloat(form.fuel_cost));
+            if (form.mileage)  payload.append('mileage', parseInt(form.mileage));
+            if (documentFile)  payload.append('document', documentFile);
+            await api.post('/consumptions', payload, { headers: { Authorization: `Bearer ${token}` } });
+            setSuccess(true);
+            setTimeout(() => navigate('/consumptions'), 1500);
+        } catch { alert(t('common.error')); }
+        finally { setSaving(false); }
     };
 
-    if (loading) return <p className="text-center mt-4">{t('common.loading')}</p>;
+    if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}><div className="spinner-border text-success" /></div>;
 
     return (
-        <div className="container mt-5">
-            <div className="card shadow p-4 border-0 rounded-4 mx-auto" style={{ maxWidth: "620px" }}>
-                <h3 className="text-center mb-4 text-primary">{t('consumptions.add_title')}</h3>
-                {message && <div className="alert alert-success text-center">{message}</div>}
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                        <label className="form-label">{t('consumptions.consumption_date')}</label>
-                        <input type="date" name="date" className={`form-control ${errors.date ? 'is-invalid' : ''}`} value={form.date} onChange={handleChange} max={today} required />
-                        {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
-                        <small className="text-muted">{t('consumptions.date_hint')}</small>
+        <div style={{ padding: '1.5rem', maxWidth: '740px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+                <button onClick={() => navigate('/consumptions')} style={{ background: 'none', border: 'none', color: ACCENT, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', padding: 0, marginBottom: '0.75rem' }}>
+                    ← {t('common.back')}
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '11px', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>⛽</div>
+                    <div>
+                        <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('consumptions.add_title')}</h2>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>Enregistrer un plein de carburant</p>
                     </div>
-                    <div className="mb-3">
-                        <label className="form-label">{t('consumptions.vehicle')}</label>
-                        <select name="vehicle_id" className={`form-select ${errors.vehicle_id ? 'is-invalid' : ''}`} value={form.vehicle_id} onChange={handleChange} required>
-                            <option value="">{t('consumptions.select_vehicle')}</option>
-                            {vehicles.map((v) => <option key={v.id} value={v.id}>{v.license_plate}</option>)}
-                        </select>
-                        {errors.vehicle_id && <div className="invalid-feedback d-block">{errors.vehicle_id}</div>}
-                    </div>
-                    <div className="mb-3">
-                        <label className="form-label">{t('consumptions.driver')}</label>
-                        <select name="driver_id" className={`form-select ${errors.driver_id ? 'is-invalid' : ''}`} value={form.driver_id} onChange={handleChange} required>
-                            <option value="">{t('consumptions.select_driver')}</option>
-                            {drivers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                        </select>
-                        {errors.driver_id && <div className="invalid-feedback d-block">{errors.driver_id}</div>}
-                    </div>
-                    <div className="row">
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">{t('consumptions.liters')}</label>
-                            <input type="number" name="fuel_volume" className={`form-control ${errors.fuel_volume ? 'is-invalid' : ''}`} value={form.fuel_volume} onChange={handleChange} min="0" step="0.01" required />
-                            {errors.fuel_volume && <div className="invalid-feedback d-block">{errors.fuel_volume}</div>}
-                        </div>
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">{t('consumptions.amount')}</label>
-                            <input type="number" name="fuel_cost" className={`form-control ${errors.fuel_cost ? 'is-invalid' : ''}`} value={form.fuel_cost} onChange={handleChange} min="0" step="0.01" required />
-                            {errors.fuel_cost && <div className="invalid-feedback d-block">{errors.fuel_cost}</div>}
-                        </div>
-                    </div>
-                    <div className="mb-3">
-                        <label className="form-label">{t('consumptions.mileage')}</label>
-                        <div className="input-group">
-                            <input type="number" name="mileage" className={`form-control ${errors.mileage ? 'is-invalid' : ''}`} value={form.mileage} onChange={handleChange} min="0" step="1" placeholder="ex. 45 230" />
-                            <span className="input-group-text">km</span>
-                        </div>
-                        <small className="text-muted">{t('consumptions.mileage_hint')}</small>
-                        {errors.mileage && <div className="text-danger small">{errors.mileage}</div>}
-                    </div>
-                    <div className="mb-3">
-                        <label className="form-label">{t('consumptions.document')}</label>
-                        <input
-                            type="file"
-                            className="form-control"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(e) => setDocumentFile(e.target.files[0] || null)}
-                        />
-                        <small className="text-muted">{t('consumptions.document_hint')}</small>
-                    </div>
-                    <div className="d-flex justify-content-center gap-2 mt-3">
-                        <button type="submit" className="btn btn-success px-4">✅ {t('common.add')}</button>
-                        <button type="button" onClick={() => navigate("/consumptions")} className="btn btn-secondary px-4">🔙 {t('common.cancel')}</button>
-                    </div>
-                </form>
+                </div>
             </div>
+
+            {success && (
+                <div style={{ background: '#dcfce7', border: '1.5px solid #16a34a', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem', color: '#15803d', fontWeight: 600, fontSize: '0.88rem' }}>
+                    ✓ {t('consumptions.add_success')} — Redirection…
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                {/* Section: Contexte */}
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}0c` }}>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Contexte</h3>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <Label>{t('consumptions.consumption_date')}</Label>
+                            <input type="date" name="date" value={form.date} onChange={handleChange} max={today} required style={inp(errors.date)}
+                                onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = errors.date ? '#fca5a5' : '#e2e8f0'} />
+                            <Err msg={errors.date} />
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.mileage')}</Label>
+                            <div style={{ position: 'relative' }}>
+                                <input type="number" name="mileage" value={form.mileage} onChange={handleChange} min="0" style={{ ...inp(errors.mileage), paddingRight: '2.8rem' }} placeholder="45 230"
+                                    onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>km</span>
+                            </div>
+                            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '3px', marginBottom: 0 }}>{t('consumptions.mileage_hint')}</p>
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.vehicle')}</Label>
+                            <select name="vehicle_id" value={form.vehicle_id} onChange={handleChange} required style={{ ...inp(errors.vehicle_id), cursor: 'pointer' }}
+                                onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = errors.vehicle_id ? '#fca5a5' : '#e2e8f0'}>
+                                <option value="">{t('consumptions.select_vehicle')}</option>
+                                {vehicles.map(v => <option key={v.id} value={v.id}>{v.license_plate}</option>)}
+                            </select>
+                            <Err msg={errors.vehicle_id} />
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.driver')}</Label>
+                            <select name="driver_id" value={form.driver_id} onChange={handleChange} required style={{ ...inp(errors.driver_id), cursor: 'pointer' }}
+                                onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = errors.driver_id ? '#fca5a5' : '#e2e8f0'}>
+                                <option value="">{t('consumptions.select_driver')}</option>
+                                {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            </select>
+                            <Err msg={errors.driver_id} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section: Carburant */}
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}0c` }}>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Carburant & Coût</h3>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <Label>{t('consumptions.liters')}</Label>
+                            <div style={{ position: 'relative' }}>
+                                <input type="number" name="fuel_volume" value={form.fuel_volume} onChange={handleChange} min="0" step="0.01" required style={{ ...inp(errors.fuel_volume), paddingRight: '2.8rem' }}
+                                    onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = errors.fuel_volume ? '#fca5a5' : '#e2e8f0'} />
+                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>L</span>
+                            </div>
+                            <Err msg={errors.fuel_volume} />
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.amount')}</Label>
+                            <div style={{ position: 'relative' }}>
+                                <input type="number" name="fuel_cost" value={form.fuel_cost} onChange={handleChange} min="0" step="0.01" required style={{ ...inp(errors.fuel_cost), paddingRight: '3.8rem' }}
+                                    onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = errors.fuel_cost ? '#fca5a5' : '#e2e8f0'} />
+                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>FCFA</span>
+                            </div>
+                            <Err msg={errors.fuel_cost} />
+                        </div>
+                        {form.fuel_volume > 0 && form.fuel_cost > 0 && (
+                            <div style={{ gridColumn: '1/-1', background: '#f0fdf4', borderRadius: '10px', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '1rem' }}>📊</span>
+                                <span style={{ fontSize: '0.82rem', color: '#166534', fontWeight: 600 }}>
+                                    Coût/litre estimé : {Math.round(parseFloat(form.fuel_cost) / parseFloat(form.fuel_volume)).toLocaleString()} FCFA/L
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Section: Document */}
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.5rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}0c` }}>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('consumptions.document')}</h3>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem' }}>
+                        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${documentFile ? ACCENT : '#e2e8f0'}`, borderRadius: '12px', padding: '1.4rem', cursor: 'pointer', background: documentFile ? `${ACCENT}08` : '#f8faff' }}>
+                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={e => setDocumentFile(e.target.files[0] || null)} />
+                            <div style={{ fontSize: '1.7rem', marginBottom: '0.35rem' }}>{documentFile ? '📎' : '📤'}</div>
+                            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: documentFile ? ACCENT : '#64748b' }}>
+                                {documentFile ? documentFile.name : t('consumptions.document_hint')}
+                            </div>
+                            {!documentFile && <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Reçu de carburant — PDF, JPG, PNG ≤ 5 Mo</div>}
+                        </label>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button type="button" onClick={() => navigate('/consumptions')} style={{ flex: 1, padding: '0.72rem', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+                        {t('common.cancel')}
+                    </button>
+                    <button type="submit" disabled={saving || success} style={{ flex: 1, padding: '0.72rem', borderRadius: '10px', border: 'none', background: ACCENT, color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'wait' : 'pointer', boxShadow: `0 4px 14px ${ACCENT}50` }}>
+                        {saving ? <><span className="spinner-border spinner-border-sm me-2" />{t('common.saving')}</> : `💾 ${t('common.add')}`}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }

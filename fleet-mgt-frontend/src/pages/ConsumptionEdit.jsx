@@ -1,149 +1,185 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import api from "../axios";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import api from '../axios';
+
+const ACCENT = '#198754';
+
+const inp = (err) => ({
+    width: '100%', background: err ? '#fff8f8' : '#f8fff9',
+    border: `1.5px solid ${err ? '#fca5a5' : '#e2e8f0'}`, borderRadius: '10px',
+    padding: '0.62rem 0.9rem', fontSize: '0.88rem', color: '#1e293b',
+    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.18s',
+});
+const Label = ({ children }) => (
+    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+        {children}
+    </label>
+);
 
 export default function ConsumptionEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const [form, setForm] = useState({ date: "", fuel_volume: "", fuel_cost: "", vehicle_id: "", driver_id: "", mileage: "" });
+    const token = localStorage.getItem('token');
+
+    const [form, setForm] = useState({ date: '', fuel_volume: '', fuel_cost: '', vehicle_id: '', driver_id: '', mileage: '' });
     const [documentFile, setDocumentFile] = useState(null);
     const [existingDoc, setExistingDoc] = useState(null);
     const [vehicles, setVehicles] = useState([]);
     const [drivers, setDrivers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const token = localStorage.getItem("token");
+    const [saving, setSaving] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const consumptionRes = await api.get(`/consumptions/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-                const data = consumptionRes.data;
-                setForm({
-                    date: data.date ? data.date.split('T')[0] : "",
-                    fuel_volume: data.fuel_volume || "",
-                    fuel_cost: data.fuel_cost || "",
-                    vehicle_id: data.vehicle?.id || "",
-                    driver_id: data.driver?.id || "",
-                    mileage: data.mileage || "",
-                });
-                setExistingDoc(data.document_url || null);
-                const [vehiclesRes, driversRes] = await Promise.all([
-                    api.get("/vehicles-list", { headers: { Authorization: `Bearer ${token}` } }),
-                    api.get("/drivers", { headers: { Authorization: `Bearer ${token}` } }),
-                ]);
-                setVehicles(vehiclesRes.data);
-                setDrivers(driversRes.data);
-            } catch (err) {
-                if (err.response?.status === 401) { alert(t('common.session_expired')); navigate("/login"); }
-                else if (err.response?.status === 403) alert(t('common.unauthorized'));
-                else if (err.response?.status === 404) { alert(t('consumptions.not_found')); navigate("/consumptions"); }
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [id, navigate, token, t]);
+        const headers = { Authorization: `Bearer ${token}` };
+        api.get(`/consumptions/${id}`, { headers }).then(res => {
+            const d = res.data;
+            setForm({ date: d.date ? d.date.split('T')[0] : '', fuel_volume: d.fuel_volume || '', fuel_cost: d.fuel_cost || '', vehicle_id: d.vehicle?.id || '', driver_id: d.driver?.id || '', mileage: d.mileage || '' });
+            setExistingDoc(d.document_url || null);
+        });
+        Promise.all([
+            api.get('/vehicles-list', { headers }),
+            api.get('/drivers',       { headers }),
+        ]).then(([v, d]) => { setVehicles(v.data); setDrivers(d.data); })
+          .finally(() => setLoading(false));
+    }, [id, token]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async e => {
         e.preventDefault();
+        setSaving(true);
         try {
             const payload = new FormData();
-            payload.append('date', form.date);
-            payload.append('vehicle_id', form.vehicle_id);
-            payload.append('driver_id', form.driver_id);
+            payload.append('date',        form.date);
+            payload.append('vehicle_id',  form.vehicle_id);
+            payload.append('driver_id',   form.driver_id);
             payload.append('fuel_volume', parseFloat(form.fuel_volume));
-            payload.append('fuel_cost', parseFloat(form.fuel_cost));
-            if (form.mileage) payload.append('mileage', parseInt(form.mileage));
-            if (documentFile) payload.append('document', documentFile);
-            // PUT with FormData requires method spoofing
+            payload.append('fuel_cost',   parseFloat(form.fuel_cost));
+            if (form.mileage)  payload.append('mileage', parseInt(form.mileage));
+            if (documentFile)  payload.append('document', documentFile);
             payload.append('_method', 'PUT');
-
             await api.post(`/consumptions/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
-            alert(t('consumptions.update_success'));
-            navigate("/consumptions");
-        } catch (err) {
-            console.error(err);
-            alert(t('common.error'));
-        }
+            setSuccess(true);
+            setTimeout(() => navigate('/consumptions'), 1500);
+        } catch { alert(t('common.error')); }
+        finally { setSaving(false); }
     };
 
-    if (loading) return (
-        <div className="text-center mt-5">
-            <div className="spinner-border text-primary" role="status" />
-            <p className="mt-2">{t('common.loading')}</p>
-        </div>
-    );
+    if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}><div className="spinner-border text-success" /></div>;
 
     return (
-        <div className="container py-4">
-            <div className="card shadow-sm mx-auto" style={{ maxWidth: "620px" }}>
-                <div className="card-header bg-primary text-white">
-                    <h5 className="mb-0">{t('consumptions.edit_title')}</h5>
-                </div>
-                <div className="card-body">
-                    <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
-                            <label className="form-label">{t('consumptions.date')} :</label>
-                            <input type="date" className="form-control" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">{t('consumptions.vehicle')}</label>
-                            <select className="form-select" value={form.vehicle_id} onChange={(e) => setForm({ ...form, vehicle_id: e.target.value })} required>
-                                <option value="">{t('consumptions.choose_vehicle')}</option>
-                                {vehicles.map((v) => <option key={v.id} value={v.id}>{v.license_plate}</option>)}
-                            </select>
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">{t('consumptions.driver')}</label>
-                            <select className="form-select" value={form.driver_id} onChange={(e) => setForm({ ...form, driver_id: e.target.value })} required>
-                                <option value="">{t('consumptions.choose_driver')}</option>
-                                {drivers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="row">
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">{t('consumptions.liters')}</label>
-                                <input type="number" className="form-control" value={form.fuel_volume} onChange={(e) => setForm({ ...form, fuel_volume: e.target.value })} required />
-                            </div>
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label">{t('consumptions.amount')}</label>
-                                <input type="number" className="form-control" value={form.fuel_cost} onChange={(e) => setForm({ ...form, fuel_cost: e.target.value })} required />
-                            </div>
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">{t('consumptions.mileage')}</label>
-                            <div className="input-group">
-                                <input type="number" className="form-control" value={form.mileage} onChange={(e) => setForm({ ...form, mileage: e.target.value })} min="0" step="1" placeholder="ex. 45 230" />
-                                <span className="input-group-text">km</span>
-                            </div>
-                            <small className="text-muted">{t('consumptions.mileage_hint')}</small>
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">{t('consumptions.document')}</label>
-                            {existingDoc && (
-                                <div className="mb-1">
-                                    <a href={existingDoc} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-success">
-                                        📄 {t('consumptions.document_view')}
-                                    </a>
-                                </div>
-                            )}
-                            <input
-                                type="file"
-                                className="form-control"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={(e) => setDocumentFile(e.target.files[0] || null)}
-                            />
-                            <small className="text-muted">{t('consumptions.document_hint')}</small>
-                        </div>
-                        <div className="d-flex justify-content-between">
-                            <button type="submit" className="btn btn-success">💾 {t('common.update')}</button>
-                            <button type="button" className="btn btn-secondary" onClick={() => navigate("/consumptions")}>↩ {t('common.cancel')}</button>
-                        </div>
-                    </form>
+        <div style={{ padding: '1.5rem', maxWidth: '740px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+                <button onClick={() => navigate('/consumptions')} style={{ background: 'none', border: 'none', color: ACCENT, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', padding: 0, marginBottom: '0.75rem' }}>
+                    ← {t('common.back')}
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '11px', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>✏️</div>
+                    <div>
+                        <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('consumptions.edit_title')}</h2>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>{form.date}</p>
+                    </div>
                 </div>
             </div>
+
+            {success && (
+                <div style={{ background: '#dcfce7', border: '1.5px solid #16a34a', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem', color: '#15803d', fontWeight: 600, fontSize: '0.88rem' }}>
+                    ✓ {t('consumptions.update_success')} — Redirection…
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}0c` }}>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Contexte</h3>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <Label>{t('consumptions.date')}</Label>
+                            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required style={inp(false)}
+                                onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.mileage')}</Label>
+                            <div style={{ position: 'relative' }}>
+                                <input type="number" value={form.mileage} onChange={e => setForm(p => ({ ...p, mileage: e.target.value }))} min="0" style={{ ...inp(false), paddingRight: '2.8rem' }} placeholder="45 230"
+                                    onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>km</span>
+                            </div>
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.vehicle')}</Label>
+                            <select value={form.vehicle_id} onChange={e => setForm(p => ({ ...p, vehicle_id: e.target.value }))} required style={{ ...inp(false), cursor: 'pointer' }}
+                                onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'}>
+                                <option value="">{t('consumptions.choose_vehicle')}</option>
+                                {vehicles.map(v => <option key={v.id} value={v.id}>{v.license_plate}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.driver')}</Label>
+                            <select value={form.driver_id} onChange={e => setForm(p => ({ ...p, driver_id: e.target.value }))} required style={{ ...inp(false), cursor: 'pointer' }}
+                                onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'}>
+                                <option value="">{t('consumptions.choose_driver')}</option>
+                                {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}0c` }}>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Carburant & Coût</h3>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <Label>{t('consumptions.liters')}</Label>
+                            <div style={{ position: 'relative' }}>
+                                <input type="number" value={form.fuel_volume} onChange={e => setForm(p => ({ ...p, fuel_volume: e.target.value }))} min="0" step="0.01" required style={{ ...inp(false), paddingRight: '2.8rem' }}
+                                    onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>L</span>
+                            </div>
+                        </div>
+                        <div>
+                            <Label>{t('consumptions.amount')}</Label>
+                            <div style={{ position: 'relative' }}>
+                                <input type="number" value={form.fuel_cost} onChange={e => setForm(p => ({ ...p, fuel_cost: e.target.value }))} min="0" step="0.01" required style={{ ...inp(false), paddingRight: '3.8rem' }}
+                                    onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.5rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}0c` }}>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('consumptions.document')}</h3>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem' }}>
+                        {existingDoc && (
+                            <a href={existingDoc} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: ACCENT, fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', background: '#f0fdf4', padding: '6px 14px', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                                📄 {t('consumptions.document_view')}
+                            </a>
+                        )}
+                        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', border: `2px dashed ${documentFile ? ACCENT : '#e2e8f0'}`, borderRadius: '12px', padding: '1.25rem', cursor: 'pointer', background: documentFile ? `${ACCENT}08` : '#f8faff' }}>
+                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={e => setDocumentFile(e.target.files[0] || null)} />
+                            <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{documentFile ? '📎' : '📤'}</div>
+                            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: documentFile ? ACCENT : '#64748b' }}>
+                                {documentFile ? documentFile.name : (existingDoc ? 'Remplacer le document...' : t('consumptions.document_hint'))}
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button type="button" onClick={() => navigate('/consumptions')} style={{ flex: 1, padding: '0.72rem', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+                        {t('common.cancel')}
+                    </button>
+                    <button type="submit" disabled={saving || success} style={{ flex: 1, padding: '0.72rem', borderRadius: '10px', border: 'none', background: ACCENT, color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'wait' : 'pointer', boxShadow: `0 4px 14px ${ACCENT}50` }}>
+                        {saving ? <><span className="spinner-border spinner-border-sm me-2" />{t('common.saving')}</> : `💾 ${t('common.update')}`}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }
