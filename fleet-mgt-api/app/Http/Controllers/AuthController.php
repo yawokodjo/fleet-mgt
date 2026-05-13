@@ -76,29 +76,41 @@ class AuthController extends Controller
 
             $user->login_attempts += 1;
 
-            // 🔴 3 tentatives → blocage 5 minutes
+            // 🔴 3e tentative → blocage immédiat
             if ($user->login_attempts >= 3) {
-                $user->blocked_until = now()->addMinutes(5);
+                $user->blocked_until  = now()->addMinutes(5);
                 $user->login_attempts = 0;
-                $user->block_count += 1;
+                $user->block_count   += 1;
 
-                // 💣 2 blocages → suppression du compte
+                // 💣 2e blocage → suppression définitive du compte
                 if ($user->block_count >= 2) {
-                    $user->delete(); // soft delete
+                    $user->save();
+                    $user->delete();
 
                     return response()->json([
-                        'code' => 'ACCOUNT_DELETED',
-                        'message' => 'Compte supprimé après plusieurs tentatives échouées',
+                        'code'    => 'ACCOUNT_DELETED',
+                        'message' => 'Votre compte a été désactivé suite à de trop nombreuses tentatives de connexion échouées. Veuillez contacter l\'administrateur.',
                     ], 403);
                 }
+
+                $user->save();
+
+                return response()->json([
+                    'code'              => 'ACCOUNT_BLOCKED',
+                    'message'           => 'Compte temporairement bloqué après 3 tentatives échouées. Réessayez dans 5 minutes.',
+                    'blocked_until'     => $user->blocked_until,
+                    'remaining_seconds' => (int) now()->diffInSeconds($user->blocked_until),
+                ], 423);
             }
 
             $user->save();
 
+            $remaining = 3 - $user->login_attempts;
+
             return response()->json([
-                'code' => 'INVALID_PASSWORD',
-                'message' => 'Mot de passe incorrect',
-                'remaining_attempts' => max(0, 3 - $user->login_attempts),
+                'code'               => 'INVALID_PASSWORD',
+                'message'            => "Mot de passe incorrect. Il vous reste {$remaining} tentative(s) avant le blocage du compte.",
+                'remaining_attempts' => $remaining,
             ], 401);
         }
 
