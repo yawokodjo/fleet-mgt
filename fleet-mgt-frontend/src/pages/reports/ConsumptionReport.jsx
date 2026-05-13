@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Container, Row, Col, Table, Button, Form, Alert } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import api from "../../axios";
+import Pagination from "../../components/Pagination";
+
+const PAGE_SIZE = 20;
 
 export default function ConsumptionReport() {
     const { t, i18n } = useTranslation();
@@ -13,6 +16,7 @@ export default function ConsumptionReport() {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         api.get("/vehicles-list")
@@ -48,6 +52,7 @@ export default function ConsumptionReport() {
             const res = await api.get("/reports/exportBetweenDates", { params: buildParams() });
             setData(res.data.consumptions ?? []);
             setTotals(res.data.totals ?? { total_fuel: 0, total_cost: 0 });
+            setCurrentPage(1);
         } catch (err) {
             setError(err.response?.data?.message || t('reports.load_error'));
             setData([]);
@@ -79,6 +84,11 @@ export default function ConsumptionReport() {
             }
         }
     };
+
+    const lastPage = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+    const from = data.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const to = Math.min(currentPage * PAGE_SIZE, data.length);
+    const pageData = useMemo(() => data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [data, currentPage]);
 
     return (
         <Container className="mt-4">
@@ -145,7 +155,7 @@ export default function ConsumptionReport() {
                         </tr>
                     </thead>
                     <tbody>
-                        {data.length > 0 ? data.map((item, i) => (
+                        {pageData.length > 0 ? pageData.map((item, i) => (
                             <tr key={i}>
                                 <td>{item.date ? new Date(item.date).toLocaleDateString(locale) : "-"}</td>
                                 <td>{item.vehicle}</td>
@@ -158,7 +168,7 @@ export default function ConsumptionReport() {
                             <tr><td colSpan="6" className="text-muted">{t('reports.no_records')}</td></tr>
                         )}
                     </tbody>
-                    {data.length > 0 && (
+                    {data.length > 0 && currentPage === lastPage && (
                         <tfoot className="fw-bold table-light">
                             <tr>
                                 <td colSpan="3">{t('reports.total')}</td>
@@ -170,6 +180,18 @@ export default function ConsumptionReport() {
                     )}
                 </Table>
             </div>
+
+            {data.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    lastPage={lastPage}
+                    total={data.length}
+                    perPage={PAGE_SIZE}
+                    from={from}
+                    to={to}
+                    onPageChange={setCurrentPage}
+                />
+            )}
 
             <div className="mt-3 d-flex gap-2">
                 <Button variant="success" onClick={() => exportReport("excel")}>{t('reports.export_excel_btn')}</Button>

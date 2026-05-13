@@ -15,7 +15,7 @@ class VehicleController extends Controller
      * Route: GET /api/vehicles
      * Accessible par : admin, manager, accountant
      */
-    public function index()
+    public function index(Request $request)
     {
         if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
             return response()->json([
@@ -23,7 +23,8 @@ class VehicleController extends Controller
             ], 403);
         }
 
-        $vehicles = Vehicle::with('currentDriver')->paginate(10);
+        $perPage = (int) $request->get('per_page', 10);
+        $vehicles = Vehicle::with('currentDriver')->paginate($perPage);
 
         return response()->json($vehicles);
     }

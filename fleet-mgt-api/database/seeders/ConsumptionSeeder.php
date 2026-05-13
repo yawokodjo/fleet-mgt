@@ -79,6 +79,9 @@ class ConsumptionSeeder extends Seeder
             [6, 2, 80,  46.0,  64400, 53250],
         ];
 
+        // Ne pas insérer si des données existent déjà
+        if (Consumption::count() > 0) return;
+
         foreach ($records as [$vi, $di, $daysAgo, $litres, $cout, $mileage]) {
             $vehicle = $vehicles->values()->get($vi % $vehicles->count());
             $driver  = $drivers->values()->get($di % $drivers->count());

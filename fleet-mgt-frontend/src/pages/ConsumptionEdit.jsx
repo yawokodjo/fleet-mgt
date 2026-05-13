@@ -62,8 +62,16 @@ export default function ConsumptionEdit() {
             await api.post(`/consumptions/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
             setSuccess(true);
             setTimeout(() => navigate('/consumptions'), 1500);
-        } catch { alert(t('common.error')); }
-        finally { setSaving(false); }
+        } catch (err) {
+            const msg = err.response?.data?.message;
+            const apiErrors = err.response?.data?.errors;
+            if (apiErrors) {
+                const firstMsg = Object.values(apiErrors).flat()[0];
+                alert(firstMsg || t('common.error'));
+            } else {
+                alert(msg || t('common.error'));
+            }
+        } finally { setSaving(false); }
     };
 
     if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}><div className="spinner-border text-success" /></div>;

@@ -45,13 +45,11 @@ class MaintenanceController extends Controller
             'driver_id'           => 'nullable|exists:users,id',
             'maintenance_type'    => 'required|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
             'maintenance_company' => 'required|string|max:100',
-            'scheduled_date'      => 'required|date|after_or_equal:today',
+            'scheduled_date'      => 'required|date',
             'cost'                => 'required|numeric|min:0',
             'description'         => 'nullable|string',
             'mileage_at_service'  => 'nullable|integer|min:0',
             'document'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ], [
-            'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
         ]);
 
         if ($request->hasFile('document')) {
@@ -94,15 +92,13 @@ class MaintenanceController extends Controller
             'driver_id'           => 'nullable|exists:users,id',
             'maintenance_type'    => 'sometimes|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
             'maintenance_company' => 'sometimes|string|max:100',
-            'scheduled_date'      => 'sometimes|date|after_or_equal:today',
+            'scheduled_date'      => 'sometimes|date',
             'completed_date'      => 'nullable|date',
             'cost'                => 'sometimes|numeric|min:0',
             'description'         => 'nullable|string',
             'status'              => 'sometimes|in:planned,in_progress,completed,cancelled',
             'mileage_at_service'  => 'nullable|integer|min:0',
             'document'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ], [
-            'scheduled_date.after_or_equal' => 'La date de maintenance ne peut pas être dans le passé.',
         ]);
 
         if ($request->hasFile('document')) {

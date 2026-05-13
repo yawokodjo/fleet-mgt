@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Form, InputGroup, Modal, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../axios';
+import Pagination from '../components/Pagination';
 
 export default function Users() {
     const navigate = useNavigate();
@@ -10,7 +11,7 @@ export default function Users() {
     const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
 
     const [users, setUsers] = useState([]);
-    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 15, from: 0, to: 0 });
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRole, setFilterRole] = useState('all');
@@ -19,33 +20,57 @@ export default function Users() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    useEffect(() => { fetchUsers(); }, []);
+    const searchTimeout = useRef(null);
 
-    useEffect(() => {
-        let filtered = users;
-        if (filterRole !== 'all') filtered = filtered.filter(u => u.role === filterRole);
-        if (searchTerm) {
-            filtered = filtered.filter(u =>
-                u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                u.email.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-        setFilteredUsers(filtered);
-    }, [searchTerm, filterRole, users]);
-
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async (page = 1, perPage = 15, search = '', role = 'all') => {
         setLoading(true);
         try {
-            const response = await api.get('/users');
-            const usersData = response.data.data || response.data.users || response.data || [];
-            setUsers(usersData);
-            setFilteredUsers(usersData);
+            const params = { page, per_page: perPage };
+            if (search) params.search = search;
+            if (role !== 'all') params.role = role;
+            const response = await api.get('/users', { params });
+            const d = response.data;
+            const usersData = d.data || d.users || d || [];
+            setUsers(Array.isArray(usersData) ? usersData : []);
+            setPagination({
+                currentPage: d.current_page ?? 1,
+                lastPage: d.last_page ?? 1,
+                total: d.total ?? (Array.isArray(usersData) ? usersData.length : 0),
+                perPage: d.per_page ?? perPage,
+                from: d.from ?? 0,
+                to: d.to ?? 0,
+            });
         } catch (err) {
             console.error(err);
             setError(t('users.load_error'));
         } finally {
             setLoading(false);
         }
+    }, [t]);
+
+    useEffect(() => {
+        fetchUsers(1, pagination.perPage, searchTerm, filterRole);
+    }, []);
+
+    const handleSearchChange = (value) => {
+        setSearchTerm(value);
+        clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => {
+            fetchUsers(1, pagination.perPage, value, filterRole);
+        }, 350);
+    };
+
+    const handleRoleChange = (role) => {
+        setFilterRole(role);
+        fetchUsers(1, pagination.perPage, searchTerm, role);
+    };
+
+    const handlePageChange = (page) => {
+        fetchUsers(page, pagination.perPage, searchTerm, filterRole);
+    };
+
+    const handlePerPageChange = (perPage) => {
+        fetchUsers(1, perPage, searchTerm, filterRole);
     };
 
     const handleDelete = async () => {
@@ -55,7 +80,7 @@ export default function Users() {
             setSuccess(t('users.delete_success', { name: userToDelete.name }));
             setShowDeleteModal(false);
             setUserToDelete(null);
-            fetchUsers();
+            fetchUsers(pagination.currentPage, pagination.perPage, searchTerm, filterRole);
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
             console.error(err);
@@ -75,15 +100,7 @@ export default function Users() {
         return <Badge bg={config.bg} className="px-3 py-2">{config.icon} {config.label}</Badge>;
     };
 
-    const stats = {
-        total: users.length,
-        admin: users.filter(u => u.role === 'admin').length,
-        manager: users.filter(u => u.role === 'manager').length,
-        driver: users.filter(u => u.role === 'driver').length,
-        accountant: users.filter(u => u.role === 'accountant').length
-    };
-
-    if (loading) {
+    if (loading && users.length === 0) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
                 <Spinner animation="border" variant="primary" />
@@ -92,10 +109,7 @@ export default function Users() {
     }
 
     return (
-        <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            minHeight: '100vh', paddingTop: '2rem', paddingBottom: '3rem'
-        }}>
+        <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '3rem' }}>
             <Container fluid>
                 <Row className="mb-4">
                     <Col>
@@ -115,36 +129,8 @@ export default function Users() {
                     </Col>
                 </Row>
 
-                {success && (
-                    <Alert variant="success" dismissible onClose={() => setSuccess('')} className="shadow-sm">
-                        ✅ {success}
-                    </Alert>
-                )}
-                {error && (
-                    <Alert variant="danger" dismissible onClose={() => setError('')} className="shadow-sm">
-                        ❌ {error}
-                    </Alert>
-                )}
-
-                <Row className="g-3 mb-4">
-                    {[
-                        { icon: '👥', count: stats.total, label: t('users.total') },
-                        { icon: '👑', count: stats.admin, label: t('users.admins') },
-                        { icon: '👨‍💼', count: stats.manager, label: t('users.managers') },
-                        { icon: '🚗', count: stats.driver, label: t('users.drivers') },
-                        { icon: '📊', count: stats.accountant, label: t('users.accountants') },
-                    ].map(({ icon, count, label }) => (
-                        <Col key={label} xs={6} sm={4} md className="d-flex">
-                            <Card className="border-0 shadow-lg flex-fill" style={{ borderRadius: '15px', background: 'rgba(255,255,255,0.95)' }}>
-                                <Card.Body className="text-center p-3">
-                                    <div style={{ fontSize: '1.8rem' }}>{icon}</div>
-                                    <h4 className="fw-bold mb-0">{count}</h4>
-                                    <small className="text-muted">{label}</small>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    ))}
-                </Row>
+                {success && <Alert variant="success" dismissible onClose={() => setSuccess('')} className="shadow-sm">✅ {success}</Alert>}
+                {error && <Alert variant="danger" dismissible onClose={() => setError('')} className="shadow-sm">❌ {error}</Alert>}
 
                 <Card className="border-0 shadow-lg mb-4" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.95)' }}>
                     <Card.Body className="p-4">
@@ -154,13 +140,13 @@ export default function Users() {
                                     <InputGroup.Text style={{ background: 'transparent', border: '2px solid #e9ecef' }}>🔍</InputGroup.Text>
                                     <Form.Control
                                         type="text" placeholder={t('users.search_placeholder')}
-                                        value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                                        value={searchTerm} onChange={(e) => handleSearchChange(e.target.value)}
                                         style={{ border: '2px solid #e9ecef', borderLeft: 'none' }}
                                     />
                                 </InputGroup>
                             </Col>
                             <Col md={6}>
-                                <Form.Select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}
+                                <Form.Select value={filterRole} onChange={(e) => handleRoleChange(e.target.value)}
                                     style={{ border: '2px solid #e9ecef' }}>
                                     <option value="all">{t('users.all_roles')}</option>
                                     <option value="admin">{t('users.role_admin_filter')}</option>
@@ -175,6 +161,11 @@ export default function Users() {
 
                 <Card className="border-0 shadow-lg" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.95)' }}>
                     <Card.Body className="p-4">
+                        {loading && (
+                            <div className="text-center py-3">
+                                <Spinner animation="border" size="sm" variant="primary" />
+                            </div>
+                        )}
                         <div className="table-responsive">
                             <Table hover className="align-middle">
                                 <thead>
@@ -187,8 +178,8 @@ export default function Users() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredUsers.length > 0 ? (
-                                        filteredUsers.map((user) => (
+                                    {users.length > 0 ? (
+                                        users.map((user) => (
                                             <tr key={user.id}>
                                                 <td>
                                                     <div className="d-flex align-items-center gap-3">
@@ -208,9 +199,7 @@ export default function Users() {
                                                 <td>{user.email}</td>
                                                 <td>{getRoleBadge(user.role)}</td>
                                                 <td>
-                                                    {user.created_at
-                                                        ? new Date(user.created_at).toLocaleDateString(locale)
-                                                        : 'N/A'}
+                                                    {user.created_at ? new Date(user.created_at).toLocaleDateString(locale) : 'N/A'}
                                                 </td>
                                                 <td className="text-center">
                                                     <div className="d-flex gap-2 justify-content-center">
@@ -239,6 +228,17 @@ export default function Users() {
                                 </tbody>
                             </Table>
                         </div>
+
+                        <Pagination
+                            currentPage={pagination.currentPage}
+                            lastPage={pagination.lastPage}
+                            total={pagination.total}
+                            perPage={pagination.perPage}
+                            from={pagination.from}
+                            to={pagination.to}
+                            onPageChange={handlePageChange}
+                            onPerPageChange={handlePerPageChange}
+                        />
                     </Card.Body>
                 </Card>
             </Container>

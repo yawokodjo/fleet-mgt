@@ -61,6 +61,9 @@ class MaintenanceSeeder extends Seeder
             [6, 2, 'vidange',    'Auto Service Lomé',       8,  null, 25000, 'planned',  'Vidange 55 000 km',                       null],
         ];
 
+        // Ne pas insérer si des données existent déjà
+        if (Maintenance::count() > 0) return;
+
         foreach ($records as [$vi, $di, $type, $company, $schedDaysAgo, $compDaysAgo, $cost, $status, $desc, $mileage]) {
             $vehicle = $vehicles->values()->get($vi % $vehicles->count());
             $driver  = $drivers->values()->get($di % $drivers->count());

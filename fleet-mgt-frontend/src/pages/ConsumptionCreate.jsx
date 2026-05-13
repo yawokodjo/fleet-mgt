@@ -75,8 +75,16 @@ export default function ConsumptionCreate() {
             await api.post('/consumptions', payload, { headers: { Authorization: `Bearer ${token}` } });
             setSuccess(true);
             setTimeout(() => navigate('/consumptions'), 1500);
-        } catch { alert(t('common.error')); }
-        finally { setSaving(false); }
+        } catch (err) {
+            const apiErrors = err.response?.data?.errors;
+            if (apiErrors) {
+                const mapped = {};
+                Object.entries(apiErrors).forEach(([k, v]) => { mapped[k] = Array.isArray(v) ? v[0] : v; });
+                setErrors(mapped);
+            } else {
+                alert(err.response?.data?.message || t('common.error'));
+            }
+        } finally { setSaving(false); }
     };
 
     if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}><div className="spinner-border text-success" /></div>;

@@ -74,7 +74,14 @@ export default function MaintenanceCreate() {
             setSuccess(true);
             setTimeout(() => navigate('/maintenances'), 1500);
         } catch (err) {
-            alert(err.response?.data?.message || t('maintenances.add_error'));
+            const apiErrors = err.response?.data?.errors;
+            if (apiErrors) {
+                const mapped = {};
+                Object.entries(apiErrors).forEach(([k, v]) => { mapped[k] = Array.isArray(v) ? v[0] : v; });
+                setErrors(mapped);
+            } else {
+                alert(err.response?.data?.message || t('maintenances.add_error'));
+            }
         } finally { setSaving(false); }
     };
 

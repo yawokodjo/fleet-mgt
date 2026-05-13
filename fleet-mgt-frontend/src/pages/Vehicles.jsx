@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import Pagination from '../components/Pagination';
 
 export default function Vehicles() {
   const [vehicles, setVehicles] = useState([]);
+  const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 10, from: 0, to: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -13,28 +15,33 @@ export default function Vehicles() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    fetchVehicles();
+    fetchVehicles(pagination.currentPage, pagination.perPage);
   }, []);
 
-  // Fermer le menu si on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setSelectedVehicle(null);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = async (page = 1, perPage = 10) => {
     setLoading(true);
     try {
-      const res = await api.get('/vehicles');
-      setVehicles(res.data);
+      const res = await api.get('/vehicles', { params: { page, per_page: perPage } });
+      const d = res.data;
+      setVehicles(d.data || []);
+      setPagination({
+        currentPage: d.current_page ?? 1,
+        lastPage: d.last_page ?? 1,
+        total: d.total ?? 0,
+        perPage: d.per_page ?? perPage,
+        from: d.from ?? 0,
+        to: d.to ?? 0,
+      });
     } catch (err) {
       console.error('Erreur lors du chargement des véhicules :', err);
       alert(t('vehicles.load_error'));
@@ -43,15 +50,20 @@ export default function Vehicles() {
     }
   };
 
+  const handlePageChange = (page) => {
+    setSelectedVehicle(null);
+    fetchVehicles(page, pagination.perPage);
+  };
+
+  const handlePerPageChange = (perPage) => {
+    setSelectedVehicle(null);
+    fetchVehicles(1, perPage);
+  };
+
   const handleRowClick = (event, vehicle) => {
     event.preventDefault();
-
-    // Calculer la position du menu
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX;
-    const y = rect.bottom;
-
-    setMenuPosition({ x, y });
+    setMenuPosition({ x: event.clientX, y: rect.bottom });
     setSelectedVehicle(vehicle);
   };
 
@@ -70,11 +82,10 @@ export default function Vehicles() {
       setSelectedVehicle(null);
       return;
     }
-
     try {
       const res = await api.delete(`/vehicles/${selectedVehicle.id}`);
       alert(res.data.message || t('vehicles.delete_success'));
-      fetchVehicles();
+      fetchVehicles(pagination.currentPage, pagination.perPage);
       setSelectedVehicle(null);
     } catch (err) {
       console.error('Erreur lors de la suppression :', err);
@@ -112,8 +123,8 @@ export default function Vehicles() {
             </tr>
           </thead>
           <tbody>
-            {vehicles.data && vehicles.data.length > 0 ? (
-              vehicles.data.map((vehicle) => (
+            {vehicles.length > 0 ? (
+              vehicles.map((vehicle) => (
                 <tr
                   key={vehicle.id}
                   className="text-center"
@@ -124,29 +135,14 @@ export default function Vehicles() {
                     backgroundColor: selectedVehicle?.id === vehicle.id ? '#0d6efd' : 'transparent',
                     color: selectedVehicle?.id === vehicle.id ? 'white' : 'inherit',
                     transition: 'all 0.2s',
-                    position: 'relative'
                   }}
-                  onMouseEnter={(e) => {
-                    if (selectedVehicle?.id !== vehicle.id) {
-                      e.currentTarget.style.backgroundColor = '#f8f9fa';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedVehicle?.id !== vehicle.id) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
+                  onMouseEnter={(e) => { if (selectedVehicle?.id !== vehicle.id) e.currentTarget.style.backgroundColor = '#f8f9fa'; }}
+                  onMouseLeave={(e) => { if (selectedVehicle?.id !== vehicle.id) e.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
                   <td>{vehicle.marque}</td>
                   <td>{vehicle.model}</td>
                   <td>
-                    <span
-                      className="badge"
-                      style={{
-                        backgroundColor: selectedVehicle?.id === vehicle.id ? 'rgba(255,255,255,0.3)' : '#6c757d',
-                        color: selectedVehicle?.id === vehicle.id ? 'white' : 'white'
-                      }}
-                    >
+                    <span className="badge" style={{ backgroundColor: selectedVehicle?.id === vehicle.id ? 'rgba(255,255,255,0.3)' : '#6c757d', color: 'white' }}>
                       {vehicle.license_plate}
                     </span>
                   </td>
@@ -164,7 +160,17 @@ export default function Vehicles() {
         </table>
       </div>
 
-      {/* Menu contextuel */}
+      <Pagination
+        currentPage={pagination.currentPage}
+        lastPage={pagination.lastPage}
+        total={pagination.total}
+        perPage={pagination.perPage}
+        from={pagination.from}
+        to={pagination.to}
+        onPageChange={handlePageChange}
+        onPerPageChange={handlePerPageChange}
+      />
+
       {selectedVehicle && (
         <div
           ref={menuRef}
@@ -177,14 +183,7 @@ export default function Vehicles() {
             animation: 'fadeIn 0.2s ease-in-out'
           }}
         >
-          <div
-            className="card shadow-lg border-0"
-            style={{
-              minWidth: '220px',
-              borderRadius: '12px',
-              overflow: 'hidden'
-            }}
-          >
+          <div className="card shadow-lg border-0" style={{ minWidth: '220px', borderRadius: '12px', overflow: 'hidden' }}>
             <div className="card-header bg-primary text-white py-2">
               <small className="fw-bold">{t('common.actions')}</small>
             </div>
@@ -215,19 +214,11 @@ export default function Vehicles() {
         </div>
       )}
 
-      {/* CSS pour l'animation */}
       <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
+          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
-
         .list-group-item-action:hover {
           background-color: #f8f9fa !important;
           transform: translateX(3px);

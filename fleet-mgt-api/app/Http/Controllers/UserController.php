@@ -19,10 +19,23 @@ class UserController extends Controller
         Gate::authorize('admin-action');
 
         $perPage = $request->get('per_page', 15);
+        $search  = $request->get('search', '');
+        $role    = $request->get('role', '');
 
-        return response()->json(
-            User::withTrashed()->paginate($perPage)
-        );
+        $query = User::withTrashed();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($role && $role !== 'all') {
+            $query->where('role', $role);
+        }
+
+        return response()->json($query->paginate($perPage));
     }
 
     /**

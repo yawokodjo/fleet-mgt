@@ -47,13 +47,11 @@ class ConsumptionController extends Controller
         $data = $request->validate([
             'vehicle_id'  => 'required|exists:vehicles,id',
             'driver_id'   => 'required|exists:users,id',
-            'date'        => 'required|date|before_or_equal:today',
+            'date'        => 'required|date',
             'fuel_volume' => 'required|numeric|min:0.01',
             'fuel_cost'   => 'required|numeric|min:0.01',
             'mileage'     => 'nullable|integer|min:0',
             'document'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ], [
-            'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
         ]);
 
         if ($request->hasFile('document')) {
@@ -94,13 +92,11 @@ class ConsumptionController extends Controller
         $data = $request->validate([
             'vehicle_id'  => 'sometimes|exists:vehicles,id',
             'driver_id'   => 'sometimes|exists:users,id',
-            'date'        => 'sometimes|date|before_or_equal:today',
+            'date'        => 'sometimes|date',
             'fuel_volume' => 'sometimes|numeric|min:0.01',
             'fuel_cost'   => 'sometimes|numeric|min:0.01',
             'mileage'     => 'nullable|integer|min:0',
             'document'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ], [
-            'date.before_or_equal' => 'La date de consommation ne peut pas être dans le futur.',
         ]);
 
         if ($request->hasFile('document')) {

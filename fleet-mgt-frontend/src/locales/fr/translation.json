@@ -25,7 +25,14 @@
     "edit_info": "Éditer les informations",
     "delete_permanently": "Retirer définitivement",
     "irreversible": "Cette action est irréversible",
-    "navigate": "naviguer"
+    "navigate": "naviguer",
+    "pagination_showing": "Affichage de {{from}} à {{to}} sur {{total}}",
+    "per_page": "Par page",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page",
+    "of_pages": "sur {{total}}",
+    "items_total": "{{total}} élément(s)"
   },
   "nav": {
     "home": "Accueil",
@@ -46,7 +53,8 @@
     "admin_group": "Administration"
   },
   "header": {
-    "title": "Gestion de Flotte Véhicule Compassion International Togo",
+    "title": "Gestion de Flotte Véhicule",
+    "title_sub": "Compassion International Togo",
     "title_short": "Gestion de Flotte - CI Togo",
     "search_placeholder": "Rechercher... Ctrl+K",
     "search_modal_placeholder": "Rechercher un véhicule, chauffeur, maintenance...",
@@ -56,7 +64,20 @@
     "results_vehicles": "Véhicules",
     "results_drivers": "Chauffeurs",
     "results_maintenances": "Maintenances",
-    "results_consumptions": "Consommations"
+    "results_consumptions": "Consommations",
+    "logout": "Se déconnecter"
+  },
+  "help": {
+    "title": "Aide — Gestion de Flotte",
+    "close": "Fermer",
+    "vehicles_title": "Véhicules",
+    "vehicles_desc": "Consultez, ajoutez et modifiez les véhicules du parc. Accédez via le menu latéral → Véhicules.",
+    "fuel_title": "Consommations carburant",
+    "fuel_desc": "Enregistrez les pleins et suivez la consommation de chaque véhicule. Menu → Consommation.",
+    "maint_title": "Maintenances",
+    "maint_desc": "Planifiez et suivez les entretiens. Statuts : Planifié, En cours, Terminé. Menu → Maintenance.",
+    "reports_title": "Rapports",
+    "reports_desc": "Exportez les données en PDF ou Excel. Filtrez par date et véhicule. Menu → Rapports."
   },
   "dashboard": {
     "welcome": "👋 Bienvenue, {{name}} !",

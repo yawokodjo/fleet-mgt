@@ -25,7 +25,14 @@
     "edit_info": "Edit information",
     "delete_permanently": "Remove permanently",
     "irreversible": "This action is irreversible",
-    "navigate": "navigate"
+    "navigate": "navigate",
+    "pagination_showing": "Showing {{from}} to {{to}} of {{total}}",
+    "per_page": "Per page",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of_pages": "of {{total}}",
+    "items_total": "{{total}} item(s)"
   },
   "nav": {
     "home": "Home",
@@ -46,7 +53,8 @@
     "admin_group": "Administration"
   },
   "header": {
-    "title": "Compassion International Togo Vehicle Fleet Management",
+    "title": "Vehicle Fleet Management",
+    "title_sub": "Compassion International Togo",
     "title_short": "Fleet Management - CI Togo",
     "search_placeholder": "Search... Ctrl+K",
     "search_modal_placeholder": "Search for a vehicle, driver, maintenance...",
@@ -56,7 +64,20 @@
     "results_vehicles": "Vehicles",
     "results_drivers": "Drivers",
     "results_maintenances": "Maintenances",
-    "results_consumptions": "Consumptions"
+    "results_consumptions": "Consumptions",
+    "logout": "Sign out"
+  },
+  "help": {
+    "title": "Help — Fleet Management",
+    "close": "Close",
+    "vehicles_title": "Vehicles",
+    "vehicles_desc": "View, add and edit fleet vehicles. Access via sidebar → Vehicles.",
+    "fuel_title": "Fuel Consumptions",
+    "fuel_desc": "Log refuels and track each vehicle's consumption. Sidebar → Consumptions.",
+    "maint_title": "Maintenance",
+    "maint_desc": "Plan and track servicing. Statuses: Planned, In Progress, Completed. Sidebar → Maintenance.",
+    "reports_title": "Reports",
+    "reports_desc": "Export data to PDF or Excel. Filter by date and vehicle. Sidebar → Reports."
   },
   "dashboard": {
     "welcome": "👋 Welcome, {{name}}!",

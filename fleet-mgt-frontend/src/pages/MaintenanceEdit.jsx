@@ -81,8 +81,14 @@ export default function MaintenanceEdit() {
             }
             setSuccess(true);
             setTimeout(() => navigate('/maintenances'), 1500);
-        } catch {
-            setMessage(t('maintenances.update_error'));
+        } catch (err) {
+            const apiErrors = err.response?.data?.errors;
+            if (apiErrors) {
+                const firstMsg = Object.values(apiErrors).flat()[0];
+                setMessage(firstMsg || t('maintenances.update_error'));
+            } else {
+                setMessage(err.response?.data?.message || t('maintenances.update_error'));
+            }
         } finally { setSaving(false); }
     };
 
