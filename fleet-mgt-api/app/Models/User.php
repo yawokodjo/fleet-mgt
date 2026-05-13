@@ -21,6 +21,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'login_attempts',
+        'block_count',
+        'blocked_until',
     ];
 
     /**
@@ -36,7 +39,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed', // Laravel 10+ (sécurité ++)
+        'blocked_until'     => 'datetime',
+        'password'          => 'hashed',
     ];
 
     /* =====================================================
