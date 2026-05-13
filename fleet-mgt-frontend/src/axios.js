@@ -37,17 +37,20 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('❌ Response Error:', error.response?.status, error.message);
+    const status  = error.response?.status;
+    const url     = error.config?.url || '';
+    const isLogin = url.includes('/login') || url.includes('/register');
 
-    // Gérer les erreurs spécifiques
+    // Routes d'auth : laisser passer toutes les erreurs au composant appelant
+    if (isLogin) {
+      return Promise.reject(error);
+    }
+
     if (error.response) {
-      // Le serveur a répondu avec un code d'erreur
-      const { status, data } = error.response;
-
       switch (status) {
         case 401:
-          // Token invalide ou expiré
-          console.warn('⚠️ Session expirée, redirection vers login');
+          // Session expirée en dehors du login → déconnexion
+          console.warn('⚠️ Session expirée');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
@@ -55,33 +58,21 @@ api.interceptors.response.use(
 
         case 403:
           console.error('🚫 Accès interdit');
-          alert('Vous n\'avez pas les permissions nécessaires.');
-          break;
-
-        case 404:
-          console.error('🔍 Ressource non trouvée');
           break;
 
         case 422:
-          // Erreurs de validation Laravel
-          console.error('⚠️ Erreur de validation:', data.errors);
+          console.error('⚠️ Erreur de validation:', error.response.data?.errors);
           break;
 
         case 500:
-          console.error('💥 Erreur serveur:', data.message);
-          alert('Erreur serveur. Vérifiez la console pour plus de détails.');
+          console.error('💥 Erreur serveur:', error.response.data?.message);
           break;
 
         default:
-          console.error(`❌ Erreur ${status}:`, data.message);
+          console.error(`❌ Erreur ${status}:`, error.response.data?.message);
       }
     } else if (error.request) {
-      // La requête a été envoyée mais pas de réponse
-      console.error('🌐 Aucune réponse du serveur. Vérifiez que le backend Laravel est en cours d\'exécution.');
-      alert('Impossible de contacter le serveur. Vérifiez votre connexion.');
-    } else {
-      // Erreur lors de la configuration de la requête
-      console.error('⚙️ Erreur de configuration:', error.message);
+      console.error('🌐 Aucune réponse du serveur.');
     }
 
     return Promise.reject(error);

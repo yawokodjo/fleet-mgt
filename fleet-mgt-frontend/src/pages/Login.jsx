@@ -50,19 +50,25 @@ export default function Login() {
       login(res.data.user, res.data.access_token);
       setRemainingAttempts(3);
     } catch (err) {
-      const d = err.response?.data;
-      if (d?.code === 'ACCOUNT_BLOCKED') {
+      const d      = err.response?.data;
+      const code   = d?.code;
+
+      if (code === 'ACCOUNT_BLOCKED') {
         setIsBlocked(true);
-        setBlockEndTime(new Date(d.blocked_until || Date.now() + 300000));
-        setRemainingTime(d.remaining_seconds || 300);
-        setError(d.message || t('login.blocked_title'));
-      } else if (d?.code === 'ACCOUNT_DELETED') {
+        const seconds = d.remaining_seconds || 300;
+        setRemainingTime(Math.round(seconds));
+        setBlockEndTime(new Date(Date.now() + seconds * 1000));
+        setError(d.message);
+      } else if (code === 'ACCOUNT_DELETED') {
         setShowDeleteModal(true);
-      } else if (d?.code === 'INVALID_PASSWORD') {
-        setRemainingAttempts(d.remaining_attempts || 0);
-        setError(d.message || t('login.remaining_attempts'));
+      } else if (code === 'INVALID_PASSWORD') {
+        const left = d.remaining_attempts ?? (remainingAttempts - 1);
+        setRemainingAttempts(left);
+        setError(d.message || `Mot de passe incorrect. Il vous reste ${left} tentative(s).`);
+      } else if (!err.response) {
+        setError('Impossible de contacter le serveur. Vérifiez votre connexion.');
       } else {
-        setError(d?.message || t('login.error_title'));
+        setError(d?.message || 'Email ou mot de passe incorrect.');
       }
     } finally {
       setLoading(false);
