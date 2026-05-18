@@ -26,10 +26,11 @@ Route::get('/message', [MessageController::class, 'index']);
 Route::get('/search', [SearchController::class, 'search']);
 
 // Authentification
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
-Route::post('/reset-password', [PasswordResetController::class, 'reset']);
+// throttle:10,1 = max 10 requêtes/minute par IP (OWASP : rate limiting par IP)
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:5,1');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
 Route::get('/reset-password/{token}', function ($token) {
     return view('auth.reset-password', ['token' => $token]);
 })->name('password.reset');
@@ -56,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ------------------------------------------------------------------------
     // Véhicules
     // ------------------------------------------------------------------------
+    Route::get('/vehicles/expiring-documents', [VehicleController::class, 'expiringDocuments']); // Avant apiResource
     Route::apiResource('vehicles', VehicleController::class);
     Route::get('/vehicles-list', [VehicleController::class, 'list']); // Liste simple
     Route::get('/vehicles-details/{vehicle}', [VehicleController::class, 'detailsVehicle']); // Détails complets

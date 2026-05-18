@@ -22,7 +22,7 @@ export default function VehicleCreate() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    const [form, setForm] = useState({ marque: '', model: '', license_plate: '', year: '', fuel_type: '', fuel_card: '', mileage: 0, status: 'operational', current_driver_id: '' });
+    const [form, setForm] = useState({ marque: '', model: '', license_plate: '', year: '', fuel_type: '', fuel_card: '', mileage: 0, status: 'operational', current_driver_id: '', insurance_expiry: '', technical_inspection_expiry: '', tvm_expiry: '' });
     const [documentFile, setDocumentFile] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -61,7 +61,7 @@ export default function VehicleCreate() {
                     <div style={{ width: '44px', height: '44px', borderRadius: '11px', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>🚗</div>
                     <div>
                         <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('vehicles.add_title')}</h2>
-                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>Remplissez les informations du véhicule</p>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>{t('vehicles.add_subtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -76,7 +76,7 @@ export default function VehicleCreate() {
                 {/* Section: Identification */}
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}08` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Identification</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('vehicles.section_identification')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -109,7 +109,7 @@ export default function VehicleCreate() {
                 {/* Section: Carburant & Statut */}
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}08` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Carburant & Statut</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('vehicles.section_fuel_status')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -149,6 +149,33 @@ export default function VehicleCreate() {
                                 <option value="out_of_service">{t('vehicles.status_out_of_service')}</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                {/* Section: Documents Réglementaires */}
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: 'linear-gradient(135deg, #fff1f208, #fef9f008)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ fontSize: '1rem' }}>🛡️</span>
+                            <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: '#dc2626' }}>{t('vehicles.regulatory_docs')}</h3>
+                        </div>
+                        <p style={{ margin: '3px 0 0', fontSize: '0.72rem', color: '#94a3b8' }}>{t('vehicles.regulatory_docs_hint_create')}</p>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                        {[
+                            { name: 'insurance_expiry',            icon: '🛡️', label: t('vehicles.insurance_expiry_label') },
+                            { name: 'technical_inspection_expiry', icon: '🔬', label: t('vehicles.inspection_expiry_label') },
+                            { name: 'tvm_expiry',                  icon: '📋', label: t('vehicles.tvm_expiry_label') },
+                        ].map(f => (
+                            <div key={f.name}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                                    <span>{f.icon}</span>{f.label}
+                                </label>
+                                <input type="date" name={f.name} value={form[f.name]} onChange={handleChange} style={inp(errors[f.name])}
+                                    onFocus={e => e.target.style.borderColor = '#dc2626'} onBlur={e => e.target.style.borderColor = errors[f.name] ? '#fca5a5' : '#e2e8f0'} />
+                                <Err msg={errors[f.name]?.[0]} />
+                            </div>
+                        ))}
                     </div>
                 </div>
 

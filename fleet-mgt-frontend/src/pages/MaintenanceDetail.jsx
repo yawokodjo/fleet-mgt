@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import api from '../axios';
 
 const STATUS_MAP = {
-    planned:     { label: 'Planifié',  color: '#0d6efd', bg: '#eff6ff' },
-    in_progress: { label: 'En cours',  color: '#d97706', bg: '#fef3c7' },
-    completed:   { label: 'Terminé',   color: '#16a34a', bg: '#dcfce7' },
-    cancelled:   { label: 'Annulé',    color: '#dc2626', bg: '#fee2e2' },
+    planned:     { key: 'maintenances.status_label_planned',     color: '#0d6efd', bg: '#eff6ff' },
+    in_progress: { key: 'maintenances.status_label_in_progress', color: '#d97706', bg: '#fef3c7' },
+    completed:   { key: 'maintenances.status_label_completed',   color: '#16a34a', bg: '#dcfce7' },
+    cancelled:   { key: 'maintenances.status_label_cancelled',   color: '#dc2626', bg: '#fee2e2' },
 };
 
 function InfoRow({ icon, label, value, badge }) {
@@ -43,7 +43,7 @@ export default function MaintenanceDetail() {
     if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}><div className="spinner-border text-warning" /></div>;
     if (!m) return null;
 
-    const st = STATUS_MAP[m.status] || { label: m.status, color: '#64748b', bg: '#f1f5f9' };
+    const st = STATUS_MAP[m.status] || { key: null, color: '#64748b', bg: '#f1f5f9' };
 
     return (
         <div style={{ padding: '1.5rem', maxWidth: '660px', margin: '0 auto' }}>
@@ -54,7 +54,7 @@ export default function MaintenanceDetail() {
                     <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('maintenances.detail_title')}</h2>
                     <div style={{ display: 'flex', align: 'center', gap: '0.6rem', marginTop: '4px' }}>
                         <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{m.vehicle?.license_plate || '—'}</span>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: st.color, background: st.bg, padding: '2px 9px', borderRadius: '20px' }}>{st.label}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: st.color, background: st.bg, padding: '2px 9px', borderRadius: '20px' }}>{st.key ? t(st.key) : m.status}</span>
                     </div>
                 </div>
             </div>
@@ -63,12 +63,12 @@ export default function MaintenanceDetail() {
             {m.cost && (
                 <div style={{ background: '#fff', borderRadius: '12px', border: '1.5px solid #f1f5f9', padding: '1rem 1.4rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
                     <div>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Coût total</div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{t('maintenances.detail_total_cost')}</div>
                         <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fd7e14' }}>{Number(m.cost).toLocaleString()} FCFA</div>
                     </div>
                     {m.mileage_at_service && (
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Kilométrage</div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{t('maintenances.detail_mileage')}</div>
                             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>{Number(m.mileage_at_service).toLocaleString()} km</div>
                         </div>
                     )}
@@ -78,12 +78,12 @@ export default function MaintenanceDetail() {
             {/* Details */}
             <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', padding: '0.4rem 1.4rem', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', marginBottom: '1.25rem' }}>
                 <InfoRow icon="📅" label={t('maintenances.detail_date')}    value={m.scheduled_date} />
-                <InfoRow icon="✅" label="Date réalisée"                     value={m.completed_date || '—'} />
+                <InfoRow icon="✅" label={t('maintenances.detail_completed_date')} value={m.completed_date || '—'} />
                 <InfoRow icon="🚗" label={t('maintenances.detail_vehicle')} value={m.vehicle?.license_plate} />
                 <InfoRow icon="👤" label={t('maintenances.detail_driver')}  value={m.driver?.name} />
                 <InfoRow icon="🔩" label={t('maintenances.detail_type')}    value={m.maintenance_type} />
                 <InfoRow icon="🏢" label={t('maintenances.detail_company')} value={m.maintenance_company} />
-                <InfoRow icon="🔄" label={t('maintenances.detail_status') || 'Statut'} value={st.label} badge={st} />
+                <InfoRow icon="🔄" label={t('maintenances.detail_status') || t('vehicles.status')} value={st.key ? t(st.key) : m.status} badge={st} />
                 {m.description && <InfoRow icon="📝" label={t('maintenances.detail_desc')} value={m.description} />}
                 {m.document_url && (
                     <div style={{ padding: '0.72rem 0' }}>

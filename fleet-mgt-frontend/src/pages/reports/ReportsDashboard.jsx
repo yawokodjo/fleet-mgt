@@ -154,14 +154,17 @@ function KpiCard({ icon, label, value, sub, color, spark, onClick, badge }) {
 }
 
 /* ── Status Legend Row ── */
-function StatusRow({ label, count, total, color }) {
+function StatusRow({ label, count, total, color, onClick }) {
     const pct = total > 0 ? Math.round(count / total * 100) : 0;
     return (
-        <div style={{ marginBottom: '0.9rem' }}>
+        <div onClick={onClick} style={{ marginBottom: '0.9rem', cursor: onClick ? 'pointer' : 'default', borderRadius: '8px', padding: onClick ? '2px 4px' : '0', transition: 'background 0.15s' }}
+            onMouseEnter={e => { if (onClick) e.currentTarget.style.background = '#f8fafc'; }}
+            onMouseLeave={e => { if (onClick) e.currentTarget.style.background = 'transparent'; }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
                     <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>{label}</span>
+                    {onClick && <span style={{ fontSize: '0.65rem', color, fontWeight: 700 }}>↗</span>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '0.8rem', fontWeight: 800, color }}>{count}</span>
@@ -178,6 +181,7 @@ function StatusRow({ label, count, total, color }) {
 /* ── Report Entry Card ── */
 function ReportEntryCard({ color, gradient, title, desc, features, route, IlluComp, stat, statLabel }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [hovered, setHovered] = useState(false);
     return (
         <div
@@ -237,7 +241,7 @@ function ReportEntryCard({ color, gradient, title, desc, features, route, IlluCo
                     onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.boxShadow = `0 8px 24px ${color}55`; }}
                     onMouseLeave={e => { e.currentTarget.style.opacity = '1';   e.currentTarget.style.boxShadow = `0 4px 16px ${color}40`; }}
                 >
-                    Accéder au rapport →
+                    {t('reports.access_report')}
                 </button>
             </div>
         </div>
@@ -315,7 +319,7 @@ export default function ReportsDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>
             <div style={{ width: '52px', height: '52px', border: '4px solid #e2e8f0', borderTopColor: '#0d6efd', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>Chargement des données…</span>
+            <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>{t('common.loading')}</span>
         </div>
     );
 
@@ -336,26 +340,26 @@ export default function ReportsDashboard() {
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.6rem' }}>
                             <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', borderRadius: '10px', padding: '6px 14px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                                Tableau de bord
+                                {t('nav.dashboard')}
                             </div>
                             <div style={{ background: '#10b981', borderRadius: '20px', padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700, color: '#fff' }}>
-                                ● Données en direct
+                                {t('reports.live_data_badge')}
                             </div>
                         </div>
                         <h1 style={{ margin: 0, fontSize: 'clamp(1.4rem, 2.5vw, 2rem)', fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
-                            Rapports &amp; Analyses
+                            {t('reports.hero_title')}
                         </h1>
                         <p style={{ margin: '0.5rem 0 0', fontSize: '0.88rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
-                            Vue d'ensemble de la flotte — <span style={{ color: '#60c8ff', fontWeight: 600 }}>{monthName}</span>
+                            {t('reports.fleet_overview')} — <span style={{ color: '#60c8ff', fontWeight: 600 }}>{monthName}</span>
                         </p>
 
                         {/* Quick stats row */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1.25rem' }}>
                             {[
-                                { label: 'Véhicules', value: vehicles.length, icon: '🚗' },
-                                { label: 'Maintenances', value: maintenances.length, icon: '🔧' },
-                                { label: 'Pleins', value: consumptions.length, icon: '⛽' },
-                                { label: 'Alertes', value: stats.alerts.length, icon: '⚠️' },
+                                { label: t('reports.vehicles_section'),    value: vehicles.length,     icon: '🚗' },
+                                { label: t('reports.maintenances_section'), value: maintenances.length, icon: '🔧' },
+                                { label: t('reports.quick_refuels'),        value: consumptions.length, icon: '⛽' },
+                                { label: t('reports.quick_alerts'),         value: stats.alerts.length, icon: '⚠️' },
                             ].map((s, i) => (
                                 <div key={i} style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', borderRadius: '12px', padding: '0.55rem 1rem', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.12)' }}>
                                     <span style={{ fontSize: '1rem' }}>{s.icon}</span>
@@ -380,36 +384,36 @@ export default function ReportsDashboard() {
                 <div style={{ background: 'linear-gradient(135deg, #fff7ed, #fff3e0)', border: '1.5px solid #fed7aa', borderRadius: '14px', padding: '0.85rem 1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fd7e14', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>⚠️</div>
                     <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#92400e' }}>{stats.alerts.length} véhicule(s) hors service ou en maintenance</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#92400e' }}>{t('reports.vehicles_alert', { count: stats.alerts.length })}</div>
                         <div style={{ fontSize: '0.78rem', color: '#b45309', marginTop: '2px' }}>{stats.alerts.map(v => v.license_plate).join(' · ')}</div>
                     </div>
-                    <button onClick={() => navigate('/vehicles')} style={{ background: '#fd7e14', border: 'none', color: '#fff', borderRadius: '8px', padding: '5px 14px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
-                        Voir →
+                    <button onClick={() => navigate('/vehicles?status=maintenance,out_of_service')} style={{ background: '#fd7e14', border: 'none', color: '#fff', borderRadius: '8px', padding: '5px 14px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                        {t('reports.see_link')}
                     </button>
                 </div>
             )}
 
             {/* ── KPI Cards ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
-                <KpiCard icon="🚗" color="#0d6efd" label="Véhicules"
+                <KpiCard icon="🚗" color="#0d6efd" label={t('reports.vehicles_section')}
                     value={vehicles.length}
-                    sub={`${stats.vByStatus.operational} opérationnel(s)`}
-                    badge={`${stats.vByStatus.maintenance} en maint.`}
+                    sub={t('dashboard.vehicles_kpi_sub', { op: stats.vByStatus.operational, mnt: stats.vByStatus.maintenance })}
+                    badge={`${stats.vByStatus.maintenance} ${t('vehicles.status_maintenance').toLowerCase()}`}
                     onClick={() => navigate('/vehicles')} />
-                <KpiCard icon="🔧" color="#fd7e14" label="Maintenances"
+                <KpiCard icon="🔧" color="#fd7e14" label={t('reports.maintenances_section')}
                     value={maintenances.length}
-                    sub={`${stats.mByStatus.in_progress} en cours · ${stats.mByStatus.planned} planifié(s)`}
+                    sub={t('dashboard.maintenances_kpi_sub', { inProgress: stats.mByStatus.in_progress, planned: stats.mByStatus.planned })}
                     badge={`${fmt(Math.round(stats.totalMaintCost))} FCFA`}
                     onClick={() => navigate('/maintenances')} />
-                <KpiCard icon="⛽" color="#198754" label={`Carburant — ${monthName}`}
+                <KpiCard icon="⛽" color="#198754" label={t('dashboard.fuel_kpi_label', { month: monthName })}
                     value={`${fmtK(stats.totalFuelCost)} FCFA`}
-                    sub={`${stats.totalFuelVolume.toFixed(0)} L · ${stats.thisMonthCount} plein(s)`}
+                    sub={t('dashboard.fuel_kpi_sub', { vol: stats.totalFuelVolume.toFixed(0), count: stats.thisMonthCount })}
                     spark={stats.sparkFuel}
                     onClick={() => navigate('/consumptions')} />
-                <KpiCard icon="📈" color="#6610f2" label="Consommation moy."
+                <KpiCard icon="📈" color="#6610f2" label={t('reports.avg_consumption')}
                     value={stats.avgL100 ? `${stats.avgL100} L/100` : '—'}
-                    sub={stats.avgL100 ? 'Flotte complète' : 'Données insuffisantes'}
-                    badge={`${fmtK(stats.allFuelCost)} FCFA total`} />
+                    sub={stats.avgL100 ? t('reports.full_fleet') : t('reports.insufficient_data')}
+                    badge={`${fmtK(stats.allFuelCost)} FCFA ${t('reports.total_cost_label')}`} />
             </div>
 
             {/* ── Breakdown Charts ── */}
@@ -419,8 +423,8 @@ export default function ReportsDashboard() {
                 <div style={{ background: '#fff', borderRadius: '20px', padding: '1.5rem', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>Véhicules</h3>
-                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Répartition par statut</p>
+                            <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('reports.vehicles_section')}</h3>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('reports.vehicles_distribution')}</p>
                         </div>
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#eff6ff', color: '#0d6efd', padding: '4px 10px', borderRadius: '20px' }}>{vehicles.length} total</span>
                     </div>
@@ -431,9 +435,9 @@ export default function ReportsDashboard() {
                             { value: stats.vByStatus.out_of_service, color: '#dc2626' },
                         ]} />
                         <div style={{ flex: 1 }}>
-                            <StatusRow label="Opérationnel"  count={stats.vByStatus.operational}    total={vehicles.length} color="#16a34a" />
-                            <StatusRow label="En maintenance" count={stats.vByStatus.maintenance}     total={vehicles.length} color="#d97706" />
-                            <StatusRow label="Hors service"   count={stats.vByStatus.out_of_service}  total={vehicles.length} color="#dc2626" />
+                            <StatusRow label={t('reports.status_operational')}   count={stats.vByStatus.operational}    total={vehicles.length} color="#16a34a" onClick={() => navigate('/vehicles?status=operational')} />
+                            <StatusRow label={t('reports.status_maintenance')}   count={stats.vByStatus.maintenance}     total={vehicles.length} color="#d97706" onClick={() => navigate('/vehicles?status=maintenance')} />
+                            <StatusRow label={t('reports.status_out_of_service')} count={stats.vByStatus.out_of_service}  total={vehicles.length} color="#dc2626" onClick={() => navigate('/vehicles?status=out_of_service')} />
                         </div>
                     </div>
                 </div>
@@ -442,8 +446,8 @@ export default function ReportsDashboard() {
                 <div style={{ background: '#fff', borderRadius: '20px', padding: '1.5rem', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>Maintenances</h3>
-                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Répartition par statut</p>
+                            <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('reports.maintenances_section')}</h3>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('reports.vehicles_distribution')}</p>
                         </div>
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#fff7ed', color: '#fd7e14', padding: '4px 10px', borderRadius: '20px' }}>{maintenances.length} total</span>
                     </div>
@@ -455,10 +459,10 @@ export default function ReportsDashboard() {
                             { value: stats.mByStatus.cancelled,   color: '#dc2626' },
                         ]} />
                         <div style={{ flex: 1 }}>
-                            <StatusRow label="Planifié"  count={stats.mByStatus.planned}     total={maintenances.length} color="#0d6efd" />
-                            <StatusRow label="En cours"  count={stats.mByStatus.in_progress} total={maintenances.length} color="#d97706" />
-                            <StatusRow label="Terminé"   count={stats.mByStatus.completed}   total={maintenances.length} color="#16a34a" />
-                            <StatusRow label="Annulé"    count={stats.mByStatus.cancelled}   total={maintenances.length} color="#dc2626" />
+                            <StatusRow label={t('maintenances.status_label_planned')}     count={stats.mByStatus.planned}     total={maintenances.length} color="#0d6efd" />
+                            <StatusRow label={t('maintenances.status_label_in_progress')} count={stats.mByStatus.in_progress} total={maintenances.length} color="#d97706" />
+                            <StatusRow label={t('maintenances.status_label_completed')}   count={stats.mByStatus.completed}   total={maintenances.length} color="#16a34a" />
+                            <StatusRow label={t('maintenances.status_label_cancelled')}   count={stats.mByStatus.cancelled}   total={maintenances.length} color="#dc2626" />
                         </div>
                     </div>
                 </div>
@@ -467,16 +471,16 @@ export default function ReportsDashboard() {
                 <div style={{ background: '#fff', borderRadius: '20px', padding: '1.5rem', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>Carburant</h3>
-                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Synthèse financière</p>
+                            <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('reports.fuel_section')}</h3>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('reports.fuel_summary')}</p>
                         </div>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#f0fdf4', color: '#198754', padding: '4px 10px', borderRadius: '20px' }}>{consumptions.length} pleins</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#f0fdf4', color: '#198754', padding: '4px 10px', borderRadius: '20px' }}>{t('reports.fuel_badge', { count: consumptions.length })}</span>
                     </div>
                     {[
-                        { label: 'Coût total (historique)', value: `${fmt(Math.round(stats.allFuelCost))} FCFA`,    color: '#198754', bg: '#f0fdf4' },
-                        { label: `Ce mois (${monthName})`,  value: `${fmt(Math.round(stats.totalFuelCost))} FCFA`,  color: '#0d6efd', bg: '#eff6ff' },
-                        { label: 'Volume ce mois',          value: `${stats.totalFuelVolume.toFixed(1)} L`,         color: '#6610f2', bg: '#f5f3ff' },
-                        { label: 'Consommation moy.',       value: stats.avgL100 ? `${stats.avgL100} L/100km` : '—', color: '#fd7e14', bg: '#fff7ed' },
+                        { label: t('reports.historical_cost'),              value: `${fmt(Math.round(stats.allFuelCost))} FCFA`,    color: '#198754', bg: '#f0fdf4' },
+                        { label: t('reports.this_month', { month: monthName }), value: `${fmt(Math.round(stats.totalFuelCost))} FCFA`, color: '#0d6efd', bg: '#eff6ff' },
+                        { label: t('reports.volume_month'),                 value: `${stats.totalFuelVolume.toFixed(1)} L`,         color: '#6610f2', bg: '#f5f3ff' },
+                        { label: t('reports.avg_consumption'),              value: stats.avgL100 ? `${stats.avgL100} L/100km` : '—', color: '#fd7e14', bg: '#fff7ed' },
                     ].map((row, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.75rem', borderRadius: '10px', background: row.bg, marginBottom: i < 3 ? '0.5rem' : 0 }}>
                             <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>{row.label}</span>
@@ -490,7 +494,7 @@ export default function ReportsDashboard() {
             <div style={{ marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.1rem' }}>
                     <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px', whiteSpace: 'nowrap' }}>Rapports détaillés</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px', whiteSpace: 'nowrap' }}>{t('reports.detailed_reports_section')}</span>
                     <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
@@ -501,12 +505,12 @@ export default function ReportsDashboard() {
                         desc={t('reports.consumption_desc')}
                         IlluComp={IlluFuel}
                         stat={`${consumptions.length}`}
-                        statLabel="enregistrements"
+                        statLabel={t('reports.records_count')}
                         features={[
                             t('reports.filter_vehicle'),
                             t('reports.filter_period'),
                             t('reports.export_excel'),
-                            'Calcul L/100km par véhicule',
+                            t('reports.l100km_calc'),
                         ]}
                         route="/reports/consumption"
                     />
@@ -517,12 +521,12 @@ export default function ReportsDashboard() {
                         desc={t('reports.maintenance_desc')}
                         IlluComp={IlluWrench}
                         stat={`${fmt(Math.round(stats.totalMaintCost))} FCFA`}
-                        statLabel="coût total"
+                        statLabel={t('reports.total_cost_label')}
                         features={[
                             t('reports.filter_vehicle'),
                             t('reports.filter_period'),
                             t('reports.export_excel'),
-                            'Suivi des coûts par véhicule',
+                            t('reports.cost_per_vehicle'),
                         ]}
                         route="/reports/maintenance"
                     />

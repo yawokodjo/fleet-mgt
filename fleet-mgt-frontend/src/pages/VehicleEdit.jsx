@@ -23,7 +23,7 @@ export default function VehicleEdit() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    const [form, setForm] = useState({ marque: '', model: '', license_plate: '', year: '', fuel_type: '', fuel_card: '', mileage: '', status: 'operational' });
+    const [form, setForm] = useState({ marque: '', model: '', license_plate: '', year: '', fuel_type: '', fuel_card: '', mileage: '', status: 'operational', insurance_expiry: '', technical_inspection_expiry: '', tvm_expiry: '' });
     const [documentFile, setDocumentFile] = useState(null);
     const [existingDoc, setExistingDoc] = useState(null);
     const [errors, setErrors] = useState({});
@@ -33,7 +33,17 @@ export default function VehicleEdit() {
 
     useEffect(() => {
         api.get(`/vehicles/${id}`)
-            .then(res => { setForm(res.data); setExistingDoc(res.data.document_url || null); setLoading(false); })
+            .then(res => {
+                const d = res.data;
+                setForm({
+                    ...d,
+                    insurance_expiry:            d.insurance_expiry            ? d.insurance_expiry.split('T')[0]            : '',
+                    technical_inspection_expiry: d.technical_inspection_expiry ? d.technical_inspection_expiry.split('T')[0] : '',
+                    tvm_expiry:                  d.tvm_expiry                  ? d.tvm_expiry.split('T')[0]                  : '',
+                });
+                setExistingDoc(d.document_url || null);
+                setLoading(false);
+            })
             .catch(() => { navigate('/vehicles'); });
     }, [id, navigate]);
 
@@ -90,7 +100,7 @@ export default function VehicleEdit() {
             <form onSubmit={handleSubmit}>
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}08` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Identification</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('vehicles.section_identification')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         {[
@@ -111,7 +121,7 @@ export default function VehicleEdit() {
 
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}08` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Carburant & Statut</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('vehicles.section_fuel_status')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -152,6 +162,46 @@ export default function VehicleEdit() {
                     </div>
                 </div>
 
+                {/* Section: Documents Réglementaires */}
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: 'linear-gradient(135deg, #fff1f208, #fef9f008)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ fontSize: '1rem' }}>🛡️</span>
+                            <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: '#dc2626' }}>{t('vehicles.regulatory_docs')}</h3>
+                        </div>
+                        <p style={{ margin: '3px 0 0', fontSize: '0.72rem', color: '#94a3b8' }}>{t('vehicles.regulatory_docs_hint_edit')}</p>
+                    </div>
+                    <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                        {[
+                            { name: 'insurance_expiry',            icon: '🛡️', label: t('vehicles.insurance_expiry_label') },
+                            { name: 'technical_inspection_expiry', icon: '🔬', label: t('vehicles.inspection_expiry_label') },
+                            { name: 'tvm_expiry',                  icon: '📋', label: t('vehicles.tvm_expiry_label') },
+                        ].map(f => {
+                            const val = form[f.name] || '';
+                            const today = new Date().toISOString().split('T')[0];
+                            const isExpired = val && val < today;
+                            const daysLeft = val ? Math.round((new Date(val) - new Date()) / 86400000) : null;
+                            const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 7;
+                            const isSoon   = daysLeft !== null && daysLeft > 7 && daysLeft <= 30;
+                            const borderColor = isExpired ? '#fca5a5' : isUrgent ? '#fed7aa' : isSoon ? '#fde68a' : '#e2e8f0';
+                            const bgColor     = isExpired ? '#fff8f8' : isUrgent ? '#fff9f0' : '#f8faff';
+                            return (
+                                <div key={f.name}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                                        <span>{f.icon}</span>{f.label}
+                                    </label>
+                                    <input type="date" name={f.name} value={val} onChange={handleChange}
+                                        style={{ width: '100%', background: bgColor, border: `1.5px solid ${borderColor}`, borderRadius: '10px', padding: '0.62rem 0.9rem', fontSize: '0.88rem', color: '#1e293b', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.18s' }}
+                                        onFocus={e => e.target.style.borderColor = '#dc2626'} onBlur={e => e.target.style.borderColor = borderColor} />
+                                    {isExpired && <p style={{ fontSize: '0.73rem', color: '#dc2626', marginTop: '3px', marginBottom: 0, fontWeight: 700 }}>{t('vehicles.doc_expired_warning')}</p>}
+                                    {isUrgent  && <p style={{ fontSize: '0.73rem', color: '#d97706', marginTop: '3px', marginBottom: 0, fontWeight: 700 }}>{t('vehicles.doc_expires_in', { days: daysLeft })}</p>}
+                                    {isSoon    && <p style={{ fontSize: '0.73rem', color: '#ca8a04', marginTop: '3px', marginBottom: 0, fontWeight: 600 }}>{t('vehicles.doc_expires_soon', { days: daysLeft })}</p>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.5rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}08` }}>
                         <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('vehicles.document')}</h3>
@@ -170,7 +220,7 @@ export default function VehicleEdit() {
                             <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={e => setDocumentFile(e.target.files[0] || null)} />
                             <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{documentFile ? '📎' : '📤'}</div>
                             <div style={{ fontWeight: 600, fontSize: '0.82rem', color: documentFile ? ACCENT : '#64748b' }}>
-                                {documentFile ? documentFile.name : (existingDoc ? 'Remplacer le document...' : t('vehicles.document_hint'))}
+                                {documentFile ? documentFile.name : (existingDoc ? t('vehicles.replace_document') : t('vehicles.document_hint'))}
                             </div>
                         </label>
                     </div>

@@ -33,6 +33,20 @@ class ConsumptionController extends Controller
             $query->where('date', '<=', $request->end_date);
         }
 
+        if ($request->filled('search')) {
+            $s = $request->get('search');
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('vehicle', fn($v) => $v->where('license_plate', 'like', "%{$s}%")
+                                                      ->orWhere('marque', 'like', "%{$s}%"))
+                  ->orWhereHas('driver', fn($d) => $d->where('name', 'like', "%{$s}%"));
+            });
+        }
+
+        $allowed = ['date', 'fuel_volume', 'fuel_cost', 'mileage'];
+        $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'date';
+        $sortDir = $request->get('sort_dir') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortDir);
+
         return $query->paginate($request->per_page ?? 15);
     }
 

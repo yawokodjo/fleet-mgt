@@ -18,10 +18,16 @@ class Vehicle extends Model
         'status',
         'current_driver_id',
         'document_path',
+        'insurance_expiry',
+        'technical_inspection_expiry',
+        'tvm_expiry',
     ];
 
     protected $casts = [
-        'year' => 'integer',
+        'year'                        => 'integer',
+        'insurance_expiry'            => 'date',
+        'technical_inspection_expiry' => 'date',
+        'tvm_expiry'                  => 'date',
     ];
 
     // Relation avec le conducteur actuel

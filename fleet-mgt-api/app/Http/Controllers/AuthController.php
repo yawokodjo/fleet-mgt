@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Notifications\AccountLockedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -10,142 +11,148 @@ use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
 {
-    /**
-     * Enregistrer un nouvel utilisateur
-     */
+    // NIST SP 800-63B : max 5 tentatives avant blocage
+    private const MAX_ATTEMPTS = 5;
+
+    // OWASP : blocage progressif (exponential backoff)
+    private const BLOCK_DURATIONS = [
+        1 => 5,        // 5 minutes
+        2 => 30,       // 30 minutes
+        3 => 120,      // 2 heures
+        4 => 1440,     // 24 heures
+    ];
+
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['sometimes', 'in:admin,manager,driver,accountant'],
+            'role'     => ['sometimes', 'in:admin,manager,driver,accountant'],
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'driver',
+            'name'           => $validated['name'],
+            'email'          => $validated['email'],
+            'password'       => Hash::make($validated['password']),
+            'role'           => $validated['role'] ?? 'driver',
             'login_attempts' => 0,
-            'block_count' => 0,
-            'blocked_until' => null,
+            'block_count'    => 0,
+            'blocked_until'  => null,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user'         => $user,
             'access_token' => $token,
-            'token_type' => 'Bearer',
+            'token_type'   => 'Bearer',
         ], 201);
     }
 
-    /**
-     * Connexion avec sécurité renforcée
-     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email'    => ['required', 'email'],
             'password' => ['required'],
         ]);
 
+        // OWASP : message générique — ne pas révéler si l'email existe
         $user = User::where('email', $credentials['email'])->first();
 
-        /** ❌ Utilisateur inexistant */
         if (! $user) {
             return response()->json([
-                'code' => 'INVALID_PASSWORD',
-                'message' => 'Email ou mot de passe incorrect',
+                'code'    => 'INVALID_CREDENTIALS',
+                'message' => 'Email ou mot de passe incorrect.',
             ], 401);
         }
 
-        /** 🔒 Compte temporairement bloqué */
-        if ($user->blocked_until && now()->lessThan($user->blocked_until)) {
+        // Compte bloqué de façon permanente (block_count >= 4)
+        if ($user->block_count >= 4 && $user->blocked_until && now()->lessThan($user->blocked_until)) {
             return response()->json([
-                'code' => 'ACCOUNT_BLOCKED',
-                'message' => 'Compte temporairement bloqué',
-                'blocked_until' => $user->blocked_until,
-                'remaining_seconds' => now()->diffInSeconds($user->blocked_until),
+                'code'    => 'ACCOUNT_PERMANENTLY_LOCKED',
+                'message' => 'Votre compte est bloqué définitivement. Contactez un administrateur.',
             ], 423);
         }
 
-        /** ❌ Mauvais mot de passe */
-        if (! Hash::check($credentials['password'], $user->password)) {
+        // Compte temporairement bloqué
+        if ($user->blocked_until && now()->lessThan($user->blocked_until)) {
+            return response()->json([
+                'code'              => 'ACCOUNT_BLOCKED',
+                'message'           => 'Compte temporairement bloqué. Réessayez plus tard.',
+                'blocked_until'     => $user->blocked_until,
+                'remaining_seconds' => (int) now()->diffInSeconds($user->blocked_until),
+            ], 423);
+        }
 
+        // Réinitialiser les tentatives si le blocage précédent a expiré
+        if ($user->blocked_until && now()->greaterThanOrEqualTo($user->blocked_until)) {
+            $user->login_attempts = 0;
+            $user->blocked_until  = null;
+        }
+
+        if (! Hash::check($credentials['password'], $user->password)) {
             $user->login_attempts += 1;
 
-            // 🔴 3e tentative → blocage immédiat
-            if ($user->login_attempts >= 3) {
-                $user->blocked_until  = now()->addMinutes(5);
+            if ($user->login_attempts >= self::MAX_ATTEMPTS) {
+                $user->block_count  += 1;
                 $user->login_attempts = 0;
-                $user->block_count   += 1;
 
-                // 💣 2e blocage → suppression définitive du compte
-                if ($user->block_count >= 2) {
-                    $user->save();
-                    $user->delete();
+                $minutes = self::BLOCK_DURATIONS[$user->block_count]
+                    ?? self::BLOCK_DURATIONS[4]; // permanent au-delà de 4
 
-                    return response()->json([
-                        'code'    => 'ACCOUNT_DELETED',
-                        'message' => 'Votre compte a été désactivé suite à de trop nombreuses tentatives de connexion échouées. Veuillez contacter l\'administrateur.',
-                    ], 403);
-                }
-
+                $user->blocked_until = now()->addMinutes($minutes);
                 $user->save();
+
+                // OWASP : notifier l'utilisateur légitime par email
+                $user->notify(new AccountLockedNotification($user->blocked_until, $user->block_count));
+
+                $isPermanent = $user->block_count >= 4;
 
                 return response()->json([
                     'code'              => 'ACCOUNT_BLOCKED',
-                    'message'           => 'Compte temporairement bloqué après 3 tentatives échouées. Réessayez dans 5 minutes.',
-                    'blocked_until'     => $user->blocked_until,
-                    'remaining_seconds' => (int) now()->diffInSeconds($user->blocked_until),
+                    'message'           => $isPermanent
+                        ? 'Compte bloqué définitivement. Contactez un administrateur.'
+                        : "Compte bloqué après {$user->block_count} blocage(s). Consultez votre email.",
+                    'blocked_until'     => $isPermanent ? null : $user->blocked_until,
+                    'remaining_seconds' => $isPermanent ? null : (int) now()->diffInSeconds($user->blocked_until),
                 ], 423);
             }
 
             $user->save();
 
-            $remaining = 3 - $user->login_attempts;
+            $remaining = self::MAX_ATTEMPTS - $user->login_attempts;
 
             return response()->json([
-                'code'               => 'INVALID_PASSWORD',
-                'message'            => "Mot de passe incorrect. Il vous reste {$remaining} tentative(s) avant le blocage du compte.",
+                'code'               => 'INVALID_CREDENTIALS',
+                'message'            => "Email ou mot de passe incorrect. Il vous reste {$remaining} tentative(s).",
                 'remaining_attempts' => $remaining,
             ], 401);
         }
 
-        /** ✅ Connexion réussie → reset sécurité */
+        // Connexion réussie — reset tentatives et blocage, block_count conservé (OWASP)
         $user->update([
             'login_attempts' => 0,
-            'blocked_until' => null,
-            'block_count' => 0,
+            'blocked_until'  => null,
         ]);
 
         Auth::login($user);
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user'         => $user,
             'access_token' => $token,
-            'token_type' => 'Bearer',
+            'token_type'   => 'Bearer',
         ]);
     }
 
-    /**
-     * Déconnexion
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Déconnexion réussie',
-        ]);
+        return response()->json(['message' => 'Déconnexion réussie']);
     }
 
-    /**
-     * Infos utilisateur connecté
-     */
     public function me(Request $request)
     {
         return response()->json([

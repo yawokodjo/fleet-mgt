@@ -109,6 +109,31 @@ function ActivityItem({ icon, bg, title, sub, time, onClick }) {
     );
 }
 
+/* ── Document expiry badge ── */
+function DocBadge({ doc, label, icon }) {
+    const { t } = useTranslation();
+    if (!doc) return null;
+    const days = Math.round(doc.days_left);
+    const expired = doc.expired;
+    const urgent  = !expired && days <= 7;
+    const soon    = !expired && !urgent && days <= 30;
+    const color   = expired ? '#dc2626' : urgent ? '#d97706' : '#ca8a04';
+    const bg      = expired ? '#fee2e2' : urgent ? '#fff7ed' : '#fefce8';
+    const border  = expired ? '#fca5a5' : urgent ? '#fed7aa' : '#fde68a';
+    const text    = expired
+        ? t('dashboard.doc_expired_ago', { days: Math.abs(days) })
+        : days === 0 ? t('dashboard.doc_expires_today')
+        : t('dashboard.doc_days_left', { days });
+    if (!expired && !urgent && !soon) return null;
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: bg, border: `1px solid ${border}`, borderRadius: '8px', padding: '4px 10px', fontSize: '0.74rem', fontWeight: 700, color }}>
+            <span style={{ fontSize: '0.85rem' }}>{icon}</span>
+            <span>{label}</span>
+            <span style={{ fontWeight: 400, opacity: 0.85, marginLeft: '2px' }}>— {text}</span>
+        </div>
+    );
+}
+
 /* ── Quick action ── */
 function QuickAction({ icon, label, color, gradient, onClick }) {
     const [hov, setHov] = useState(false);
@@ -138,15 +163,16 @@ export default function Dashboard() {
     const headers = { Authorization: `Bearer ${token}` };
 
     /* ── State ── */
-    const [vehicles,     setVehicles]     = useState([]);
-    const [maintenances, setMaintenances] = useState([]);
-    const [consumptions, setConsumptions] = useState([]);
-    const [drivers,      setDrivers]      = useState([]);
-    const [loading,      setLoading]      = useState(true);
-    const [currentTime,  setCurrentTime]  = useState(new Date());
-    const [showWarning,  setShowWarning]  = useState(false);
-    const [countdown,    setCountdown]    = useState(60);
-    const [weather,      setWeather]      = useState(null);
+    const [vehicles,      setVehicles]      = useState([]);
+    const [maintenances,  setMaintenances]  = useState([]);
+    const [consumptions,  setConsumptions]  = useState([]);
+    const [drivers,       setDrivers]       = useState([]);
+    const [expiringDocs,  setExpiringDocs]  = useState([]);
+    const [loading,       setLoading]       = useState(true);
+    const [currentTime,   setCurrentTime]   = useState(new Date());
+    const [showWarning,   setShowWarning]   = useState(false);
+    const [countdown,     setCountdown]     = useState(60);
+    const [weather,       setWeather]       = useState(null);
 
     /* ── Clock ── */
     useEffect(() => {
@@ -211,15 +237,17 @@ export default function Dashboard() {
     useEffect(() => {
         const toArr = d => Array.isArray(d.data) ? d.data : (d.data?.data ?? []);
         Promise.all([
-            api.get('/vehicles-list', { headers }).catch(() => ({ data: [] })),
-            api.get('/maintenances',  { headers }).catch(() => ({ data: [] })),
-            api.get('/consumptions',  { headers }).catch(() => ({ data: [] })),
-            api.get('/drivers',       { headers }).catch(() => ({ data: [] })),
-        ]).then(([v, m, c, d]) => {
+            api.get('/vehicles-list',            { headers }).catch(() => ({ data: [] })),
+            api.get('/maintenances',              { headers }).catch(() => ({ data: [] })),
+            api.get('/consumptions',              { headers }).catch(() => ({ data: [] })),
+            api.get('/drivers',                  { headers }).catch(() => ({ data: [] })),
+            api.get('/vehicles/expiring-documents', { headers }).catch(() => ({ data: [] })),
+        ]).then(([v, m, c, d, exp]) => {
             setVehicles(toArr(v));
             setMaintenances(toArr(m));
             setConsumptions(toArr(c));
             setDrivers(Array.isArray(d.data) ? d.data : (d.data?.data ?? []));
+            setExpiringDocs(Array.isArray(exp.data) ? exp.data : []);
         }).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -284,7 +312,7 @@ export default function Dashboard() {
         }));
         const cActivity = consumptions.slice(-10).map(c => ({
             id: `c-${c.id}`, type: 'consumption', date: new Date(c.date || c.created_at),
-            title: `Plein — ${fmt(Math.round(c.fuel_cost || 0))} FCFA`,
+            title: t('dashboard.fill_log', { amount: fmt(Math.round(c.fuel_cost || 0)) }),
             sub: c.vehicle?.license_plate || `Véhicule #${c.vehicle_id}`,
             icon: '⛽', bg: 'linear-gradient(135deg, #198754, #22c55e)',
             route: `/consumptions/${c.id}`,
@@ -294,7 +322,7 @@ export default function Dashboard() {
             .slice(0, 6);
 
         return { vOp, vMnt, vOos, alerts, mCompleted, mInProgress, mPlanned, totalMaintCost, fuelThisMonth, fuelLastMonth, fuelTrend, volThisMonth, spark, avgL100, recent, thisMonthCount: thisMonth.length };
-    }, [vehicles, maintenances, consumptions]);
+    }, [vehicles, maintenances, consumptions, t]);
 
     /* ── Time helpers ── */
     const timeStr = currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -347,7 +375,7 @@ export default function Dashboard() {
                     {/* Welcome */}
                     <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '0.4rem' }}>
-                            Tableau de bord
+                            {t('dashboard.section_label')}
                         </div>
                         <h1 style={{ margin: 0, fontSize: 'clamp(1.3rem, 2.5vw, 1.75rem)', fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
                             {t('dashboard.welcome', { name: user?.name?.split(' ')[0] || '' })}
@@ -358,9 +386,9 @@ export default function Dashboard() {
 
                         {/* Alert chip */}
                         {stats.alerts.length > 0 && (
-                            <div onClick={() => navigate('/vehicles')} style={{ marginTop: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,126,20,0.22)', border: '1px solid rgba(253,126,20,0.4)', borderRadius: '10px', padding: '5px 12px', cursor: 'pointer' }}>
+                            <div onClick={() => navigate('/vehicles?status=maintenance,out_of_service')} style={{ marginTop: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,126,20,0.22)', border: '1px solid rgba(253,126,20,0.4)', borderRadius: '10px', padding: '5px 12px', cursor: 'pointer' }}>
                                 <span style={{ fontSize: '0.85rem' }}>⚠️</span>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbb03b' }}>{stats.alerts.length} véhicule(s) hors service ou en maintenance</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbb03b' }}>{t('dashboard.vehicles_alert_chip', { count: stats.alerts.length })}</span>
                             </div>
                         )}
                     </div>
@@ -380,16 +408,16 @@ export default function Dashboard() {
                                     <div style={{ display: 'flex', gap: '0.7rem', marginLeft: 'auto' }}>
                                         <div style={{ textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#7dd3fc' }}>💧 {weather.humidity}%</div>
-                                            <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.38)' }}>Humidité</div>
+                                            <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.38)' }}>{t('dashboard.weather_humidity')}</div>
                                         </div>
                                         <div style={{ textAlign: 'center' }}>
                                             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a5f3fc' }}>💨 {weather.wind} km/h</div>
-                                            <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.38)' }}>Vent</div>
+                                            <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.38)' }}>{t('dashboard.weather_wind')}</div>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>Météo en chargement…</div>
+                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>{t('dashboard.weather_loading')}</div>
                             )}
                         </div>
                     </div>
@@ -401,25 +429,25 @@ export default function Dashboard() {
                 <KpiCard
                     icon="🚗" color="#0d6efd"
                     gradient="linear-gradient(135deg, #dbeafe, #eff6ff)"
-                    label="Véhicules"
+                    label={t('dashboard.vehicles')}
                     value={vehicles.length}
-                    sub={`${stats.vOp} opérationnel(s) · ${stats.vMnt} en maint.`}
+                    sub={t('dashboard.vehicles_kpi_sub', { op: stats.vOp, mnt: stats.vMnt })}
                     onClick={() => navigate('/vehicles')}
                 />
                 <KpiCard
                     icon="🔧" color="#fd7e14"
                     gradient="linear-gradient(135deg, #fff7ed, #ffedd5)"
-                    label="Maintenances"
+                    label={t('dashboard.maintenances')}
                     value={maintenances.length}
-                    sub={`${stats.mInProgress} en cours · ${stats.mPlanned} planifié(s)`}
+                    sub={t('dashboard.maintenances_kpi_sub', { inProgress: stats.mInProgress, planned: stats.mPlanned })}
                     onClick={() => navigate('/maintenances')}
                 />
                 <KpiCard
                     icon="⛽" color="#198754"
                     gradient="linear-gradient(135deg, #dcfce7, #f0fdf4)"
-                    label={`Carburant — ${monthName}`}
+                    label={t('dashboard.fuel_kpi_label', { month: monthName })}
                     value={`${fmtK(stats.fuelThisMonth)} FCFA`}
-                    sub={`${stats.volThisMonth.toFixed(0)} L · ${stats.thisMonthCount} plein(s)`}
+                    sub={t('dashboard.fuel_kpi_sub', { vol: stats.volThisMonth.toFixed(0), count: stats.thisMonthCount })}
                     trend={stats.fuelTrend}
                     spark={stats.spark}
                     onClick={() => navigate('/consumptions')}
@@ -427,12 +455,95 @@ export default function Dashboard() {
                 <KpiCard
                     icon="👥" color="#6610f2"
                     gradient="linear-gradient(135deg, #f3e8ff, #faf5ff)"
-                    label="Chauffeurs"
+                    label={t('dashboard.drivers')}
                     value={drivers.length}
-                    sub={stats.avgL100 ? `Moy. ${stats.avgL100} L/100km` : 'Parc actif'}
+                    sub={stats.avgL100 ? t('dashboard.drivers_avg', { avg: stats.avgL100 }) : t('dashboard.drivers_active')}
                     onClick={() => navigate('/users')}
                 />
             </div>
+
+            {/* ── Documents Réglementaires — Alertes ── */}
+            {expiringDocs.length > 0 && (() => {
+                const expiredCount = expiringDocs.reduce((n, v) => {
+                    return n + [v.insurance, v.inspection, v.tvm].filter(d => d?.expired).length;
+                }, 0);
+                const urgentCount = expiringDocs.reduce((n, v) => {
+                    return n + [v.insurance, v.inspection, v.tvm].filter(d => d && !d.expired && Math.round(d.days_left) <= 7).length;
+                }, 0);
+                const soonCount = expiringDocs.reduce((n, v) => {
+                    return n + [v.insurance, v.inspection, v.tvm].filter(d => d && !d.expired && Math.round(d.days_left) > 7 && Math.round(d.days_left) <= 30).length;
+                }, 0);
+                return (
+                    <div style={{ background: '#fff', borderRadius: '20px', border: '1.5px solid #fee2e2', boxShadow: '0 4px 24px rgba(220,38,38,0.08)', marginBottom: '1.5rem', overflow: 'hidden' }}>
+                        {/* Header */}
+                        <div style={{ background: 'linear-gradient(135deg, #fff1f2 0%, #fef9f0 100%)', padding: '1.1rem 1.5rem', borderBottom: '1px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #dc2626, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                                    🛡️
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('dashboard.docs_alerts_title')}</h3>
+                                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>{t('dashboard.docs_alerts_sub')}</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                {expiredCount > 0 && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '20px', padding: '4px 12px', fontSize: '0.77rem', fontWeight: 800 }}>
+                                        🔴 {t('dashboard.docs_expired_badge', { count: expiredCount })}
+                                    </span>
+                                )}
+                                {urgentCount > 0 && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fff7ed', color: '#d97706', border: '1px solid #fed7aa', borderRadius: '20px', padding: '4px 12px', fontSize: '0.77rem', fontWeight: 800 }}>
+                                        🟠 {t('dashboard.docs_urgent_badge', { count: urgentCount })}
+                                    </span>
+                                )}
+                                {soonCount > 0 && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fefce8', color: '#ca8a04', border: '1px solid #fde68a', borderRadius: '20px', padding: '4px 12px', fontSize: '0.77rem', fontWeight: 800 }}>
+                                        🟡 {t('dashboard.docs_soon_badge', { count: soonCount })}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {/* Vehicle rows */}
+                        <div style={{ padding: '0.5rem 1rem 1rem' }}>
+                            {expiringDocs.map((v, i) => {
+                                const badges = [
+                                    { doc: v.insurance,  label: t('dashboard.doc_label_insurance'),  icon: '🛡️' },
+                                    { doc: v.inspection, label: t('dashboard.doc_label_inspection'), icon: '🔬' },
+                                    { doc: v.tvm,        label: t('dashboard.doc_label_tvm'),        icon: '📋' },
+                                ].filter(b => {
+                                    if (!b.doc) return false;
+                                    const days = Math.round(b.doc.days_left);
+                                    return b.doc.expired || days <= 30;
+                                });
+                                if (badges.length === 0) return null;
+                                return (
+                                    <div key={v.id}
+                                        onClick={() => navigate(`/vehicles/${v.id}/edit`)}
+                                        style={{ display: 'flex', alignItems: 'flex-start', gap: '0.9rem', padding: '0.75rem 0.5rem', borderBottom: i < expiringDocs.length - 1 ? '1px solid #f8f9fa' : 'none', cursor: 'pointer', borderRadius: '10px', transition: 'background 0.15s' }}
+                                        onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: 'linear-gradient(135deg, #0d6efd18, #0d6efd08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0, border: '1px solid #dbeafe' }}>
+                                            🚗
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>{v.license_plate}</span>
+                                                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{v.marque} {v.model}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                {badges.map(b => <DocBadge key={b.label} doc={b.doc} label={b.label} icon={b.icon} />)}
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500, flexShrink: 0, alignSelf: 'center' }}>{t('dashboard.docs_edit_link')}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* ── Middle row: Stats + Activity ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
@@ -442,27 +553,27 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.3rem' }}>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('dashboard.monthly_stats')}</h3>
-                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Calculé depuis les données réelles</p>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('dashboard.monthly_stats_sub')}</p>
                         </div>
                     </div>
 
                     <StatRow
-                        label="Véhicules opérationnels"
+                        label={t('dashboard.stat_vehicles_op')}
                         value={stats.vOp} total={vehicles.length}
                         color="#16a34a"
                     />
                     <StatRow
-                        label="Maintenances terminées"
+                        label={t('dashboard.stat_maintenances_done')}
                         value={stats.mCompleted} total={maintenances.length}
                         color="#0d6efd"
                     />
                     <StatRow
-                        label="Véhicules en maintenance"
-                        value={stats.vMnt} total={vehicles.length}
-                        color="#d97706"
+                        label={t('dashboard.stat_vehicles_oos')}
+                        value={stats.vOos} total={vehicles.length}
+                        color="#dc2626"
                     />
                     <StatRow
-                        label="Maintenances en cours"
+                        label={t('dashboard.stat_maintenances_inprogress')}
                         value={stats.mInProgress} total={maintenances.length}
                         color="#fd7e14"
                     />
@@ -470,8 +581,8 @@ export default function Dashboard() {
                     {/* Fuel vs maintenance cost */}
                     <div style={{ marginTop: '1.1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                         {[
-                            { label: 'Coût maintenance', value: `${fmtK(stats.totalMaintCost)} FCFA`, color: '#fd7e14', bg: '#fff7ed' },
-                            { label: 'Carburant total', value: `${fmtK(consumptions.reduce((s,c) => s+Number(c.fuel_cost||0), 0))} FCFA`, color: '#198754', bg: '#f0fdf4' },
+                            { label: t('dashboard.cost_maintenance'), value: `${fmtK(stats.totalMaintCost)} FCFA`, color: '#fd7e14', bg: '#fff7ed' },
+                            { label: t('dashboard.cost_fuel_total'), value: `${fmtK(consumptions.reduce((s,c) => s+Number(c.fuel_cost||0), 0))} FCFA`, color: '#198754', bg: '#f0fdf4' },
                         ].map((item, i) => (
                             <div key={i} style={{ background: item.bg, borderRadius: '11px', padding: '0.65rem 0.85rem' }}>
                                 <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{item.label}</div>
@@ -486,7 +597,7 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('dashboard.recent_activity')}</h3>
-                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Maintenances &amp; consommations récentes</p>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('dashboard.recent_activity_sub')}</p>
                         </div>
                         <div style={{ display: 'flex', gap: '4px' }}>
                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fd7e14', display: 'inline-block' }} />
@@ -496,7 +607,7 @@ export default function Dashboard() {
 
                     {stats.recent.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '2rem 0', color: '#94a3b8', fontSize: '0.85rem' }}>
-                            Aucune activité récente
+                            {t('dashboard.no_activity')}
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -515,16 +626,16 @@ export default function Dashboard() {
                 {/* Fleet health donut */}
                 <div style={{ background: '#fff', borderRadius: '20px', padding: '1.5rem', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 16px rgba(0,0,0,0.05)' }}>
                     <div style={{ marginBottom: '1.2rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>Santé de la flotte</h3>
-                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Indicateurs clés en temps réel</p>
+                        <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#0f172a' }}>{t('dashboard.fleet_health')}</h3>
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('dashboard.fleet_health_sub')}</p>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         {[
-                            { label: 'Véhicules opérationnels', value: stats.vOp, max: vehicles.length, color: '#16a34a' },
-                            { label: 'Maintenances terminées', value: stats.mCompleted, max: maintenances.length, color: '#0d6efd' },
-                            { label: 'Pleins ce mois', value: stats.thisMonthCount, max: consumptions.length, color: '#198754' },
-                            { label: 'Maintenances planifiées', value: stats.mPlanned, max: maintenances.length, color: '#d97706' },
+                            { label: t('dashboard.stat_vehicles_op'),        value: stats.vOp,          max: vehicles.length,     color: '#16a34a' },
+                            { label: t('dashboard.stat_maintenances_done'),   value: stats.mCompleted,   max: maintenances.length, color: '#0d6efd' },
+                            { label: t('dashboard.donut_fills_month'),        value: stats.thisMonthCount, max: consumptions.length, color: '#198754' },
+                            { label: t('dashboard.donut_maintenances_planned'), value: stats.mPlanned,   max: maintenances.length, color: '#d97706' },
                         ].map((item, i) => (
                             <div key={i} style={{ textAlign: 'center', padding: '0.5rem 0' }}>
                                 <DonutMini value={item.value} max={item.max} color={item.color} />

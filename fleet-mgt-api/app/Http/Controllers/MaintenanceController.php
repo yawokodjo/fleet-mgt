@@ -29,7 +29,20 @@ class MaintenanceController extends Controller
             $query->where('maintenance_type', $request->type);
         }
 
-        $query->orderBy('scheduled_date', 'asc');
+        if ($request->filled('search')) {
+            $s = $request->get('search');
+            $query->where(function ($q) use ($s) {
+                $q->where('maintenance_company', 'like', "%{$s}%")
+                  ->orWhere('description', 'like', "%{$s}%")
+                  ->orWhereHas('vehicle', fn($v) => $v->where('license_plate', 'like', "%{$s}%"))
+                  ->orWhereHas('driver',  fn($d) => $d->where('name', 'like', "%{$s}%"));
+            });
+        }
+
+        $allowed = ['scheduled_date', 'maintenance_type', 'cost', 'status', 'maintenance_company'];
+        $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'scheduled_date';
+        $sortDir = $request->get('sort_dir') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortDir);
 
         return $query->paginate($request->per_page ?? 15);
     }

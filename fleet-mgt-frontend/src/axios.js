@@ -18,6 +18,11 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Laisser axios définir automatiquement Content-Type pour FormData (multipart/form-data + boundary)
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     // Log pour debug (à retirer en production)
     console.log('📤 API Request:', config.method.toUpperCase(), config.url, config.params);
 

@@ -97,7 +97,7 @@ export default function MaintenanceCreate() {
                     <div style={{ width: '44px', height: '44px', borderRadius: '11px', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>🔧</div>
                     <div>
                         <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('maintenances.add_title')}</h2>
-                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>Planifier une intervention</p>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>{t('maintenances.add_subtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@ export default function MaintenanceCreate() {
                 {/* Planification */}
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}10` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Planification</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('maintenances.section_planning')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -154,7 +154,7 @@ export default function MaintenanceCreate() {
                 {/* Intervention */}
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}10` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Type & Prestataire</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('maintenances.section_type_provider')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -208,7 +208,7 @@ export default function MaintenanceCreate() {
                             <div style={{ fontWeight: 600, fontSize: '0.82rem', color: documentFile ? ACCENT : '#64748b' }}>
                                 {documentFile ? documentFile.name : t('maintenances.document_hint')}
                             </div>
-                            {!documentFile && <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Facture proforma / reçu — PDF, JPG, PNG ≤ 5 Mo</div>}
+                            {!documentFile && <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>{t('maintenances.invoice_hint')}</div>}
                         </label>
                     </div>
                 </div>

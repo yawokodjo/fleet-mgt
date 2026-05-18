@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -24,7 +25,29 @@ class VehicleController extends Controller
         }
 
         $perPage = (int) $request->get('per_page', 10);
-        $vehicles = Vehicle::with('currentDriver')->paginate($perPage);
+
+        $query = Vehicle::with('currentDriver');
+
+        if ($request->filled('status')) {
+            $statuses = explode(',', $request->get('status'));
+            $query->whereIn('status', $statuses);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->get('search');
+            $query->where(function ($q) use ($s) {
+                $q->where('marque', 'like', "%{$s}%")
+                  ->orWhere('model', 'like', "%{$s}%")
+                  ->orWhere('license_plate', 'like', "%{$s}%");
+            });
+        }
+
+        $allowed = ['marque', 'model', 'license_plate', 'status', 'year', 'mileage'];
+        $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'license_plate';
+        $sortDir = $request->get('sort_dir') === 'desc' ? 'desc' : 'asc';
+        $query->orderBy($sortBy, $sortDir);
+
+        $vehicles = $query->paginate($perPage);
 
         return response()->json($vehicles);
     }
@@ -43,16 +66,19 @@ class VehicleController extends Controller
         }
 
         $data = $request->validate([
-            'marque'             => 'required|string|max:50',
-            'model'              => 'required|string|max:50',
-            'license_plate'      => 'required|string|unique:vehicles|max:20',
-            'year'               => 'required|integer|min:1900|max:'.(date('Y') + 1),
-            'fuel_type'          => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
-            'fuel_card'          => 'nullable|string|max:50',
-            'mileage'            => 'required|integer|min:0',
-            'status'             => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id'  => 'nullable|exists:users,id',
-            'document'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'marque'                       => 'required|string|max:50',
+            'model'                        => 'required|string|max:50',
+            'license_plate'                => 'required|string|unique:vehicles|max:20',
+            'year'                         => 'required|integer|min:1900|max:'.(date('Y') + 1),
+            'fuel_type'                    => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
+            'fuel_card'                    => 'nullable|string|max:50',
+            'mileage'                      => 'required|integer|min:0',
+            'status'                       => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
+            'current_driver_id'            => 'nullable|exists:users,id',
+            'document'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'insurance_expiry'             => 'nullable|date',
+            'technical_inspection_expiry'  => 'nullable|date',
+            'tvm_expiry'                   => 'nullable|date',
         ]);
 
         if ($request->hasFile('document')) {
@@ -95,16 +121,19 @@ class VehicleController extends Controller
         }
 
         $data = $request->validate([
-            'marque'            => 'sometimes|string|max:50',
-            'model'             => 'sometimes|string|max:50',
-            'license_plate'     => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
-            'year'              => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
-            'fuel_type'         => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
-            'fuel_card'         => 'nullable|string|max:50',
-            'mileage'           => 'sometimes|integer|min:0',
-            'status'            => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id' => 'nullable|exists:users,id',
-            'document'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'marque'                       => 'sometimes|string|max:50',
+            'model'                        => 'sometimes|string|max:50',
+            'license_plate'                => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
+            'year'                         => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
+            'fuel_type'                    => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
+            'fuel_card'                    => 'nullable|string|max:50',
+            'mileage'                      => 'sometimes|integer|min:0',
+            'status'                       => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
+            'current_driver_id'            => 'nullable|exists:users,id',
+            'document'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'insurance_expiry'             => 'nullable|date',
+            'technical_inspection_expiry'  => 'nullable|date',
+            'tvm_expiry'                   => 'nullable|date',
         ]);
 
         if ($request->hasFile('document')) {
@@ -314,6 +343,56 @@ class VehicleController extends Controller
             ->with('currentDriver:id,name')
             ->orderBy('updated_at', 'desc')
             ->get();
+
+        return response()->json($vehicles);
+    }
+
+    /**
+     * Retourne les véhicules dont au moins un document expire dans les 30 jours (ou est expiré)
+     * Route: GET /api/vehicles/expiring-documents
+     */
+    public function expiringDocuments()
+    {
+        if (! Gate::allows('manager-action') && ! Gate::allows('accountant-action')) {
+            return response()->json(['message' => 'Accès non autorisé.'], 403);
+        }
+
+        $threshold = Carbon::now()->addDays(30);
+
+        $vehicles = Vehicle::select('id', 'license_plate', 'marque', 'model', 'insurance_expiry', 'technical_inspection_expiry', 'tvm_expiry')
+            ->where(function ($q) use ($threshold) {
+                $q->where(function ($q2) use ($threshold) {
+                    $q2->whereNotNull('insurance_expiry')->where('insurance_expiry', '<=', $threshold);
+                })->orWhere(function ($q2) use ($threshold) {
+                    $q2->whereNotNull('technical_inspection_expiry')->where('technical_inspection_expiry', '<=', $threshold);
+                })->orWhere(function ($q2) use ($threshold) {
+                    $q2->whereNotNull('tvm_expiry')->where('tvm_expiry', '<=', $threshold);
+                });
+            })
+            ->orderByRaw('LEAST(
+                COALESCE(insurance_expiry, "9999-12-31"),
+                COALESCE(technical_inspection_expiry, "9999-12-31"),
+                COALESCE(tvm_expiry, "9999-12-31")
+            ) ASC')
+            ->get()
+            ->map(function ($v) {
+                $today = Carbon::today();
+                $fmt = fn ($d) => $d ? [
+                    'date'      => $d->format('Y-m-d'),
+                    'days_left' => $today->diffInDays($d, false),
+                    'expired'   => $d->lt($today),
+                ] : null;
+
+                return [
+                    'id'            => $v->id,
+                    'license_plate' => $v->license_plate,
+                    'marque'        => $v->marque,
+                    'model'         => $v->model,
+                    'insurance'     => $fmt($v->insurance_expiry),
+                    'inspection'    => $fmt($v->technical_inspection_expiry),
+                    'tvm'           => $fmt($v->tvm_expiry),
+                ];
+            });
 
         return response()->json($vehicles);
     }

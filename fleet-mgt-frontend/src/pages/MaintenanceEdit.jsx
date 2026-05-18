@@ -124,7 +124,7 @@ export default function MaintenanceEdit() {
                 {/* Planification */}
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}10` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Planification</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('maintenances.section_planning')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -162,7 +162,7 @@ export default function MaintenanceEdit() {
                 {/* Intervention */}
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1.5px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: '1.25rem', overflow: 'hidden' }}>
                     <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', background: `${ACCENT}10` }}>
-                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>Type & Prestataire</h3>
+                        <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: ACCENT }}>{t('maintenances.section_type_provider')}</h3>
                     </div>
                     <div style={{ padding: '1.25rem 1.4rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
@@ -215,7 +215,7 @@ export default function MaintenanceEdit() {
                             <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={e => setDocumentFile(e.target.files[0] || null)} />
                             <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{documentFile ? '📎' : '📤'}</div>
                             <div style={{ fontWeight: 600, fontSize: '0.82rem', color: documentFile ? ACCENT : '#64748b' }}>
-                                {documentFile ? documentFile.name : (existingDoc ? 'Remplacer le document...' : t('maintenances.document_hint'))}
+                                {documentFile ? documentFile.name : (existingDoc ? t('maintenances.replace_document') : t('maintenances.document_hint'))}
                             </div>
                         </label>
                     </div>

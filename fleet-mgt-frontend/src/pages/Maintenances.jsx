@@ -4,91 +4,141 @@ import { useTranslation } from "react-i18next";
 import api from "../axios";
 import Pagination from "../components/Pagination";
 
+const STATUS_BADGE = {
+  planned:     { bg: '#eff6ff', color: '#0d6efd', border: '#bfdbfe', key: 'maintenances.status_label_planned' },
+  in_progress: { bg: '#fff7ed', color: '#d97706', border: '#fcd34d', key: 'maintenances.status_label_in_progress' },
+  completed:   { bg: '#dcfce7', color: '#16a34a', border: '#86efac', key: 'maintenances.status_label_completed' },
+  cancelled:   { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5', key: 'maintenances.status_label_cancelled' },
+};
+
+const TYPES = [
+  { value: 'vidange',       key: 'maintenances.type_vidange' },
+  { value: 'pneus',         key: 'maintenances.type_pneus' },
+  { value: 'freins',        key: 'maintenances.type_freins' },
+  { value: 'batterie',      key: 'maintenances.type_batterie' },
+  { value: 'révision',      key: 'maintenances.type_revision' },
+  { value: 'carrosserie',   key: 'maintenances.type_carrosserie' },
+  { value: 'électricité',   key: 'maintenances.type_electricite' },
+  { value: 'climatisation', key: 'maintenances.type_climatisation' },
+  { value: 'autre',         key: 'maintenances.type_autre' },
+];
+
+function SortIcon({ col, sortBy, sortDir }) {
+  if (sortBy !== col) return <span style={{ color: '#cbd5e1', marginLeft: 4, fontSize: '0.7rem' }}>⇅</span>;
+  return <span style={{ color: '#0d6efd', marginLeft: 4, fontSize: '0.75rem' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+}
+
+function Th({ col, label, sortBy, sortDir, onSort }) {
+  return (
+    <th onClick={() => onSort(col)} style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+      {label}<SortIcon col={col} sortBy={sortBy} sortDir={sortDir} />
+    </th>
+  );
+}
+
 export default function Maintenances() {
-  const [logs, setLogs] = useState([]);
-  const [pagination, setPagination] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 15, from: 0, to: 0 });
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState(null);
+  const [logs, setLogs]               = useState([]);
+  const [pagination, setPagination]   = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 15, from: 0, to: 0 });
+  const [loading, setLoading]         = useState(true);
+  const [search, setSearch]           = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterType, setFilterType]   = useState('');
+  const [sortBy, setSortBy]           = useState('scheduled_date');
+  const [sortDir, setSortDir]         = useState('desc');
+  const [message, setMessage]         = useState(null);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const menuRef = useRef(null);
-  const navigate = useNavigate();
-  const { t } = useTranslation();
+
+  const filtersRef    = useRef({ search: '', status: '', type: '', sortBy: 'scheduled_date', sortDir: 'desc', perPage: 15 });
+  const searchTimeout = useRef(null);
+  const menuRef       = useRef(null);
+  const navigate      = useNavigate();
+  const { t }         = useTranslation();
 
   useEffect(() => {
-    fetchData(1, 15);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setSelectedMaintenance(null);
-      }
+    fetchData(1);
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setSelectedMaintenance(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchData = async (page = 1, perPage = 15) => {
+  const fetchData = async (page = 1, perPage = filtersRef.current.perPage) => {
     setLoading(true);
     try {
-      const res = await api.get("/maintenances", { params: { page, per_page: perPage } });
+      const { search: s, status, type, sortBy: sb, sortDir: sd } = filtersRef.current;
+      const params = { page, per_page: perPage, sort_by: sb, sort_dir: sd };
+      if (s)      params.search = s;
+      if (status) params.status = status;
+      if (type)   params.type   = type;
+      const res = await api.get("/maintenances", { params });
       const d = res.data;
       setLogs(d.data || d || []);
-      setPagination({
-        currentPage: d.current_page ?? 1,
-        lastPage: d.last_page ?? 1,
-        total: d.total ?? 0,
-        perPage: d.per_page ?? perPage,
-        from: d.from ?? 0,
-        to: d.to ?? 0,
-      });
+      const pp = { currentPage: d.current_page ?? 1, lastPage: d.last_page ?? 1, total: d.total ?? 0, perPage: d.per_page ?? perPage, from: d.from ?? 0, to: d.to ?? 0 };
+      setPagination(pp);
+      filtersRef.current.perPage = pp.perPage;
     } catch (err) {
       console.error(err);
-      setLogs([]);
       setMessage(t('maintenances.load_error'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePageChange = (page) => {
-    setSelectedMaintenance(null);
-    fetchData(page, pagination.perPage);
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    filtersRef.current.search = value;
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => fetchData(1), 350);
   };
 
-  const handlePerPageChange = (perPage) => {
-    setSelectedMaintenance(null);
-    fetchData(1, perPage);
+  const handleStatusChange = (value) => {
+    setFilterStatus(value);
+    filtersRef.current.status = value;
+    fetchData(1);
   };
 
-  const handleRowClick = (event, maintenance) => {
+  const handleTypeChange = (value) => {
+    setFilterType(value);
+    filtersRef.current.type = value;
+    fetchData(1);
+  };
+
+  const handleSort = (col) => {
+    const newDir = filtersRef.current.sortBy === col && filtersRef.current.sortDir === 'desc' ? 'asc' : 'desc';
+    setSortBy(col); setSortDir(newDir);
+    filtersRef.current.sortBy = col;
+    filtersRef.current.sortDir = newDir;
+    fetchData(1);
+  };
+
+  const clearAll = () => {
+    clearTimeout(searchTimeout.current);
+    setSearch(''); setFilterStatus(''); setFilterType('');
+    filtersRef.current.search = ''; filtersRef.current.status = ''; filtersRef.current.type = '';
+    fetchData(1);
+  };
+
+  const handlePageChange    = (page)    => { setSelectedMaintenance(null); fetchData(page); };
+  const handlePerPageChange = (perPage) => { setSelectedMaintenance(null); filtersRef.current.perPage = perPage; fetchData(1, perPage); };
+
+  const handleRowClick = (event, m) => {
     event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
     setMenuPosition({ x: event.clientX, y: rect.bottom });
-    setSelectedMaintenance(maintenance);
+    setSelectedMaintenance(m);
   };
 
-  const handleView = () => {
-    navigate(`/maintenances/${selectedMaintenance.id}`);
-    setSelectedMaintenance(null);
-  };
-
-  const handleEdit = () => {
-    navigate(`/maintenances/${selectedMaintenance.id}/edit`);
-    setSelectedMaintenance(null);
-  };
-
+  const handleView   = () => { navigate(`/maintenances/${selectedMaintenance.id}`);      setSelectedMaintenance(null); };
+  const handleEdit   = () => { navigate(`/maintenances/${selectedMaintenance.id}/edit`); setSelectedMaintenance(null); };
   const handleDelete = async () => {
-    if (!window.confirm(t('maintenances.delete_confirm'))) {
-      setSelectedMaintenance(null);
-      return;
-    }
+    if (!window.confirm(t('maintenances.delete_confirm'))) { setSelectedMaintenance(null); return; }
     try {
       await api.delete(`/maintenances/${selectedMaintenance.id}`);
       setMessage(t('maintenances.delete_success'));
-      fetchData(pagination.currentPage, pagination.perPage);
       setSelectedMaintenance(null);
+      fetchData(pagination.currentPage);
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
       console.error(err);
@@ -98,176 +148,150 @@ export default function Maintenances() {
     }
   };
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return "-";
-    try {
-      const d = new Date(dateString);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    } catch {
-      return dateString;
-    }
+  const formatDate = (s) => {
+    if (!s) return "-";
+    try { const d = new Date(s); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+    catch { return s; }
   };
 
-  const formatNumber = (num) => {
-    if (!num) return "-";
-    return num.toLocaleString("fr-FR");
-  };
-
-  if (loading) {
-    return (
-      <div className="text-center mt-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">{t('common.loading')}</span>
-        </div>
-      </div>
-    );
-  }
+  const hasFilter = search || filterStatus || filterType;
+  const thProps   = { sortBy, sortDir, onSort: handleSort };
 
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="text-primary fw-bold mb-0">{t('maintenances.list_title')}</h2>
-        <button className="btn btn-success" onClick={() => navigate("/maintenances/create")}>
-          {t('maintenances.add_btn')}
-        </button>
+        <button className="btn btn-success" onClick={() => navigate("/maintenances/create")}>{t('maintenances.add_btn')}</button>
+      </div>
+
+      {/* Barre recherche + filtres */}
+      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: '14px' }}>
+        <div className="card-body py-3">
+          <div className="row g-3 align-items-center">
+            <div className="col-md-5">
+              <div className="input-group">
+                <span className="input-group-text bg-white" style={{ border: '2px solid #e9ecef', borderRight: 'none' }}>🔍</span>
+                <input type="text" className="form-control" placeholder={t('maintenances.search_placeholder')}
+                  value={search} onChange={e => handleSearchChange(e.target.value)}
+                  style={{ border: '2px solid #e9ecef', borderLeft: 'none' }} />
+                {search && <button className="btn btn-outline-secondary" style={{ border: '2px solid #e9ecef' }} onClick={() => handleSearchChange('')}>✕</button>}
+              </div>
+            </div>
+            <div className="col-md-3">
+              <select className="form-select" value={filterStatus} onChange={e => handleStatusChange(e.target.value)} style={{ border: '2px solid #e9ecef' }}>
+                <option value="">{t('maintenances.all_statuses')}</option>
+                <option value="planned">{t('maintenances.status_label_planned')}</option>
+                <option value="in_progress">{t('maintenances.status_label_in_progress')}</option>
+                <option value="completed">{t('maintenances.status_label_completed')}</option>
+                <option value="cancelled">{t('maintenances.status_label_cancelled')}</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <select className="form-select" value={filterType} onChange={e => handleTypeChange(e.target.value)} style={{ border: '2px solid #e9ecef' }}>
+                <option value="">{t('maintenances.all_types')}</option>
+                {TYPES.map(tp => <option key={tp.value} value={tp.value}>{t(tp.key)}</option>)}
+              </select>
+            </div>
+            {hasFilter && (
+              <div className="col-md-1">
+                <button className="btn btn-sm btn-outline-danger w-100" style={{ borderRadius: '10px' }} onClick={clearAll}>{t('maintenances.clear_filters')}</button>
+              </div>
+            )}
+          </div>
+          {hasFilter && (
+            <div className="mt-2 d-flex align-items-center gap-2 flex-wrap">
+              <small className="text-muted">{t('maintenances.filter_active')}</small>
+              {search && <span className="badge rounded-pill bg-primary bg-opacity-10 text-primary" style={{ fontWeight: 600 }}>"{search}"</span>}
+              {filterStatus && <span className="badge rounded-pill" style={{ background: STATUS_BADGE[filterStatus]?.bg, color: STATUS_BADGE[filterStatus]?.color, border: `1px solid ${STATUS_BADGE[filterStatus]?.border}`, fontWeight: 700 }}>{t(STATUS_BADGE[filterStatus]?.key)}</span>}
+              {filterType && <span className="badge rounded-pill bg-info bg-opacity-10 text-info" style={{ fontWeight: 600 }}>{t(TYPES.find(tp => tp.value === filterType)?.key || '')}</span>}
+            </div>
+          )}
+        </div>
       </div>
 
       {message && (
         <div className="alert alert-info text-center alert-dismissible fade show">
-          {message}
-          <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
+          {message}<button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
         </div>
       )}
 
-      <div className="table-responsive">
-        <table className="table table-bordered table-hover text-center">
-          <thead className="table-light">
-            <tr>
-              <th>{t('maintenances.date')}</th>
-              <th>{t('maintenances.vehicle')}</th>
-              <th>{t('maintenances.driver')}</th>
-              <th>{t('maintenances.type')}</th>
-              <th>{t('maintenances.company')}</th>
-              <th>{t('maintenances.cost')}</th>
-              <th>{t('maintenances.description')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.length > 0 ? (
-              logs.map((m) => (
-                <tr
-                  key={m.id}
-                  onClick={(e) => handleRowClick(e, m)}
-                  title={t('vehicles.click_hint')}
-                  style={{
-                    cursor: 'pointer',
-                    backgroundColor: selectedMaintenance?.id === m.id ? '#0d6efd' : 'transparent',
-                    color: selectedMaintenance?.id === m.id ? 'white' : 'inherit',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => { if (selectedMaintenance?.id !== m.id) e.currentTarget.style.backgroundColor = '#f8f9fa'; }}
-                  onMouseLeave={(e) => { if (selectedMaintenance?.id !== m.id) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                >
-                  <td style={{ fontSize: '0.9rem' }}>{formatDateTime(m.scheduled_date)}</td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: selectedMaintenance?.id === m.id ? 'rgba(255,255,255,0.3)' : '#6c757d', color: 'white' }}>
-                      {m.vehicle?.license_plate || "-"}
-                    </span>
-                  </td>
-                  <td>{m.driver?.name || "-"}</td>
-                  <td>
-                    <span className="badge" style={{ backgroundColor: selectedMaintenance?.id === m.id ? 'rgba(255,255,255,0.3)' : '#17a2b8', color: 'white' }}>
-                      {m.maintenance_type}
-                    </span>
-                  </td>
-                  <td>{m.maintenance_company}</td>
-                  <td>
-                    <strong style={{ color: selectedMaintenance?.id === m.id ? 'white' : '#28a745' }}>
-                      {formatNumber(m.cost)}
-                    </strong>
-                  </td>
-                  <td>{m.description}</td>
-                </tr>
-              ))
-            ) : (
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status"><span className="visually-hidden">{t('common.loading')}</span></div>
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table className="table table-bordered table-hover text-center">
+            <thead className="table-light">
               <tr>
-                <td colSpan="7" className="text-center text-muted py-5">
-                  <div className="fs-1 mb-3">📋</div>
-                  <p className="mb-0">{t('maintenances.no_maintenances')}</p>
-                </td>
+                <Th col="scheduled_date"      label={t('maintenances.date')}    {...thProps} />
+                <th>{t('maintenances.vehicle')}</th>
+                <th>{t('maintenances.driver')}</th>
+                <Th col="maintenance_type"    label={t('maintenances.type')}    {...thProps} />
+                <Th col="maintenance_company" label={t('maintenances.company')} {...thProps} />
+                <Th col="cost"                label={t('maintenances.cost')}    {...thProps} />
+                <Th col="status"              label={t('vehicles.status')}      {...thProps} />
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {logs.length > 0 ? logs.map((m) => {
+                const isSelected = selectedMaintenance?.id === m.id;
+                const sb = STATUS_BADGE[m.status];
+                return (
+                  <tr key={m.id} onClick={(e) => handleRowClick(e, m)} title={t('vehicles.click_hint')}
+                    style={{ cursor: 'pointer', backgroundColor: isSelected ? '#0d6efd' : 'transparent', color: isSelected ? 'white' : 'inherit', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f8f9fa'; }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    <td style={{ fontSize: '0.9rem' }}>{formatDate(m.scheduled_date)}</td>
+                    <td><span className="badge" style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.3)' : '#6c757d', color: 'white' }}>{m.vehicle?.license_plate || "-"}</span></td>
+                    <td>{m.driver?.name || "-"}</td>
+                    <td><span className="badge" style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.3)' : '#17a2b8', color: 'white' }}>{m.maintenance_type}</span></td>
+                    <td>{m.maintenance_company}</td>
+                    <td><strong style={{ color: isSelected ? 'white' : '#28a745' }}>{m.cost ? Number(m.cost).toLocaleString('fr-FR') : '-'}</strong></td>
+                    <td>
+                      {sb ? (
+                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '0.74rem', fontWeight: 700, background: isSelected ? 'rgba(255,255,255,0.2)' : sb.bg, color: isSelected ? '#fff' : sb.color, border: `1px solid ${isSelected ? 'rgba(255,255,255,0.3)' : sb.border}` }}>{t(sb.key)}</span>
+                      ) : m.status}
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr><td colSpan="7" className="text-center text-muted py-5">
+                  <div className="fs-1 mb-3">🔧</div>
+                  <p className="mb-0">{hasFilter ? t('maintenances.no_search_results') : t('maintenances.no_maintenances')}</p>
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <Pagination
-        currentPage={pagination.currentPage}
-        lastPage={pagination.lastPage}
-        total={pagination.total}
-        perPage={pagination.perPage}
-        from={pagination.from}
-        to={pagination.to}
-        onPageChange={handlePageChange}
-        onPerPageChange={handlePerPageChange}
-      />
+      <Pagination currentPage={pagination.currentPage} lastPage={pagination.lastPage} total={pagination.total} perPage={pagination.perPage} from={pagination.from} to={pagination.to} onPageChange={handlePageChange} onPerPageChange={handlePerPageChange} />
 
       {selectedMaintenance && (
-        <div
-          ref={menuRef}
-          style={{
-            position: 'fixed',
-            top: `${menuPosition.y}px`,
-            left: `${menuPosition.x}px`,
-            zIndex: 1000,
-            transform: 'translateX(-50%)',
-            animation: 'fadeIn 0.2s ease-in-out'
-          }}
-        >
+        <div ref={menuRef} style={{ position: 'fixed', top: `${menuPosition.y}px`, left: `${menuPosition.x}px`, zIndex: 1000, transform: 'translateX(-50%)', animation: 'fadeIn 0.2s ease-in-out' }}>
           <div className="card shadow-lg border-0" style={{ minWidth: '220px', borderRadius: '12px', overflow: 'hidden' }}>
-            <div className="card-header bg-primary text-white py-2">
-              <small className="fw-bold">{t('common.actions')}</small>
-            </div>
+            <div className="card-header bg-primary text-white py-2"><small className="fw-bold">{t('common.actions')}</small></div>
             <div className="list-group list-group-flush">
-              <button onClick={handleView} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
-                <div className="d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: '#28a745', borderRadius: '8px', fontSize: '1.2rem' }}>👁️</div>
-                <div className="flex-grow-1">
-                  <strong className="d-block">{t('common.view')}</strong>
-                  <small className="text-muted">{t('common.view_details')}</small>
-                </div>
-              </button>
-              <button onClick={handleEdit} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
-                <div className="d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: '#ffc107', borderRadius: '8px', fontSize: '1.2rem' }}>✏️</div>
-                <div className="flex-grow-1">
-                  <strong className="d-block">{t('common.edit')}</strong>
-                  <small className="text-muted">{t('common.edit_info')}</small>
-                </div>
-              </button>
-              <button onClick={handleDelete} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
-                <div className="d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: '#dc3545', borderRadius: '8px', fontSize: '1.2rem' }}>🗑️</div>
-                <div className="flex-grow-1">
-                  <strong className="d-block">{t('common.delete')}</strong>
-                  <small className="text-muted">{t('common.delete_permanently')}</small>
-                </div>
-              </button>
+              {[
+                { label: t('common.view'),   sub: t('common.view_details'),      color: '#28a745', icon: '👁️', fn: handleView },
+                { label: t('common.edit'),   sub: t('common.edit_info'),          color: '#ffc107', icon: '✏️', fn: handleEdit },
+                { label: t('common.delete'), sub: t('common.delete_permanently'), color: '#dc3545', icon: '🗑️', fn: handleDelete },
+              ].map(({ label, sub, color, icon, fn }) => (
+                <button key={label} onClick={fn} className="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" style={{ border: 'none', cursor: 'pointer' }}>
+                  <div style={{ width: '40px', height: '40px', backgroundColor: color, borderRadius: '8px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
+                  <div className="flex-grow-1"><strong className="d-block">{label}</strong><small className="text-muted">{sub}</small></div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       )}
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-        .list-group-item-action:hover {
-          background-color: #f8f9fa !important;
-          transform: translateX(3px);
-          transition: all 0.2s ease;
-        }
+        @keyframes fadeIn { from { opacity:0; transform:translateX(-50%) translateY(-10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+        .list-group-item-action:hover { background-color:#f8f9fa !important; transform:translateX(3px); transition:all 0.2s ease; }
       `}</style>
     </div>
   );
