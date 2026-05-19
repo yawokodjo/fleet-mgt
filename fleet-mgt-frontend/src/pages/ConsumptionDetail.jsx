@@ -39,13 +39,18 @@ export default function ConsumptionDetail() {
     return (
         <div style={{ padding: '1.5rem', maxWidth: '660px', margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ background: 'linear-gradient(135deg, #19875418, #19875408)', border: '1.5px solid #19875422', borderRadius: '16px', padding: '1.4rem 1.6rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '13px', background: '#198754', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>⛽</div>
+            <div style={{ background: 'linear-gradient(135deg, #dcfce7, #f0fdf4)', border: '1.5px solid #86efac', borderRadius: '0 0 18px 18px', padding: '0.9rem 1.5rem 1.1rem', marginBottom: '1.25rem', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 4px 20px rgba(22,163,74,0.1)' }}>
+                <button onClick={() => navigate('/consumptions')} style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', padding: 0, marginBottom: '0.55rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ‹ {t('common.back')}
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '50px', height: '50px', borderRadius: '13px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.45rem', flexShrink: 0, boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }}>⛽</div>
                 <div>
-                    <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('consumptions.detail_title')}</h2>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '3px' }}>
+                    <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a', lineHeight: 1.2 }}>{t('consumptions.detail_title')}</h2>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>
                         {c.vehicle?.license_plate || '—'} · {c.date}
                     </div>
+                </div>
                 </div>
             </div>
 

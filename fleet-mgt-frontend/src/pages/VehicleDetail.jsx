@@ -50,15 +50,20 @@ export default function VehicleDetail() {
     return (
         <div style={{ padding: '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
             {/* Header card */}
-            <div style={{ background: 'linear-gradient(135deg, #0d6efd18, #0d6efd08)', border: '1.5px solid #0d6efd22', borderRadius: '16px', padding: '1.5rem 1.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: '#0d6efd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', flexShrink: 0 }}>🚗</div>
-                <div>
-                    <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
-                        {vehicle.marque} {vehicle.model}
-                    </h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '4px' }}>
-                        <span style={{ fontWeight: 700, color: '#0d6efd', fontSize: '0.95rem', letterSpacing: '1px' }}>{vehicle.license_plate}</span>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: st.color, background: st.bg, padding: '2px 9px', borderRadius: '20px' }}>{st.label}</span>
+            <div style={{ background: 'linear-gradient(135deg, #dbeafe, #eff6ff)', border: '1.5px solid #bfdbfe', borderRadius: '0 0 18px 18px', padding: '0.9rem 1.5rem 1.1rem', marginBottom: '1.25rem', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 4px 20px rgba(13,110,253,0.1)' }}>
+                <button onClick={() => navigate('/vehicles')} style={{ background: 'none', border: 'none', color: '#60a5fa', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', padding: 0, marginBottom: '0.55rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ‹ {t('common.back')}
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '13px', background: 'linear-gradient(135deg, #3b82f6, #0d6efd)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.45rem', flexShrink: 0, boxShadow: '0 4px 14px rgba(13,110,253,0.35)' }}>🚗</div>
+                    <div>
+                        <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a', lineHeight: 1.2 }}>
+                            {vehicle.marque} {vehicle.model}
+                        </h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '5px' }}>
+                            <span style={{ fontWeight: 700, color: '#2563eb', fontSize: '0.88rem', letterSpacing: '1px' }}>{vehicle.license_plate}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: st.color, background: st.bg, padding: '2px 9px', borderRadius: '20px' }}>{st.label}</span>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -89,15 +89,15 @@ export default function MaintenanceCreate() {
 
     return (
         <div style={{ padding: '1.5rem', maxWidth: '740px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '1.5rem' }}>
-                <button onClick={() => navigate('/maintenances')} style={{ background: 'none', border: 'none', color: ACCENT, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', padding: 0, marginBottom: '0.75rem' }}>
-                    ← {t('common.back')}
+            <div style={{ marginBottom: '1.25rem', position: 'sticky', top: 0, zIndex: 100, background: '#fff', borderRadius: '0 0 16px 16px', boxShadow: '0 4px 20px rgba(253,126,20,0.1)', padding: '1rem 1.25rem' }}>
+                <button onClick={() => navigate('/maintenances')} style={{ background: 'none', border: 'none', color: '#94a3b8', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', padding: 0, marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ‹ {t('common.back')}
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '11px', background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>🔧</div>
+                    <div style={{ width: '46px', height: '46px', borderRadius: '13px', background: 'linear-gradient(135deg, #fb923c, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0, boxShadow: '0 4px 14px rgba(253,126,20,0.35)' }}>🔧</div>
                     <div>
-                        <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('maintenances.add_title')}</h2>
-                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>{t('maintenances.add_subtitle')}</p>
+                        <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.18rem', color: '#0f172a', lineHeight: 1.2 }}>{t('maintenances.add_title')}</h2>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>{t('maintenances.add_subtitle')}</p>
                     </div>
                 </div>
             </div>

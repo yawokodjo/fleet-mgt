@@ -6,23 +6,25 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function MainLayout({ children }) {
   return (
-    <div className="d-flex flex-column bg-light" style={{ height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', height: '100vh', background: '#f8f9fa' }}>
       {/* En-tête toujours visible */}
       <Header />
 
-      {/* Corps principal */}
-      <div className="d-flex flex-grow-1" style={{ overflow: 'hidden' }}>
+      {/* Corps principal — 1fr prend exactement l'espace restant */}
+      <div style={{ display: 'flex', overflow: 'hidden' }}>
         {/* Barre latérale */}
-        <div className="d-none d-md-block bg-white border-end" style={{ width: '250px', overflowY: 'auto' }}>
+        <div className="d-none d-md-block bg-white border-end" style={{ width: '250px', overflowY: 'auto', flexShrink: 0 }}>
           <Sidebar />
         </div>
 
         {/* Contenu principal — seule zone qui défile */}
-        <main className="flex-grow-1 p-4" style={{ overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minWidth: 0 }}>
           {children}
-          <Footer />
         </main>
       </div>
+
+      {/* Pied de page — toujours visible */}
+      <Footer />
     </div>
   );
 }

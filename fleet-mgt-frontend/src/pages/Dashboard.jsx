@@ -367,7 +367,7 @@ export default function Dashboard() {
             )}
 
             {/* ── Hero Banner ── */}
-            <div style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d3a6e 55%, #1565c0 100%)', borderRadius: '24px', padding: '1.75rem 2rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d3a6e 55%, #1565c0 100%)', borderRadius: '0 0 24px 24px', padding: '1.75rem 2rem', marginBottom: '1.5rem', position: 'sticky', top: 0, zIndex: 100, overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '240px', height: '240px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
                 <div style={{ position: 'absolute', bottom: '-80px', left: '35%', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
 

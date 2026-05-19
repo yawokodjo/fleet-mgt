@@ -159,9 +159,20 @@ export default function Maintenances() {
 
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2 className="text-primary fw-bold mb-0">{t('maintenances.list_title')}</h2>
-        <button className="btn btn-success" onClick={() => navigate("/maintenances/create")}>{t('maintenances.add_btn')}</button>
+      <div className="sticky-page-header" style={{ background: '#fff', borderRadius: '0 0 18px 18px', boxShadow: '0 4px 24px rgba(253,126,20,0.1)', padding: '0.85rem 0', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #fb923c, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0, boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}>🔧</div>
+            <div>
+              <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.15rem', color: '#0f172a', lineHeight: 1.2 }}>{t('maintenances.list_title')}</h2>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{pagination.total} {t('reports.records_count')}</span>
+            </div>
+          </div>
+          <button onClick={() => navigate("/maintenances/create")}
+            style={{ background: 'linear-gradient(135deg, #fb923c, #f97316)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(249,115,22,0.28)', whiteSpace: 'nowrap' }}>
+            + {t('maintenances.add_btn')}
+          </button>
+        </div>
       </div>
 
       {/* Barre recherche + filtres */}

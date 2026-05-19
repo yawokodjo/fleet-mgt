@@ -48,14 +48,19 @@ export default function MaintenanceDetail() {
     return (
         <div style={{ padding: '1.5rem', maxWidth: '660px', margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ background: 'linear-gradient(135deg, #fd7e1418, #fd7e1408)', border: '1.5px solid #fd7e1422', borderRadius: '16px', padding: '1.4rem 1.6rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '13px', background: '#fd7e14', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>🔧</div>
+            <div style={{ background: 'linear-gradient(135deg, #ffedd5, #fff7ed)', border: '1.5px solid #fed7aa', borderRadius: '0 0 18px 18px', padding: '0.9rem 1.5rem 1.1rem', marginBottom: '1.25rem', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 4px 20px rgba(253,126,20,0.1)' }}>
+                <button onClick={() => navigate('/maintenances')} style={{ background: 'none', border: 'none', color: '#fb923c', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', padding: 0, marginBottom: '0.55rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    ‹ {t('common.back')}
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '50px', height: '50px', borderRadius: '13px', background: 'linear-gradient(135deg, #fb923c, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.45rem', flexShrink: 0, boxShadow: '0 4px 14px rgba(253,126,20,0.35)' }}>🔧</div>
                 <div>
-                    <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>{t('maintenances.detail_title')}</h2>
-                    <div style={{ display: 'flex', align: 'center', gap: '0.6rem', marginTop: '4px' }}>
-                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{m.vehicle?.license_plate || '—'}</span>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: st.color, background: st.bg, padding: '2px 9px', borderRadius: '20px' }}>{st.key ? t(st.key) : m.status}</span>
+                    <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#0f172a', lineHeight: 1.2 }}>{t('maintenances.detail_title')}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '5px' }}>
+                        <span style={{ fontSize: '0.88rem', color: '#64748b', fontWeight: 600 }}>{m.vehicle?.license_plate || '—'}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: st.color, background: st.bg, padding: '2px 9px', borderRadius: '20px' }}>{st.key ? t(st.key) : m.status}</span>
                     </div>
+                </div>
                 </div>
             </div>
 

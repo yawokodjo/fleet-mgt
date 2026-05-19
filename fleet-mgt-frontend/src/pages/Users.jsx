@@ -110,24 +110,25 @@ export default function Users() {
 
     return (
         <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '3rem' }}>
+            <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', paddingTop: '1.25rem', paddingBottom: '1.1rem', boxShadow: '0 4px 24px rgba(102,126,234,0.35)' }}>
             <Container fluid>
-                <Row className="mb-4">
-                    <Col>
-                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                            <div>
-                                <h1 className="text-white fw-bold mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-                                    {t('users.title')}
-                                </h1>
-                                <p className="text-white opacity-75 mb-0">{t('users.subtitle')}</p>
-                            </div>
-                            <Button size="lg" variant="light" className="shadow-lg"
-                                style={{ borderRadius: '15px', fontWeight: '600' }}
-                                onClick={() => navigate('/users/create')}>
-                                {t('users.new_user')}
-                            </Button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        <div style={{ width: '46px', height: '46px', borderRadius: '13px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.35rem', flexShrink: 0 }}>👥</div>
+                        <div>
+                            <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.2rem', color: '#fff', lineHeight: 1.2, textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{t('users.title')}</h2>
+                            <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>{t('users.subtitle')}</p>
                         </div>
-                    </Col>
-                </Row>
+                    </div>
+                    <Button variant="light"
+                        style={{ borderRadius: '10px', fontWeight: 700, fontSize: '0.85rem', padding: '0.48rem 1.1rem', boxShadow: '0 3px 10px rgba(0,0,0,0.2)', border: 'none' }}
+                        onClick={() => navigate('/users/create')}>
+                        + {t('users.new_user')}
+                    </Button>
+                </div>
+            </Container>
+            </div>
+            <Container fluid>
 
                 {success && <Alert variant="success" dismissible onClose={() => setSuccess('')} className="shadow-sm">✅ {success}</Alert>}
                 {error && <Alert variant="danger" dismissible onClose={() => setError('')} className="shadow-sm">❌ {error}</Alert>}

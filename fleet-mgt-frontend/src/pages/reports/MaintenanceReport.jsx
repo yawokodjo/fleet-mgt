@@ -98,16 +98,19 @@ export default function MaintenanceReport() {
     const pageData = useMemo(() => data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [data, currentPage]);
 
     return (
-        <Container className="mt-4">
-            <Row className="mb-4">
-                <Col>
-                    <h3 className="text-primary text-center">{t('reports.maintenance_report_title')}</h3>
-                </Col>
-            </Row>
+        <Container>
+            <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#f8f9fa', paddingBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '1rem', paddingBottom: '0.5rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #fb923c, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>🔧</div>
+                <div>
+                    <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.2 }}>{t('reports.maintenance_report_title')}</h3>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{t('reports.maintenances_section')}</span>
+                </div>
+            </div>
 
             {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
 
-            <Form className="bg-light p-3 rounded shadow-sm mb-4">
+            <Form className="bg-light p-3 rounded shadow-sm mb-2">
                 <Row className="g-3 align-items-end">
                     <Col md={3}>
                         <Form.Group>
@@ -148,6 +151,7 @@ export default function MaintenanceReport() {
                     </Col>
                 </Row>
             </Form>
+            </div>
 
             <div className="table-responsive shadow-sm">
                 <Table bordered hover className="align-middle text-center">
