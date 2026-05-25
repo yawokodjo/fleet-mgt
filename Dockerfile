@@ -2,7 +2,7 @@
 # Docker context = repo root, all paths prefixed with fleet-mgt-api/
 
 # ─── Stage: vendor ────────────────────────────────────────────────
-FROM composer:2-php8.2 AS vendor
+FROM composer:2 AS vendor
 WORKDIR /app
 COPY fleet-mgt-api/composer.json fleet-mgt-api/composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
