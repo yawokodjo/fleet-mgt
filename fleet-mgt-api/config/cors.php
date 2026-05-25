@@ -14,6 +14,7 @@ return [
     'allowed_origins_patterns' => [
         '#^https://.*\.up\.railway\.app$#',
         '#^https://.*\.pages\.dev$#',
+        '#^https://.*\.workers\.dev$#',
         '#^https://.*\.b4a\.run$#',
     ],
 
