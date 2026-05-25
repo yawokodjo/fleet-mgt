@@ -1,8 +1,12 @@
 # ─── Stage: vendor ────────────────────────────────────────────────
-FROM composer:2 AS vendor
+FROM php:8.2-cli AS vendor
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apt-get update && apt-get install -y libzip-dev zip unzip \
+    && docker-php-ext-install zip \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts --ignore-platform-req=ext-gd
 
 # ─── Stage: dev (php artisan serve + hot reload) ──────────────────
 FROM php:8.2-fpm AS dev

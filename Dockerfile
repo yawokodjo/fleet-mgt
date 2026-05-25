@@ -2,10 +2,14 @@
 # Docker context = repo root, all paths prefixed with fleet-mgt-api/
 
 # ─── Stage: vendor ────────────────────────────────────────────────
-FROM composer:2 AS vendor
+FROM php:8.2-cli AS vendor
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apt-get update && apt-get install -y libzip-dev zip unzip \
+    && docker-php-ext-install zip \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY fleet-mgt-api/composer.json fleet-mgt-api/composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts --ignore-platform-req=ext-gd
 
 # ─── Stage: prod (Nginx + PHP-FPM via supervisord) ────────────────
 FROM php:8.2-fpm AS prod
