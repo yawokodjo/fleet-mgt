@@ -11,8 +11,6 @@ services:
     runtime: docker
     dockerfilePath: ./fleet-mgt-api/Dockerfile
     dockerContext: ./fleet-mgt-api
-    dockerBuildTarget: prod
-    plan: free
     healthCheckPath: /api/message
     envVars:
       - key: APP_ENV
@@ -60,8 +58,6 @@ services:
     runtime: docker
     dockerfilePath: ./fleet-mgt-frontend/Dockerfile
     dockerContext: ./fleet-mgt-frontend
-    dockerBuildTarget: prod
-    plan: free
     healthCheckPath: /
     envVars:
       - key: VITE_API_URL
