@@ -11,7 +11,11 @@ return [
         env('FRONTEND_URL') ? [env('FRONTEND_URL')] : []
     )),
 
-    'allowed_origins_patterns' => ['#^https://.*\.up\.railway\.app$#'],
+    'allowed_origins_patterns' => [
+        '#^https://.*\.up\.railway\.app$#',
+        '#^https://.*\.pages\.dev$#',
+        '#^https://.*\.b4a\.run$#',
+    ],
 
     'allowed_headers' => ['*'],
 
