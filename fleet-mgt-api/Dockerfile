@@ -24,10 +24,10 @@ CMD ["dockerize", "-wait", "tcp://db:3306", "-timeout", "30s", \
 # ─── Stage: prod (Nginx + PHP-FPM via supervisord) ────────────────
 FROM php:8.2-fpm AS prod
 RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libfreetype6-dev libzip-dev zip \
+    libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libpq-dev zip \
     nginx supervisor ca-certificates \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql gd zip opcache \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql gd zip opcache \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
