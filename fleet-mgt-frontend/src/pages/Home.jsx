@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import logoCI from '../assets/logo-ci.png';
-import carVideo from '../assets/voiture-video.mp4';
+import carBg from '../assets/voiture.jpg';
 
 const fadeUp = { hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0 } };
 const stagger = { visible: { transition: { staggerChildren: 0.15 } } };
@@ -155,9 +155,7 @@ export default function Home() {
 
             {/* ── Hero ── */}
             <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <video autoPlay muted loop playsInline style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.42)' }}>
-                    <source src={carVideo} type="video/mp4" />
-                </video>
+                <img src={carBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.42)' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,15,26,0.25) 0%, rgba(10,15,26,0.7) 100%)' }} />
 
                 <motion.div initial="hidden" animate="visible" variants={stagger}

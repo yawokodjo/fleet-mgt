@@ -1,7 +1,5 @@
 name = "fleet-frontend"
-pages_build_output_dir = "dist"
 compatibility_date = "2024-01-01"
 
-# VITE_API_URL doit être défini dans le dashboard Cloudflare Pages
-# (Settings → Environment variables) avec l'URL Koyeb :
-# VITE_API_URL = "https://<ton-app>.koyeb.app"
+[assets]
+directory = "./dist"
