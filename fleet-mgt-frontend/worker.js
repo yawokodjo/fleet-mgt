@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/api/')) {
-      const target = `https://citgfleetmgt1-6293a6pz.b4a.run${url.pathname}${url.search}`;
+      const target = `https://fleet-api-production-4d99.up.railway.app${url.pathname}${url.search}`;
 
       const headers = new Headers(request.headers);
       headers.set('Host', 'citgfleetmgt1-6293a6pz.b4a.run');
