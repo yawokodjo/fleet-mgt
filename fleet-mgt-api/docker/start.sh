@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 # Render/Railway inject $PORT — nginx must listen on it
 if [ -n "$PORT" ]; then
@@ -14,10 +13,10 @@ mkdir -p storage/framework/cache/laravel-excel \
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
-php artisan config:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan migrate --force
+php artisan config:clear  || true
+php artisan config:cache  || true
+php artisan route:cache   || true
+php artisan view:cache    || true
+php artisan migrate --force || echo "[start.sh] migrate failed — continuing"
 
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
