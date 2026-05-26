@@ -18,5 +18,6 @@ php artisan config:cache  || true
 php artisan route:cache   || true
 php artisan view:cache    || true
 php artisan migrate --force || echo "[start.sh] migrate failed — continuing"
+php artisan db:seed --force || echo "[start.sh] seed failed — continuing"
 
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
