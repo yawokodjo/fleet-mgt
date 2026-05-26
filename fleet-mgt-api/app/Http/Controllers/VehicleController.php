@@ -369,11 +369,11 @@ class VehicleController extends Controller
                     $q2->whereNotNull('tvm_expiry')->where('tvm_expiry', '<=', $threshold);
                 });
             })
-            ->orderByRaw('LEAST(
-                COALESCE(insurance_expiry, "9999-12-31"),
-                COALESCE(technical_inspection_expiry, "9999-12-31"),
-                COALESCE(tvm_expiry, "9999-12-31")
-            ) ASC')
+            ->orderByRaw("LEAST(
+                COALESCE(insurance_expiry, '9999-12-31'),
+                COALESCE(technical_inspection_expiry, '9999-12-31'),
+                COALESCE(tvm_expiry, '9999-12-31')
+            ) ASC")
             ->get()
             ->map(function ($v) {
                 $today = Carbon::today();
