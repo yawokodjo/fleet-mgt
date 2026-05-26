@@ -12,7 +12,7 @@ export default {
         return await fetch(target, {
           method: request.method,
           headers,
-          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.arrayBuffer(),
           redirect: 'follow',
         });
       } catch {
