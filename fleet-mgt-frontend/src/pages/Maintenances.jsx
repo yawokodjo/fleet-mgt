@@ -43,13 +43,15 @@ export default function Maintenances() {
   const [search, setSearch]           = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType]   = useState('');
+  const [dateFrom, setDateFrom]       = useState('');
+  const [dateTo, setDateTo]           = useState('');
   const [sortBy, setSortBy]           = useState('scheduled_date');
   const [sortDir, setSortDir]         = useState('desc');
   const [message, setMessage]         = useState(null);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
-  const filtersRef    = useRef({ search: '', status: '', type: '', sortBy: 'scheduled_date', sortDir: 'desc', perPage: 15 });
+  const filtersRef    = useRef({ search: '', status: '', type: '', dateFrom: '', dateTo: '', sortBy: 'scheduled_date', sortDir: 'desc', perPage: 15 });
   const searchTimeout = useRef(null);
   const menuRef       = useRef(null);
   const navigate      = useNavigate();
@@ -67,11 +69,13 @@ export default function Maintenances() {
   const fetchData = async (page = 1, perPage = filtersRef.current.perPage) => {
     setLoading(true);
     try {
-      const { search: s, status, type, sortBy: sb, sortDir: sd } = filtersRef.current;
+      const { search: s, status, type, dateFrom: df, dateTo: dt, sortBy: sb, sortDir: sd } = filtersRef.current;
       const params = { page, per_page: perPage, sort_by: sb, sort_dir: sd };
-      if (s)      params.search = s;
-      if (status) params.status = status;
-      if (type)   params.type   = type;
+      if (s)      params.search    = s;
+      if (status) params.status    = status;
+      if (type)   params.type      = type;
+      if (df)     params.date_from = df;
+      if (dt)     params.date_to   = dt;
       const res = await api.get("/maintenances", { params });
       const d = res.data;
       setLogs(d.data || d || []);
@@ -113,10 +117,23 @@ export default function Maintenances() {
     fetchData(1);
   };
 
+  const handleDateFromChange = (value) => {
+    setDateFrom(value);
+    filtersRef.current.dateFrom = value;
+    fetchData(1);
+  };
+
+  const handleDateToChange = (value) => {
+    setDateTo(value);
+    filtersRef.current.dateTo = value;
+    fetchData(1);
+  };
+
   const clearAll = () => {
     clearTimeout(searchTimeout.current);
-    setSearch(''); setFilterStatus(''); setFilterType('');
+    setSearch(''); setFilterStatus(''); setFilterType(''); setDateFrom(''); setDateTo('');
     filtersRef.current.search = ''; filtersRef.current.status = ''; filtersRef.current.type = '';
+    filtersRef.current.dateFrom = ''; filtersRef.current.dateTo = '';
     fetchData(1);
   };
 
@@ -154,7 +171,7 @@ export default function Maintenances() {
     catch { return s; }
   };
 
-  const hasFilter = search || filterStatus || filterType;
+  const hasFilter = search || filterStatus || filterType || dateFrom || dateTo;
   const thProps   = { sortBy, sortDir, onSort: handleSort };
 
   return (
@@ -197,11 +214,21 @@ export default function Maintenances() {
                 <option value="cancelled">{t('maintenances.status_label_cancelled')}</option>
               </select>
             </div>
-            <div className="col-md-3">
+            <div className="col-md-2">
               <select className="form-select" value={filterType} onChange={e => handleTypeChange(e.target.value)} style={{ border: '2px solid #e9ecef' }}>
                 <option value="">{t('maintenances.all_types')}</option>
                 {TYPES.map(tp => <option key={tp.value} value={tp.value}>{t(tp.key)}</option>)}
               </select>
+            </div>
+            <div className="col-md-2">
+              <input type="date" className="form-control" title={t('reports.start_date')}
+                value={dateFrom} onChange={e => handleDateFromChange(e.target.value)}
+                style={{ border: '2px solid #e9ecef' }} />
+            </div>
+            <div className="col-md-2">
+              <input type="date" className="form-control" title={t('reports.end_date')}
+                value={dateTo} onChange={e => handleDateToChange(e.target.value)}
+                style={{ border: '2px solid #e9ecef' }} />
             </div>
             {hasFilter && (
               <div className="col-md-1">

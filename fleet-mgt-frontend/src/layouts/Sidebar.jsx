@@ -17,6 +17,7 @@ const NAV_GROUPS = [
         labelKey: "nav.reports_group",
         links: [
             { to: "/reports",              labelKey: "nav.reports",              icon: <ChartIcon /> },
+            { to: "/reports/vehicles",     labelKey: "nav.vehicle_report",       icon: <CarIcon /> },
             { to: "/reports/consumption",  labelKey: "nav.consumption_report",   icon: <TrendIcon /> },
             { to: "/reports/maintenance",  labelKey: "nav.maintenance_report",   icon: <ToolIcon /> },
         ],

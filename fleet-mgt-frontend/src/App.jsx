@@ -43,15 +43,23 @@ import UserDetail from './pages/UserDetail';
 // Reports
 import ConsumptionReport from './pages/reports/ConsumptionReport';
 import MaintenanceReport from './pages/reports/MaintenanceReport';
+import VehicleReport from './pages/reports/VehicleReport';
 import ReportsDashboard from './pages/reports/ReportsDashboard';
 
 // Context
 import PrivateRoute from './components/PrivateRoute';
 
-// Tableau des entités CRUD
+// ── Rôles ──────────────────────────────────────────────────────────────────
+const ALL         = ['admin', 'manager', 'driver', 'accountant'];
+const MANAGERS    = ['admin', 'manager'];
+const NO_DRIVER   = ['admin', 'manager', 'accountant'];
+const ADMIN_ONLY  = ['admin'];
+
+// Tableau des entités CRUD avec leurs rôles autorisés
 const entities = [
   {
     name: 'vehicles',
+    roles: NO_DRIVER,
     list: Vehicles,
     create: VehicleCreate,
     detail: VehicleDetail,
@@ -59,6 +67,7 @@ const entities = [
   },
   {
     name: 'maintenances',
+    roles: MANAGERS,
     list: Maintenances,
     create: MaintenanceCreate,
     detail: MaintenanceDetail,
@@ -66,6 +75,7 @@ const entities = [
   },
   {
     name: 'consumptions',
+    roles: NO_DRIVER,
     list: Consumptions,
     create: ConsumptionCreate,
     detail: ConsumptionDetail,
@@ -73,197 +83,51 @@ const entities = [
   },
 ];
 
+function PR({ children, roles }) {
+  return (
+    <PrivateRoute roles={roles}>
+      <MainLayout>{children}</MainLayout>
+    </PrivateRoute>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
-      {/* ========================================
-          PAGE D'ACCUEIL PUBLIQUE
-      ======================================== */}
-      <Route path="/" element={<Home />} />
-
-      {/* ========================================
-              ROUTES PUBLIQUES (AUTH)
-          ======================================== */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Public */}
+      <Route path="/"                element={<Home />} />
+      <Route path="/login"           element={<Login />} />
+      <Route path="/register"        element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/debug-auth" element={<DebugAuth />} />
-      {/* ========================================
-              DASHBOARD (ROUTE PRIVÉE)
-          ======================================== */}
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
+      <Route path="/reset-password"  element={<ResetPassword />} />
+      <Route path="/debug-auth"      element={<DebugAuth />} />
 
-      {/* ========================================
-              PROFIL
-          ======================================== */}
-      <Route
-        path="/profile"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <Profile />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
+      {/* Dashboard & Profil — tous les rôles connectés */}
+      <Route path="/dashboard" element={<PR roles={ALL}><Dashboard /></PR>} />
+      <Route path="/profile"   element={<PR roles={ALL}><Profile /></PR>} />
 
-      {/* ========================================
-              RAPPORTS
-          ======================================== */}
-      <Route
-        path="/reports"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <ReportsDashboard />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
+      {/* Rapports — admin, manager, accountant */}
+      <Route path="/reports"              element={<PR roles={NO_DRIVER}><ReportsDashboard /></PR>} />
+      <Route path="/reports/vehicles"     element={<PR roles={NO_DRIVER}><VehicleReport /></PR>} />
+      <Route path="/reports/consumption"  element={<PR roles={NO_DRIVER}><ConsumptionReport /></PR>} />
+      <Route path="/reports/maintenance"  element={<PR roles={NO_DRIVER}><MaintenanceReport /></PR>} />
 
-      <Route
-        path="/reports/consumption"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <ConsumptionReport />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
+      {/* Utilisateurs — admin uniquement */}
+      <Route path="/users"           element={<PR roles={ADMIN_ONLY}><Users /></PR>} />
+      <Route path="/users/create"    element={<PR roles={ADMIN_ONLY}><UserForm /></PR>} />
+      <Route path="/users/:id"       element={<PR roles={ADMIN_ONLY}><UserDetail /></PR>} />
+      <Route path="/users/:id/edit"  element={<PR roles={ADMIN_ONLY}><UserForm /></PR>} />
 
-      <Route
-        path="/reports/maintenance"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <MaintenanceReport />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* ========================================
-              UTILISATEURS
-          ======================================== */}
-      <Route
-        path="/users"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <Users />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/users/:id"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <UserDetail />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/users/create"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <UserForm />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/users/:id/edit"
-        element={
-          <PrivateRoute>
-            <MainLayout>
-              <UserForm />
-            </MainLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* ========================================
-              ROUTES CRUD DYNAMIQUES
-          ======================================== */}
+      {/* CRUD dynamique — rôles définis par entité */}
       {entities.map((entity) => (
         <React.Fragment key={entity.name}>
-          {/* Liste */}
-          <Route
-            path={`/${entity.name}`}
-            element={
-              <PrivateRoute>
-                <MainLayout>
-                  <entity.list />
-                </MainLayout>
-              </PrivateRoute>
-            }
-          />
-
-          {/* Création */}
-          {entity.create && (
-            <Route
-              path={`/${entity.name}/create`}
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <entity.create />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
-          )}
-
-          {/* Détail */}
-          {entity.detail && (
-            <Route
-              path={`/${entity.name}/:id`}
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <entity.detail />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
-          )}
-
-          {/* Édition */}
-          {entity.edit && (
-            <Route
-              path={`/${entity.name}/:id/edit`}
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <entity.edit />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
-          )}
+          <Route path={`/${entity.name}`}           element={<PR roles={entity.roles}><entity.list /></PR>} />
+          {entity.create && <Route path={`/${entity.name}/create`}    element={<PR roles={entity.roles}><entity.create /></PR>} />}
+          {entity.detail && <Route path={`/${entity.name}/:id`}       element={<PR roles={entity.roles}><entity.detail /></PR>} />}
+          {entity.edit   && <Route path={`/${entity.name}/:id/edit`}  element={<PR roles={entity.roles}><entity.edit /></PR>} />}
         </React.Fragment>
       ))}
 
-      {/* ========================================
-              PAGE 404
-          ======================================== */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

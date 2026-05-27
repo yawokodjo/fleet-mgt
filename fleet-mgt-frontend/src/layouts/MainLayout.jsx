@@ -6,21 +6,16 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function MainLayout({ children }) {
   return (
-    <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', height: '100vh', background: '#f8f9fa' }}>
-      {/* En-tête toujours visible */}
+    <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', height: '100vh', overflow: 'hidden', background: '#f8f9fa' }}>
       <Header />
 
-      {/* Corps principal — 1fr prend exactement l'espace restant */}
-      <div style={{ display: 'flex', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         <Sidebar />
-
-        {/* Contenu principal — seule zone qui défile */}
-        <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minWidth: 0 }}>
+        <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minWidth: 0, minHeight: 0 }}>
           {children}
         </main>
       </div>
 
-      {/* Pied de page — toujours visible */}
       <Footer />
     </div>
   );

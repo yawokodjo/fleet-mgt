@@ -42,6 +42,14 @@ class VehicleController extends Controller
             });
         }
 
+        if ($request->filled('year_from')) {
+            $query->where('year', '>=', (int) $request->get('year_from'));
+        }
+
+        if ($request->filled('year_to')) {
+            $query->where('year', '<=', (int) $request->get('year_to'));
+        }
+
         $allowed = ['marque', 'model', 'license_plate', 'status', 'year', 'mileage'];
         $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'license_plate';
         $sortDir = $request->get('sort_dir') === 'desc' ? 'desc' : 'asc';

@@ -497,7 +497,23 @@ export default function ReportsDashboard() {
                     <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1.2px', whiteSpace: 'nowrap' }}>{t('reports.detailed_reports_section')}</span>
                     <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+                    <ReportEntryCard
+                        color="#0d6efd"
+                        gradient="linear-gradient(135deg, #0b3d8f 0%, #0d6efd 50%, #3b82f6 100%)"
+                        title={t('reports.vehicle_report_title')}
+                        desc={t('reports.vehicle_report_desc')}
+                        IlluComp={IlluFleet}
+                        stat={`${vehicles.length}`}
+                        statLabel={t('reports.records_count')}
+                        features={[
+                            t('reports.filter_status'),
+                            t('reports.filter_year'),
+                            t('reports.status_distribution'),
+                            t('reports.mileage_total'),
+                        ]}
+                        route="/reports/vehicles"
+                    />
                     <ReportEntryCard
                         color="#198754"
                         gradient="linear-gradient(135deg, #0f7340 0%, #198754 50%, #22c55e 100%)"

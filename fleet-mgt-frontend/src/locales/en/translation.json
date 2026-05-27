@@ -57,7 +57,8 @@
     "see_more": "Show more",
     "see_less": "Show less",
     "reports_group": "Reports",
-    "admin_group": "Administration"
+    "admin_group": "Administration",
+    "vehicle_report": "Vehicle Report"
   },
   "header": {
     "title": "Vehicle Fleet Management",
@@ -208,7 +209,9 @@
     "doc_expired_warning": "⚠️ Document expired",
     "doc_expires_in": "⚠️ Expires in {{days}} d",
     "doc_expires_soon": "Expires in {{days}} d",
-    "replace_document": "Replace document..."
+    "replace_document": "Replace document...",
+    "year_from": "Year from",
+    "year_to": "Year to"
   },
   "maintenances": {
     "list_title": "🔧 Maintenance List",
@@ -281,7 +284,6 @@
     "type_pneus": "Tires",
     "type_freins": "Brakes",
     "type_batterie": "Battery",
-    "type_revision": "Revision",
     "type_carrosserie": "Bodywork",
     "type_electricite": "Electrical",
     "type_climatisation": "Air conditioning",
@@ -580,7 +582,13 @@
     "insufficient_data": "Insufficient data",
     "fuel_badge": "{{count}} refuel(s)",
     "records_count": "record(s)",
-    "total_cost_label": "total cost"
+    "total_cost_label": "total cost",
+    "vehicle_report_title": "Vehicle Report",
+    "vehicle_report_desc": "Fleet overview with filters by status and manufacturing year.",
+    "filter_status": "Filter by status",
+    "filter_year": "Filter by year",
+    "status_distribution": "Status distribution",
+    "mileage_total": "Total fleet mileage"
   },
   "footer": {
     "copyright": "© 2025 CITG Vehicle Fleet Manager",
@@ -627,5 +635,10 @@
     "contact_sent": "Message sent! We will reply within 24 hours.",
     "contact_email_val": "citogo@tg.ci.org",
     "contact_phone_val": "(+228) 99 90 05 05 / (+228) 90 17 76 20"
+  },
+  "access": {
+    "denied_title": "Access Denied",
+    "denied_message": "You do not have access to this page.",
+    "contact_admin": "Ask your administrator to grant you the necessary permissions."
   }
 }

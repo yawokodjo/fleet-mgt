@@ -39,6 +39,14 @@ class MaintenanceController extends Controller
             });
         }
 
+        if ($request->filled('date_from')) {
+            $query->whereDate('scheduled_date', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('scheduled_date', '<=', $request->get('date_to'));
+        }
+
         $allowed = ['scheduled_date', 'maintenance_type', 'cost', 'status', 'maintenance_company'];
         $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'scheduled_date';
         $sortDir = $request->get('sort_dir') === 'asc' ? 'asc' : 'desc';

@@ -35,13 +35,15 @@ export default function Vehicles() {
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [yearFrom, setYearFrom]       = useState('');
+  const [yearTo, setYearTo]           = useState('');
   const [sortBy, setSortBy]           = useState('license_plate');
   const [sortDir, setSortDir]         = useState('asc');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   // filtersRef évite les closures périmées dans les debounces et callbacks
-  const filtersRef    = useRef({ search: '', status: '', sortBy: 'license_plate', sortDir: 'asc' });
+  const filtersRef    = useRef({ search: '', status: '', yearFrom: '', yearTo: '', sortBy: 'license_plate', sortDir: 'asc' });
   const searchTimeout = useRef(null);
   const menuRef       = useRef(null);
   const navigate      = useNavigate();
@@ -68,10 +70,12 @@ export default function Vehicles() {
   const fetchVehicles = async (page = 1, perPage = filtersRef.current.perPage || 10) => {
     setLoading(true);
     try {
-      const { search: s, status, sortBy: sb, sortDir: sd } = filtersRef.current;
+      const { search: s, status, yearFrom: yf, yearTo: yt, sortBy: sb, sortDir: sd } = filtersRef.current;
       const params = { page, per_page: perPage, sort_by: sb, sort_dir: sd };
-      if (s)      params.search = s;
-      if (status) params.status = status;
+      if (s)      params.search    = s;
+      if (status) params.status    = status;
+      if (yf)     params.year_from = yf;
+      if (yt)     params.year_to   = yt;
       const res = await api.get('/vehicles', { params });
       const d = res.data;
       setVehicles(d.data || []);
@@ -108,10 +112,23 @@ export default function Vehicles() {
     fetchVehicles(1);
   };
 
+  const handleYearFromChange = (value) => {
+    setYearFrom(value);
+    filtersRef.current.yearFrom = value;
+    fetchVehicles(1);
+  };
+
+  const handleYearToChange = (value) => {
+    setYearTo(value);
+    filtersRef.current.yearTo = value;
+    fetchVehicles(1);
+  };
+
   const clearAll = () => {
     clearTimeout(searchTimeout.current);
-    setSearch(''); setStatusFilter('');
+    setSearch(''); setStatusFilter(''); setYearFrom(''); setYearTo('');
     filtersRef.current.search = ''; filtersRef.current.status = '';
+    filtersRef.current.yearFrom = ''; filtersRef.current.yearTo = '';
     setSearchParams({});
     fetchVehicles(1);
   };
@@ -142,7 +159,7 @@ export default function Vehicles() {
     }
   };
 
-  const hasFilter = search || statusFilter;
+  const hasFilter = search || statusFilter || yearFrom || yearTo;
 
   const thProps = { sortBy, sortDir, onSort: handleSort };
 
@@ -180,7 +197,7 @@ export default function Vehicles() {
                 )}
               </div>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <select className="form-select" value={statusFilter} onChange={e => handleStatusChange(e.target.value)}
                 style={{ border: '2px solid #e9ecef' }}>
                 <option value="">{t('vehicles.all_statuses')}</option>
@@ -189,6 +206,16 @@ export default function Vehicles() {
                 <option value="out_of_service">{t('vehicles.status_out_of_service')}</option>
                 <option value="maintenance,out_of_service">{t('vehicles.status_out_of_service')} / {t('vehicles.status_maintenance')}</option>
               </select>
+            </div>
+            <div className="col-md-2">
+              <input type="number" className="form-control" placeholder={t('vehicles.year_from')}
+                value={yearFrom} onChange={e => handleYearFromChange(e.target.value)}
+                min="1990" max="2100" style={{ border: '2px solid #e9ecef' }} />
+            </div>
+            <div className="col-md-2">
+              <input type="number" className="form-control" placeholder={t('vehicles.year_to')}
+                value={yearTo} onChange={e => handleYearToChange(e.target.value)}
+                min="1990" max="2100" style={{ border: '2px solid #e9ecef' }} />
             </div>
             {hasFilter && (
               <div className="col-md-1">

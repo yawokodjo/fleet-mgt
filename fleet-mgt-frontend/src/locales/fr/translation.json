@@ -57,7 +57,8 @@
     "see_more": "Voir plus",
     "see_less": "Voir moins",
     "reports_group": "Rapports",
-    "admin_group": "Administration"
+    "admin_group": "Administration",
+    "vehicle_report": "Rapport véhicules"
   },
   "header": {
     "title": "Gestion de Flotte Véhicule",
@@ -208,7 +209,9 @@
     "doc_expired_warning": "⚠️ Document expiré",
     "doc_expires_in": "⚠️ Expire dans {{days}} j",
     "doc_expires_soon": "Expire dans {{days}} j",
-    "replace_document": "Remplacer le document..."
+    "replace_document": "Remplacer le document...",
+    "year_from": "Année début",
+    "year_to": "Année fin"
   },
   "maintenances": {
     "list_title": "🔧 Liste des Maintenances",
@@ -281,7 +284,6 @@
     "type_pneus": "Pneus",
     "type_freins": "Freins",
     "type_batterie": "Batterie",
-    "type_revision": "Révision",
     "type_carrosserie": "Carrosserie",
     "type_electricite": "Électricité",
     "type_climatisation": "Climatisation",
@@ -580,7 +582,13 @@
     "insufficient_data": "Données insuffisantes",
     "fuel_badge": "{{count}} plein(s)",
     "records_count": "enregistrement(s)",
-    "total_cost_label": "coût total"
+    "total_cost_label": "coût total",
+    "vehicle_report_title": "Rapport des Véhicules",
+    "vehicle_report_desc": "Vue d'ensemble de la flotte avec filtres par statut et année de fabrication.",
+    "filter_status": "Filtrage par statut",
+    "filter_year": "Filtrage par année",
+    "status_distribution": "Répartition par statut",
+    "mileage_total": "Kilométrage total de la flotte"
   },
   "footer": {
     "copyright": "© 2025 CITG Vehicle Fleet Manager",
@@ -627,5 +635,10 @@
     "contact_sent": "Message envoyé ! Nous vous répondrons sous 24h.",
     "contact_email_val": "citogo@tg.ci.org",
     "contact_phone_val": "(+228) 99 90 05 05 / (+228) 90 17 76 20"
+  },
+  "access": {
+    "denied_title": "Accès refusé",
+    "denied_message": "Vous n'avez pas accès à cette page.",
+    "contact_admin": "Demandez à l'administrateur de vous accorder les droits nécessaires."
   }
 }
