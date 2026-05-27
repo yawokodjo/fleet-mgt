@@ -23,12 +23,12 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => $data['email']],
                 [
                     'name'              => $data['name'],
                     'email_verified_at' => now(),
-                    'password'          => Hash::make('Password123!'),
+                    'password'          => Hash::make('fleet123'),
                     'role'              => $data['role'],
                     'remember_token'    => Str::random(10),
                 ]
