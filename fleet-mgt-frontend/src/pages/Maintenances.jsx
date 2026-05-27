@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import api from "../axios";
 import Pagination from "../components/Pagination";
 
@@ -174,6 +177,66 @@ export default function Maintenances() {
   const hasFilter = search || filterStatus || filterType || dateFrom || dateTo;
   const thProps   = { sortBy, sortDir, onSort: handleSort };
 
+  const fetchAll = async () => {
+    const { search: s, status, type, dateFrom: df, dateTo: dt, sortBy: sb, sortDir: sd } = filtersRef.current;
+    const params = { per_page: 9999, sort_by: sb, sort_dir: sd };
+    if (s)  params.search    = s;
+    if (status) params.status = status;
+    if (type) params.type    = type;
+    if (df) params.date_from = df;
+    if (dt) params.date_to   = dt;
+    const res = await api.get('/maintenances', { params });
+    const d = res.data;
+    return d.data || d || [];
+  };
+
+  const statusLabel = (s) => t(STATUS_BADGE[s]?.key ?? s);
+
+  const exportPDF = async () => {
+    const all = await fetchAll();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    doc.text(t('maintenances.list_title'), 14, 15);
+    doc.setFontSize(9); doc.setFont(undefined, 'normal');
+    doc.text(new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }), 14, 22);
+    autoTable(doc, {
+      startY: 27,
+      head: [[t('maintenances.date'), t('maintenances.vehicle'), t('maintenances.driver'), t('maintenances.type'), t('maintenances.company'), t('maintenances.cost'), t('vehicles.status')]],
+      body: all.map(m => [
+        formatDate(m.scheduled_date),
+        m.vehicle?.license_plate || '-',
+        m.driver?.name || '-',
+        m.maintenance_type,
+        m.maintenance_company,
+        m.cost ? Number(m.cost).toLocaleString('fr-FR') : '-',
+        statusLabel(m.status),
+      ]),
+      foot: [['', '', '', '', t('reports.total'), `${all.reduce((s, m) => s + Number(m.cost || 0), 0).toLocaleString('fr-FR')} FCFA`, '']],
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [249, 115, 22] },
+      footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
+    });
+    doc.save(`maintenances-${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
+  const exportExcel = async () => {
+    const all = await fetchAll();
+    const rows = all.map(m => ({
+      [t('maintenances.date')]:    formatDate(m.scheduled_date),
+      [t('maintenances.vehicle')]: m.vehicle?.license_plate || '-',
+      [t('maintenances.driver')]:  m.driver?.name || '-',
+      [t('maintenances.type')]:    m.maintenance_type,
+      [t('maintenances.company')]: m.maintenance_company,
+      [t('maintenances.cost')]:    m.cost ? Number(m.cost) : '',
+      [t('vehicles.status')]:      statusLabel(m.status),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [12, 14, 20, 14, 18, 12, 14].map(w => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Maintenances');
+    XLSX.writeFile(wb, `maintenances-${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   return (
     <div className="container py-4">
       <div className="sticky-page-header" style={{ background: '#fff', borderRadius: '0 0 18px 18px', boxShadow: '0 4px 24px rgba(253,126,20,0.1)', padding: '0.85rem 0', marginBottom: '1rem' }}>
@@ -185,10 +248,18 @@ export default function Maintenances() {
               <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{pagination.total} {t('reports.records_count')}</span>
             </div>
           </div>
-          <button onClick={() => navigate("/maintenances/create")}
-            style={{ background: 'linear-gradient(135deg, #fb923c, #f97316)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(249,115,22,0.28)', whiteSpace: 'nowrap' }}>
-            + {t('maintenances.add_btn')}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF
+            </button>
+            <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel
+            </button>
+            <button onClick={() => navigate("/maintenances/create")}
+              style={{ background: 'linear-gradient(135deg, #fb923c, #f97316)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(249,115,22,0.28)', whiteSpace: 'nowrap' }}>
+              + {t('maintenances.add_btn')}
+            </button>
+          </div>
         </div>
       </div>
 

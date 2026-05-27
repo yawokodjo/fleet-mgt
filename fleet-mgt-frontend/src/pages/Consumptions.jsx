@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import api from "../axios";
 import Pagination from "../components/Pagination";
 
@@ -134,6 +137,60 @@ export default function Consumptions() {
   const hasFilter = search || startDate || endDate;
   const thProps   = { sortBy, sortDir, onSort: handleSort };
 
+  const fetchAll = async () => {
+    const { search: s, startDate: sd, endDate: ed, sortBy: sb, sortDir: sdir } = filtersRef.current;
+    const params = { per_page: 9999, sort_by: sb, sort_dir: sdir };
+    if (s)  params.search     = s;
+    if (sd) params.start_date = sd;
+    if (ed) params.end_date   = ed;
+    const res = await api.get('/consumptions', { params });
+    const d = res.data;
+    return d.data || d || [];
+  };
+
+  const exportPDF = async () => {
+    const all = await fetchAll();
+    const totalVol  = all.reduce((s, c) => s + Number(c.fuel_volume || 0), 0);
+    const totalCost = all.reduce((s, c) => s + Number(c.fuel_cost   || 0), 0);
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    doc.text(t('consumptions.list_title'), 14, 15);
+    doc.setFontSize(9); doc.setFont(undefined, 'normal');
+    doc.text(new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }), 14, 22);
+    autoTable(doc, {
+      startY: 27,
+      head: [[t('consumptions.date'), t('consumptions.vehicle'), t('consumptions.driver'), t('consumptions.liters_short'), t('consumptions.amount_short')]],
+      body: all.map(c => [
+        formatDate(c.date),
+        c.vehicle?.license_plate || '-',
+        c.driver?.name || '-',
+        `${Number(c.fuel_volume).toLocaleString('fr-FR')} L`,
+        c.fuel_cost ? Number(c.fuel_cost).toLocaleString('fr-FR') : '-',
+      ]),
+      foot: [['', '', t('reports.total'), `${totalVol.toLocaleString('fr-FR')} L`, `${totalCost.toLocaleString('fr-FR')} FCFA`]],
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [22, 163, 74] },
+      footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
+    });
+    doc.save(`consommations-${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
+  const exportExcel = async () => {
+    const all = await fetchAll();
+    const rows = all.map(c => ({
+      [t('consumptions.date')]:         formatDate(c.date),
+      [t('consumptions.vehicle')]:      c.vehicle?.license_plate || '-',
+      [t('consumptions.driver')]:       c.driver?.name || '-',
+      [t('consumptions.liters_short')]: Number(c.fuel_volume),
+      [t('consumptions.amount_short')]: c.fuel_cost ? Number(c.fuel_cost) : '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [12, 16, 20, 12, 14].map(w => ({ wch: w }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Consommations');
+    XLSX.writeFile(wb, `consommations-${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   return (
     <div className="container py-4">
       <div className="sticky-page-header" style={{ background: '#fff', borderRadius: '0 0 18px 18px', boxShadow: '0 4px 24px rgba(25,135,84,0.1)', padding: '0.85rem 0', marginBottom: '1rem' }}>
@@ -145,10 +202,18 @@ export default function Consumptions() {
               <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{pagination.total} {t('reports.records_count')}</span>
             </div>
           </div>
-          <button onClick={() => navigate("/consumptions/create")}
-            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(22,163,74,0.28)', whiteSpace: 'nowrap' }}>
-            + {t('consumptions.add_btn')}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF
+            </button>
+            <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel
+            </button>
+            <button onClick={() => navigate("/consumptions/create")}
+              style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(22,163,74,0.28)', whiteSpace: 'nowrap' }}>
+              + {t('consumptions.add_btn')}
+            </button>
+          </div>
         </div>
       </div>
 
