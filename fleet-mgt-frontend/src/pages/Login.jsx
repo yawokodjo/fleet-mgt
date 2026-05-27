@@ -159,12 +159,22 @@ export default function Login() {
         }
     };
 
+    const pwdOk = password.length >= 8;
+
     /* ── Styles ── */
     const inputStyle = (focused) => ({
         width: '100%', padding: '0.7rem 1rem', borderRadius: '12px',
         border: `1.5px solid ${focused ? '#0d6efd' : '#e2e8f0'}`,
         background: '#f8faff', fontSize: '0.92rem', color: '#0f172a',
         outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.18s',
+    });
+
+    const pwdInputStyle = () => ({
+        ...inputStyle(focusPwd),
+        paddingRight: '2.8rem',
+        border: password.length === 0
+            ? `1.5px solid ${focusPwd ? '#0d6efd' : '#e2e8f0'}`
+            : `1.5px solid ${pwdOk ? '#16a34a' : '#ef4444'}`,
     });
 
     const [focusEmail, setFocusEmail] = useState(false);
@@ -309,13 +319,21 @@ export default function Login() {
                                         disabled={loading || blocked}
                                         required
                                         autoComplete="current-password"
-                                        style={{ ...inputStyle(focusPwd), paddingRight: '2.8rem' }}
+                                        style={pwdInputStyle()}
                                     />
                                     <button type="button" onClick={() => setShowPwd(v => !v)} tabIndex={-1}
                                         style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1rem', padding: '2px' }}>
                                         {showPwd ? '🙈' : '👁️'}
                                     </button>
                                 </div>
+                                {password.length > 0 && (
+                                    <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: pwdOk ? '#16a34a' : '#ef4444', flexShrink: 0 }} />
+                                        <span style={{ fontSize: '0.73rem', color: pwdOk ? '#16a34a' : '#ef4444', fontWeight: 600 }}>
+                                            {pwdOk ? 'Mot de passe valide' : `Encore ${8 - password.length} caractère${8 - password.length > 1 ? 's' : ''}`}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Submit */}
