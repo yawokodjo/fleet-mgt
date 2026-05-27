@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { addPdfHeader, addPdfSignatures } from "../../utils/pdfHelpers";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -18,6 +19,7 @@ const STATUS_BADGE = {
 
 export default function VehicleReport() {
     const { t } = useTranslation();
+    const { user } = useAuth();
 
     const [filters, setFilters] = useState({ status: "", year_from: "", year_to: "" });
     const [data, setData] = useState([]);
@@ -66,6 +68,8 @@ export default function VehicleReport() {
         out_of_service: t('vehicles.status_out_of_service'),
     }[s] ?? s);
 
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : '-';
+
     const exportPDF = async () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         await addPdfHeader(doc, t('reports.vehicle_report_title'));
@@ -73,39 +77,46 @@ export default function VehicleReport() {
             startY: 27,
             head: [[
                 t('vehicles.brand'), t('vehicles.model'), t('vehicles.license_plate'),
-                t('vehicles.year'), t('vehicles.fuel_type'), t('vehicles.mileage'), t('vehicles.status'),
+                t('vehicles.year'), t('vehicles.fuel_type'), t('vehicles.mileage'),
+                t('vehicles.tvm_expiry'), t('vehicles.technical_inspection_expiry'), t('vehicles.insurance_expiry'),
+                t('vehicles.status'),
             ]],
             body: data.map(v => [
                 v.marque, v.model, v.license_plate,
                 v.year ?? '-', v.fuel_type ?? '-',
                 v.mileage ? `${Number(v.mileage).toLocaleString('fr-FR')} km` : '-',
+                fmtDate(v.tvm_expiry), fmtDate(v.technical_inspection_expiry), fmtDate(v.insurance_expiry),
                 statusLabel(v.status),
             ]),
             foot: [[
                 '', '', '', '', t('reports.total'),
-                `${Number(totals.totalMileage).toLocaleString('fr-FR')} km`, '',
+                `${Number(totals.totalMileage).toLocaleString('fr-FR')} km`,
+                '', '', '', '',
             ]],
-            styles: { fontSize: 8 },
+            styles: { fontSize: 7 },
             headStyles: { fillColor: [13, 110, 253] },
             footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
             margin: { bottom: 30 },
         });
-        addPdfSignatures(doc);
+        addPdfSignatures(doc, user?.name);
         doc.save(`rapport-vehicules-${new Date().toISOString().slice(0,10)}.pdf`);
     };
 
     const exportExcel = () => {
         const rows = data.map(v => ({
-            [t('vehicles.brand')]:         v.marque,
-            [t('vehicles.model')]:         v.model,
-            [t('vehicles.license_plate')]: v.license_plate,
-            [t('vehicles.year')]:          v.year ?? '',
-            [t('vehicles.fuel_type')]:     v.fuel_type ?? '',
-            [t('vehicles.mileage')]:       v.mileage ? Number(v.mileage) : '',
-            [t('vehicles.status')]:        statusLabel(v.status),
+            [t('vehicles.brand')]:                          v.marque,
+            [t('vehicles.model')]:                          v.model,
+            [t('vehicles.license_plate')]:                  v.license_plate,
+            [t('vehicles.year')]:                           v.year ?? '',
+            [t('vehicles.fuel_type')]:                      v.fuel_type ?? '',
+            [t('vehicles.mileage')]:                        v.mileage ? Number(v.mileage) : '',
+            [t('vehicles.tvm_expiry')]:                     fmtDate(v.tvm_expiry),
+            [t('vehicles.technical_inspection_expiry')]:    fmtDate(v.technical_inspection_expiry),
+            [t('vehicles.insurance_expiry')]:               fmtDate(v.insurance_expiry),
+            [t('vehicles.status')]:                         statusLabel(v.status),
         }));
         const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [16,16,14,8,12,12,16].map(w => ({ wch: w }));
+        ws['!cols'] = [16,16,14,8,12,12,14,16,14,16].map(w => ({ wch: w }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Véhicules');
         XLSX.writeFile(wb, `rapport-vehicules-${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -207,6 +218,9 @@ export default function VehicleReport() {
                                         <th>{t('vehicles.year')}</th>
                                         <th>{t('vehicles.fuel_type')}</th>
                                         <th>{t('vehicles.mileage')}</th>
+                                        <th>{t('vehicles.tvm_expiry')}</th>
+                                        <th>{t('vehicles.technical_inspection_expiry')}</th>
+                                        <th>{t('vehicles.insurance_expiry')}</th>
                                         <th>{t('vehicles.status')}</th>
                                     </tr>
                                 </thead>
@@ -221,6 +235,9 @@ export default function VehicleReport() {
                                                 <td>{v.year ?? '-'}</td>
                                                 <td>{v.fuel_type ?? '-'}</td>
                                                 <td><strong>{v.mileage ? Number(v.mileage).toLocaleString('fr-FR') : '-'} km</strong></td>
+                                                <td>{fmtDate(v.tvm_expiry)}</td>
+                                                <td>{fmtDate(v.technical_inspection_expiry)}</td>
+                                                <td>{fmtDate(v.insurance_expiry)}</td>
                                                 <td>
                                                     <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '0.74rem', fontWeight: 700, background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
                                                         {statusLabel(v.status)}
@@ -229,7 +246,7 @@ export default function VehicleReport() {
                                             </tr>
                                         );
                                     }) : (
-                                        <tr><td colSpan="7" className="text-center text-muted py-5">
+                                        <tr><td colSpan="10" className="text-center text-muted py-5">
                                             <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🚗</div>
                                             {t('vehicles.no_vehicles')}
                                         </td></tr>
@@ -240,7 +257,7 @@ export default function VehicleReport() {
                                         <tr>
                                             <td colSpan="5" className="text-end fw-bold">{t('reports.total')} ({data.length})</td>
                                             <td className="text-center fw-bold">{Number(totals.totalMileage).toLocaleString('fr-FR')} km</td>
-                                            <td />
+                                            <td colSpan="4" />
                                         </tr>
                                     </tfoot>
                                 )}

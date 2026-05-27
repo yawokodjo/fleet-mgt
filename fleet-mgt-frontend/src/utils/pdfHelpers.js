@@ -28,7 +28,7 @@ export const addPdfHeader = (doc, title, subtitle) => {
     });
 };
 
-export const addPdfSignatures = (doc) => {
+export const addPdfSignatures = (doc, userName) => {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const y = pageH - 22;
@@ -47,6 +47,7 @@ export const addPdfSignatures = (doc) => {
 
     doc.setTextColor(150);
     doc.setFontSize(7);
-    doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`, pageW / 2, pageH - 4, { align: 'center' });
+    const byUser = userName ? ` par ${userName}` : '';
+    doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${byUser}`, pageW / 2, pageH - 4, { align: 'center' });
     doc.setTextColor(0);
 };

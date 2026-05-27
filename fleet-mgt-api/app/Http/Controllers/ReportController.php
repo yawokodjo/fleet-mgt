@@ -206,6 +206,8 @@ class ReportController extends Controller
                         'fuel_volume'   => $c->fuel_volume,
                         'fuel_cost'     => $c->fuel_cost,
                         'cost_per_liter' => $costPerLiter,
+                        'mileage'        => $c->mileage,
+                        'document_path'  => $c->document_path,
                     ];
                 }),
                 'filters' => [
@@ -284,16 +286,18 @@ class ReportController extends Controller
             return response()->json([
                 'maintenances' => $maintenances->map(function ($m) {
                     return [
-                        'id'             => $m->id,
-                        'date'           => $m->scheduled_date,
-                        'completed_date' => $m->completed_date,
-                        'vehicle'        => $m->vehicle->license_plate ?? 'N/A',
-                        'vehicle_id'     => $m->vehicle_id,
-                        'type'           => $m->maintenance_type,
-                        'company'        => $m->maintenance_company ?? 'N/A',
-                        'cost'           => $m->cost,
-                        'status'         => $m->status,
-                        'description'    => $m->description ?? '',
+                        'id'                 => $m->id,
+                        'date'               => $m->scheduled_date,
+                        'completed_date'     => $m->completed_date,
+                        'vehicle'            => $m->vehicle->license_plate ?? 'N/A',
+                        'vehicle_id'         => $m->vehicle_id,
+                        'type'               => $m->maintenance_type,
+                        'company'            => $m->maintenance_company ?? 'N/A',
+                        'cost'               => $m->cost,
+                        'status'             => $m->status,
+                        'description'        => $m->description ?? '',
+                        'mileage_at_service' => $m->mileage_at_service,
+                        'document_path'      => $m->document_path,
                     ];
                 }),
                 'filters' => [

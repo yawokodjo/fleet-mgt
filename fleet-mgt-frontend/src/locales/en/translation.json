@@ -211,7 +211,10 @@
     "doc_expires_soon": "Expires in {{days}} d",
     "replace_document": "Replace document...",
     "year_from": "Year from",
-    "year_to": "Year to"
+    "year_to": "Year to",
+    "tvm_expiry": "TVM",
+    "technical_inspection_expiry": "Technical Inspection",
+    "insurance_expiry": "Insurance"
   },
   "maintenances": {
     "list_title": "🔧 Maintenance List",
@@ -558,6 +561,9 @@
     "col_volume": "Volume (L)",
     "col_total_cost": "Total Cost (FCFA)",
     "col_cost_per_liter": "Cost / Liter (FCFA)",
+    "col_mileage": "Mileage",
+    "col_l100": "L/100km",
+    "col_document": "Document",
     "total": "Total",
     "consumption_report_title": "Fuel consumption report",
     "maintenance_report_title": "Vehicle maintenance report",

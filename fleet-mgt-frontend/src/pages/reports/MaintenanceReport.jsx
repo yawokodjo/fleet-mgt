@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { addPdfHeader, addPdfSignatures } from "../../utils/pdfHelpers";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -13,6 +14,7 @@ const PAGE_SIZE = 20;
 export default function MaintenanceReport() {
     const { t, i18n } = useTranslation();
     const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+    const { user } = useAuth();
 
     const [filters, setFilters] = useState({ start_date: "", end_date: "", order: "asc", vehicle_id: "" });
     const [data, setData] = useState([]);
@@ -73,6 +75,7 @@ export default function MaintenanceReport() {
             head: [[
                 t('reports.col_planned_date'), t('reports.col_completed_date'), t('reports.col_vehicle'),
                 t('reports.col_type'), t('reports.col_company'), t('reports.col_cost'),
+                t('reports.col_mileage'), t('reports.col_document'),
                 t('reports.col_status'), t('reports.col_description'),
             ]],
             body: data.map(item => [
@@ -80,19 +83,21 @@ export default function MaintenanceReport() {
                 item.completed_date ? new Date(item.completed_date).toLocaleDateString(locale) : '-',
                 item.vehicle, item.type, item.company,
                 Number(item.cost).toLocaleString(locale),
+                item.mileage_at_service ? Number(item.mileage_at_service).toLocaleString(locale) + ' km' : '-',
+                item.document_path ? 'Oui' : '—',
                 statusLabel(item.status), item.description ?? '',
             ]),
             foot: [[
                 '', '', '', '', t('reports.total') + ` (${totals.count})`,
                 `${Number(totals.total_cost).toLocaleString(locale)} FCFA`,
-                '', '',
+                '', '', '', '',
             ]],
-            styles: { fontSize: 8 },
+            styles: { fontSize: 7 },
             headStyles: { fillColor: [249, 115, 22] },
             footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
             margin: { bottom: 30 },
         });
-        addPdfSignatures(doc);
+        addPdfSignatures(doc, user?.name);
         doc.save(`rapport-maintenance-${filters.start_date}-${filters.end_date}.pdf`);
     };
 
@@ -104,11 +109,13 @@ export default function MaintenanceReport() {
             [t('reports.col_type')]:           item.type,
             [t('reports.col_company')]:        item.company,
             [t('reports.col_cost')]:           Number(item.cost),
+            [t('reports.col_mileage')]:        item.mileage_at_service ? Number(item.mileage_at_service) : '',
+            [t('reports.col_document')]:       item.document_path ? 'Oui' : '—',
             [t('reports.col_status')]:         statusLabel(item.status),
             [t('reports.col_description')]:    item.description ?? '',
         }));
         const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [12, 14, 16, 14, 18, 12, 14, 30].map(w => ({ wch: w }));
+        ws['!cols'] = [12, 14, 16, 14, 18, 12, 12, 10, 14, 30].map(w => ({ wch: w }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Maintenances');
         XLSX.writeFile(wb, `rapport-maintenance-${filters.start_date}-${filters.end_date}.xlsx`);
@@ -206,6 +213,8 @@ export default function MaintenanceReport() {
                             <th>{t('reports.col_type')}</th>
                             <th>{t('reports.col_company')}</th>
                             <th>{t('reports.col_cost')}</th>
+                            <th>{t('reports.col_mileage')}</th>
+                            <th>{t('reports.col_document')}</th>
                             <th>{t('reports.col_status')}</th>
                             <th>{t('reports.col_description')}</th>
                         </tr>
@@ -219,11 +228,13 @@ export default function MaintenanceReport() {
                                 <td>{item.type}</td>
                                 <td>{item.company}</td>
                                 <td>{Number(item.cost).toLocaleString(locale)}</td>
+                                <td>{item.mileage_at_service ? Number(item.mileage_at_service).toLocaleString(locale) + ' km' : '-'}</td>
+                                <td>{item.document_path ? 'Oui' : '—'}</td>
                                 <td>{statusLabel(item.status)}</td>
                                 <td className="text-start">{item.description}</td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="8" className="text-muted">{t('reports.no_records')}</td></tr>
+                            <tr><td colSpan="10" className="text-muted">{t('reports.no_records')}</td></tr>
                         )}
                     </tbody>
                     {data.length > 0 && currentPage === lastPage && (
@@ -231,7 +242,7 @@ export default function MaintenanceReport() {
                             <tr>
                                 <td colSpan="5">{t('reports.maintenance_total', { count: totals.count })}</td>
                                 <td>{Number(totals.total_cost).toLocaleString(locale)} FCFA</td>
-                                <td colSpan="2">-</td>
+                                <td colSpan="4">-</td>
                             </tr>
                         </tfoot>
                     )}

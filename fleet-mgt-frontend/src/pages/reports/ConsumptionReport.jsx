@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { addPdfHeader, addPdfSignatures } from "../../utils/pdfHelpers";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -13,6 +14,7 @@ const PAGE_SIZE = 20;
 export default function ConsumptionReport() {
     const { t, i18n } = useTranslation();
     const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+    const { user } = useAuth();
 
     const [filters, setFilters] = useState({ start_date: "", end_date: "", order: "asc", vehicle_id: "" });
     const [data, setData] = useState([]);
@@ -65,48 +67,73 @@ export default function ConsumptionReport() {
         }
     };
 
+    const computeL100 = (items) => {
+        const prevMileage = {};
+        return items.map(item => {
+            const vehicle = item.vehicle;
+            const mileage = item.mileage ? Number(item.mileage) : null;
+            const prev = prevMileage[vehicle] ?? null;
+            let l100 = null;
+            if (mileage && prev && mileage > prev) {
+                l100 = (Number(item.fuel_volume) / (mileage - prev)) * 100;
+            }
+            prevMileage[vehicle] = mileage ?? prev;
+            return l100;
+        });
+    };
+
     const exportPDF = async () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         await addPdfHeader(doc, t('reports.consumption_report_title'), `Période : ${filters.start_date} → ${filters.end_date}`);
+        const l100Values = computeL100(data);
         autoTable(doc, {
             startY: 27,
             head: [[
                 t('reports.col_date'), t('reports.col_vehicle'), t('reports.col_driver'),
-                t('reports.col_volume'), t('reports.col_total_cost'), t('reports.col_cost_per_liter'),
+                t('reports.col_mileage'), t('reports.col_volume'), t('reports.col_l100'),
+                t('reports.col_total_cost'), t('reports.col_cost_per_liter'), t('reports.col_document'),
             ]],
-            body: data.map(item => [
+            body: data.map((item, i) => [
                 item.date ? new Date(item.date).toLocaleDateString(locale) : '-',
                 item.vehicle, item.driver,
+                item.mileage ? Number(item.mileage).toLocaleString(locale) + ' km' : '-',
                 Number(item.fuel_volume).toLocaleString(locale, { minimumFractionDigits: 2 }),
+                l100Values[i] != null ? l100Values[i].toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—',
                 Number(item.fuel_cost).toLocaleString(locale),
                 item.cost_per_liter ? Number(item.cost_per_liter).toLocaleString(locale) : 'N/A',
+                item.document_path ? 'Oui' : '—',
             ]),
             foot: [[
-                '', '', t('reports.total'),
-                `${Number(totals.total_fuel).toLocaleString(locale, { minimumFractionDigits: 2 })} L`,
+                '', '', '', '', t('reports.total'),
+                '',
                 `${Number(totals.total_cost).toLocaleString(locale)} FCFA`,
                 '',
+                '',
             ]],
-            styles: { fontSize: 8 },
+            styles: { fontSize: 7 },
             headStyles: { fillColor: [22, 163, 74] },
             footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
             margin: { bottom: 30 },
         });
-        addPdfSignatures(doc);
+        addPdfSignatures(doc, user?.name);
         doc.save(`rapport-consommation-${filters.start_date}-${filters.end_date}.pdf`);
     };
 
     const exportExcel = () => {
-        const rows = data.map(item => ({
+        const l100Values = computeL100(data);
+        const rows = data.map((item, i) => ({
             [t('reports.col_date')]:           item.date ? new Date(item.date).toLocaleDateString(locale) : '-',
             [t('reports.col_vehicle')]:        item.vehicle,
             [t('reports.col_driver')]:         item.driver,
+            [t('reports.col_mileage')]:        item.mileage ? Number(item.mileage) : '',
             [t('reports.col_volume')]:         Number(item.fuel_volume),
+            [t('reports.col_l100')]:           l100Values[i] != null ? parseFloat(l100Values[i].toFixed(1)) : '',
             [t('reports.col_total_cost')]:     Number(item.fuel_cost),
             [t('reports.col_cost_per_liter')]: item.cost_per_liter ? Number(item.cost_per_liter) : '',
+            [t('reports.col_document')]:       item.document_path ? 'Oui' : '—',
         }));
         const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [12, 16, 20, 10, 14, 14].map(w => ({ wch: w }));
+        ws['!cols'] = [12, 16, 20, 12, 10, 10, 14, 14, 10].map(w => ({ wch: w }));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Consommations');
         XLSX.writeFile(wb, `rapport-consommation-${filters.start_date}-${filters.end_date}.xlsx`);
@@ -194,32 +221,43 @@ export default function ConsumptionReport() {
                             <th>{t('reports.col_date')}</th>
                             <th>{t('reports.col_vehicle')}</th>
                             <th>{t('reports.col_driver')}</th>
+                            <th>{t('reports.col_mileage')}</th>
                             <th>{t('reports.col_volume')}</th>
+                            <th>{t('reports.col_l100')}</th>
                             <th>{t('reports.col_total_cost')}</th>
                             <th>{t('reports.col_cost_per_liter')}</th>
+                            <th>{t('reports.col_document')}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {pageData.length > 0 ? pageData.map((item, i) => (
-                            <tr key={i}>
-                                <td>{item.date ? new Date(item.date).toLocaleDateString(locale) : "-"}</td>
-                                <td>{item.vehicle}</td>
-                                <td>{item.driver}</td>
-                                <td>{Number(item.fuel_volume).toLocaleString(locale, { minimumFractionDigits: 2 })}</td>
-                                <td>{Number(item.fuel_cost).toLocaleString(locale)}</td>
-                                <td>{item.cost_per_liter ? Number(item.cost_per_liter).toLocaleString(locale) : "N/A"}</td>
-                            </tr>
-                        )) : (
-                            <tr><td colSpan="6" className="text-muted">{t('reports.no_records')}</td></tr>
+                        {pageData.length > 0 ? (() => {
+                            const l100All = computeL100(data);
+                            const offset = (currentPage - 1) * PAGE_SIZE;
+                            return pageData.map((item, i) => (
+                                <tr key={i}>
+                                    <td>{item.date ? new Date(item.date).toLocaleDateString(locale) : "-"}</td>
+                                    <td>{item.vehicle}</td>
+                                    <td>{item.driver}</td>
+                                    <td>{item.mileage ? Number(item.mileage).toLocaleString(locale) + ' km' : '-'}</td>
+                                    <td>{Number(item.fuel_volume).toLocaleString(locale, { minimumFractionDigits: 2 })}</td>
+                                    <td>{l100All[offset + i] != null ? l100All[offset + i].toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—'}</td>
+                                    <td>{Number(item.fuel_cost).toLocaleString(locale)}</td>
+                                    <td>{item.cost_per_liter ? Number(item.cost_per_liter).toLocaleString(locale) : "N/A"}</td>
+                                    <td>{item.document_path ? 'Oui' : '—'}</td>
+                                </tr>
+                            ));
+                        })() : (
+                            <tr><td colSpan="9" className="text-muted">{t('reports.no_records')}</td></tr>
                         )}
                     </tbody>
                     {data.length > 0 && currentPage === lastPage && (
                         <tfoot className="fw-bold table-light">
                             <tr>
-                                <td colSpan="3">{t('reports.total')}</td>
+                                <td colSpan="4">{t('reports.total')}</td>
                                 <td>{Number(totals.total_fuel).toLocaleString(locale, { minimumFractionDigits: 2 })} L</td>
-                                <td>{Number(totals.total_cost).toLocaleString(locale)} FCFA</td>
                                 <td>-</td>
+                                <td>{Number(totals.total_cost).toLocaleString(locale)} FCFA</td>
+                                <td colSpan="2">-</td>
                             </tr>
                         </tfoot>
                     )}
