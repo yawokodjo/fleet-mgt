@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import api from '../axios';
 import Pagination from '../components/Pagination';
 
@@ -137,6 +140,55 @@ export default function Users() {
     const thProps = { sortBy, sortDir, onSort: handleSort };
     const hasFilter = searchTerm || filterRole !== 'all';
 
+    const fetchAll = async () => {
+        const { search, role, sortBy: sb, sortDir: sd } = filtersRef.current;
+        const params = { per_page: 9999, sort_by: sb, sort_dir: sd };
+        if (search) params.search = search;
+        if (role !== 'all') params.role = role;
+        const res = await api.get('/users', { params });
+        const d = res.data;
+        return Array.isArray(d.data || d.users || d) ? (d.data || d.users || d) : [];
+    };
+
+    const roleLabel = (role) => t(`users.badge_${role?.toLowerCase()}`) || role;
+
+    const exportPDF = async () => {
+        const all = await fetchAll();
+        const doc = new jsPDF({ orientation: 'portrait' });
+        doc.setFontSize(14); doc.setFont(undefined, 'bold');
+        doc.text(t('users.title'), 14, 15);
+        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+        doc.text(new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }), 14, 22);
+        autoTable(doc, {
+            startY: 27,
+            head: [[t('users.user_col'), t('users.email_col'), t('users.role_col'), t('users.creation_date')]],
+            body: all.map(u => [
+                u.name,
+                u.email,
+                roleLabel(u.role),
+                u.created_at ? new Date(u.created_at).toLocaleDateString(locale) : '-',
+            ]),
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [102, 126, 234] },
+        });
+        doc.save(`utilisateurs-${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+
+    const exportExcel = async () => {
+        const all = await fetchAll();
+        const rows = all.map(u => ({
+            [t('users.user_col')]:      u.name,
+            [t('users.email_col')]:     u.email,
+            [t('users.role_col')]:      roleLabel(u.role),
+            [t('users.creation_date')]: u.created_at ? new Date(u.created_at).toLocaleDateString(locale) : '-',
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [24, 30, 14, 14].map(w => ({ wch: w }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Utilisateurs');
+        XLSX.writeFile(wb, `utilisateurs-${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
     return (
         <div className="container mt-4">
             <div className="sticky-page-header" style={{ background: '#fff', borderRadius: '0 0 18px 18px', boxShadow: '0 4px 24px rgba(102,126,234,0.15)', padding: '0.85rem 0', marginBottom: '1rem' }}>
@@ -148,10 +200,18 @@ export default function Users() {
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{pagination.total} {t('reports.records_count')}</span>
                         </div>
                     </div>
-                    <button onClick={() => navigate('/users/create')}
-                        style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(102,126,234,0.3)', whiteSpace: 'nowrap' }}>
-                        + {t('users.new_user')}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF
+                        </button>
+                        <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0.45rem 0.9rem', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Excel
+                        </button>
+                        <button onClick={() => navigate('/users/create')}
+                            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(102,126,234,0.3)', whiteSpace: 'nowrap' }}>
+                            + {t('users.new_user')}
+                        </button>
+                    </div>
                 </div>
             </div>
 
