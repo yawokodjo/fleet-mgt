@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import api from '../../axios';
 
 /* ── helpers ── */
@@ -314,6 +317,69 @@ export default function ReportsDashboard() {
     }, [vehicles, maintenances, consumptions]);
 
     const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const exportPDF = () => {
+        const doc = new jsPDF({ orientation: 'landscape' });
+        doc.setFontSize(16); doc.setFont(undefined, 'bold');
+        doc.text('Rapport de synthèse — Gestion de Flotte', 14, 16);
+        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+        doc.text(`Compassion International Togo · ${today}`, 14, 23);
+
+        autoTable(doc, {
+            startY: 30,
+            head: [['Indicateur', 'Valeur']],
+            body: [
+                ['Véhicules (total)',             String(vehicles.length)],
+                ['  – Opérationnels',             String(stats.vByStatus.operational)],
+                ['  – En maintenance',            String(stats.vByStatus.maintenance)],
+                ['  – Hors service',              String(stats.vByStatus.out_of_service)],
+                ['Maintenances (total)',          String(maintenances.length)],
+                ['  – Planifiées',               String(stats.mByStatus.planned)],
+                ['  – En cours',                 String(stats.mByStatus.in_progress)],
+                ['  – Terminées',               String(stats.mByStatus.completed)],
+                ['  – Annulées',                String(stats.mByStatus.cancelled)],
+                ['Coût total maintenances (FCFA)', fmt(Math.round(stats.totalMaintCost))],
+                [`Carburant — ${monthName} (FCFA)`, fmt(Math.round(stats.totalFuelCost))],
+                [`Volume carburant — ${monthName} (L)`, stats.totalFuelVolume.toFixed(1)],
+                ['Carburant historique total (FCFA)', fmt(Math.round(stats.allFuelCost))],
+                ['Conso. moyenne (L/100 km)',      stats.avgL100 ?? 'N/A'],
+                ['Ravitaillements (total)',        String(consumptions.length)],
+            ],
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [13, 58, 110] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 } },
+        });
+
+        doc.save(`rapport-synthese-${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+
+    const exportExcel = () => {
+        const wb = XLSX.utils.book_new();
+
+        const kpiRows = [
+            { Indicateur: 'Véhicules (total)',              Valeur: vehicles.length },
+            { Indicateur: '  – Opérationnels',              Valeur: stats.vByStatus.operational },
+            { Indicateur: '  – En maintenance',             Valeur: stats.vByStatus.maintenance },
+            { Indicateur: '  – Hors service',               Valeur: stats.vByStatus.out_of_service },
+            { Indicateur: 'Maintenances (total)',           Valeur: maintenances.length },
+            { Indicateur: '  – Planifiées',                Valeur: stats.mByStatus.planned },
+            { Indicateur: '  – En cours',                  Valeur: stats.mByStatus.in_progress },
+            { Indicateur: '  – Terminées',                Valeur: stats.mByStatus.completed },
+            { Indicateur: '  – Annulées',                 Valeur: stats.mByStatus.cancelled },
+            { Indicateur: 'Coût total maintenances (FCFA)', Valeur: stats.totalMaintCost },
+            { Indicateur: `Carburant — ${monthName} (FCFA)`, Valeur: stats.totalFuelCost },
+            { Indicateur: `Volume carburant — ${monthName} (L)`, Valeur: Number(stats.totalFuelVolume.toFixed(1)) },
+            { Indicateur: 'Carburant historique total (FCFA)', Valeur: stats.allFuelCost },
+            { Indicateur: 'Conso. moyenne (L/100 km)',       Valeur: stats.avgL100 ?? 'N/A' },
+            { Indicateur: 'Ravitaillements (total)',         Valeur: consumptions.length },
+        ];
+        const ws = XLSX.utils.json_to_sheet(kpiRows);
+        ws['!cols'] = [{ wch: 40 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Synthèse');
+
+        XLSX.writeFile(wb, `rapport-synthese-${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
 
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>
@@ -354,7 +420,7 @@ export default function ReportsDashboard() {
                         </p>
 
                         {/* Quick stats row */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1.25rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.25rem', alignItems: 'center' }}>
                             {[
                                 { label: t('reports.vehicles_section'),    value: vehicles.length,     icon: '🚗' },
                                 { label: t('reports.maintenances_section'), value: maintenances.length, icon: '🔧' },
@@ -369,6 +435,14 @@ export default function ReportsDashboard() {
                                     </div>
                                 </div>
                             ))}
+                            <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '10px', border: '1px solid rgba(220,38,38,0.5)', background: 'rgba(220,38,38,0.18)', color: '#fca5a5', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                PDF
+                            </button>
+                            <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '10px', border: '1px solid rgba(22,163,74,0.5)', background: 'rgba(22,163,74,0.18)', color: '#86efac', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                Excel
+                            </button>
                         </div>
                     </div>
 
