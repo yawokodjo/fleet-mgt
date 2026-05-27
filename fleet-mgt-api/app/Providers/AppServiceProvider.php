@@ -2,25 +2,19 @@
 
 namespace App\Providers;
 
+use App\Models\Consumption;
+use App\Observers\ConsumptionObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
-        // if ($this->app->environment('local')) {
-        // $this->app->register(PailServiceProvider::class);
+    }
+
+    public function boot(): void
+    {
+        Consumption::observe(ConsumptionObserver::class);
     }
 }
-
-/**
- * Bootstrap any application services.
- */
-// public function boot(): void
-// {
-//
-// }
