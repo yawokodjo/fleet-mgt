@@ -21,9 +21,9 @@ export default function MainLayout({ children }) {
     <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', height: '100vh', overflow: 'hidden', background: '#f8f9fa' }}>
       <Header />
 
-      <div style={{ display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ display: 'flex', minHeight: 0 }}>
         <Sidebar />
-        <main style={{ flex: 1, overflowY: 'auto', minWidth: 0, minHeight: 0, position: 'relative' }}>
+        <main style={{ flex: 1, overflow: 'auto', minWidth: 0, minHeight: 0, position: 'relative', WebkitOverflowScrolling: 'touch' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

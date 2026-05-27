@@ -8,7 +8,7 @@ export default function Footer() {
       <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
         <strong style={{ fontSize: '0.9rem', color: '#fff' }}>{t('footer.copyright')}</strong>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0.5rem 1.5rem', marginBottom: '0.5rem' }}>
         <a href="https://www.economie.gouv.fr/entreprises/reglement-general-protection-donnees-rgpd#"
           style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', textDecoration: 'none' }}>
           {t('footer.all_rights')}

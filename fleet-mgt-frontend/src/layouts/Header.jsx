@@ -66,7 +66,7 @@ function HelpModal({ onClose }) {
 }
 
 /* ── User Menu ── */
-function UserMenu({ user, onLogout }) {
+function UserMenu({ user, onLogout, compact = false }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
     const navigate = useNavigate();
@@ -107,12 +107,16 @@ function UserMenu({ user, onLogout }) {
                 }}>
                     {initials}
                 </div>
-                <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user?.name || 'Utilisateur'}
-                </span>
-                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ opacity: 0.6, flexShrink: 0 }}>
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
+                {!compact && (
+                    <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {user?.name || 'Utilisateur'}
+                    </span>
+                )}
+                {!compact && (
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ opacity: 0.6, flexShrink: 0 }}>
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                )}
             </button>
 
             {open && (
@@ -308,7 +312,7 @@ export default function Header() {
                                     <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                                 </svg>
                             </button>
-                            {user && <UserMenu user={user} onLogout={logout} />}
+                            {user && <UserMenu user={user} onLogout={logout} compact />}
                         </div>
                     </div>
                 </div>

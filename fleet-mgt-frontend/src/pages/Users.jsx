@@ -192,7 +192,7 @@ export default function Users() {
     return (
         <div className="container mt-4">
             <div className="sticky-page-header" style={{ background: '#fff', borderRadius: '0 0 18px 18px', boxShadow: '0 4px 24px rgba(102,126,234,0.15)', padding: '0.85rem 0', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0, boxShadow: '0 4px 12px rgba(102,126,234,0.3)' }}>👥</div>
                         <div>
