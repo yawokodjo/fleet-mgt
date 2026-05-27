@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import api from '../axios';
 
 /* ── helpers ── */
@@ -337,6 +340,94 @@ export default function Dashboard() {
         return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
     };
 
+    const exportPDF = () => {
+        const doc = new jsPDF({ orientation: 'landscape' });
+        const today = new Date().toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        doc.setFontSize(16); doc.setFont(undefined, 'bold');
+        doc.text('Tableau de bord — Gestion de Flotte', 14, 16);
+        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+        doc.text(`Compassion International Togo · ${today}`, 14, 23);
+
+        autoTable(doc, {
+            startY: 30,
+            head: [['Indicateur', 'Valeur']],
+            body: [
+                ['Véhicules (total)',            String(vehicles.length)],
+                ['  – Opérationnels',            String(stats.vOp)],
+                ['  – En maintenance',           String(stats.vMnt)],
+                ['  – Hors service',             String(stats.vOos)],
+                ['Maintenances (total)',         String(maintenances.length)],
+                ['  – Terminées',               String(stats.mCompleted)],
+                ['  – En cours',                String(stats.mInProgress)],
+                ['  – Planifiées',              String(stats.mPlanned)],
+                ['Coût total maintenances (FCFA)', fmt(stats.totalMaintCost)],
+                ['Carburant ce mois (FCFA)',     fmt(stats.fuelThisMonth)],
+                ['Volume carburant ce mois (L)', stats.volThisMonth.toFixed(1)],
+                ['Conducteurs',                 String(drivers.length)],
+                ['Conso. moy. (L/100 km)',       stats.avgL100 ?? 'N/A'],
+            ],
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [13, 110, 253] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 } },
+        });
+
+        if (stats.recent.length > 0) {
+            const y = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(11); doc.setFont(undefined, 'bold');
+            doc.text('Activité récente', 14, y);
+            autoTable(doc, {
+                startY: y + 5,
+                head: [['Type', 'Véhicule', 'Description', 'Date']],
+                body: stats.recent.map(item => [
+                    item.type === 'maintenance' ? 'Maintenance' : 'Carburant',
+                    item.sub, item.title,
+                    item.date.toLocaleDateString(locale),
+                ]),
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [100, 116, 139] },
+            });
+        }
+
+        doc.save(`dashboard-${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+
+    const exportExcel = () => {
+        const wb = XLSX.utils.book_new();
+
+        const kpiRows = [
+            { Indicateur: 'Véhicules (total)',             Valeur: vehicles.length },
+            { Indicateur: '  – Opérationnels',             Valeur: stats.vOp },
+            { Indicateur: '  – En maintenance',            Valeur: stats.vMnt },
+            { Indicateur: '  – Hors service',              Valeur: stats.vOos },
+            { Indicateur: 'Maintenances (total)',          Valeur: maintenances.length },
+            { Indicateur: '  – Terminées',                Valeur: stats.mCompleted },
+            { Indicateur: '  – En cours',                 Valeur: stats.mInProgress },
+            { Indicateur: '  – Planifiées',               Valeur: stats.mPlanned },
+            { Indicateur: 'Coût total maintenances (FCFA)', Valeur: stats.totalMaintCost },
+            { Indicateur: 'Carburant ce mois (FCFA)',      Valeur: stats.fuelThisMonth },
+            { Indicateur: 'Volume carburant ce mois (L)',  Valeur: Number(stats.volThisMonth.toFixed(1)) },
+            { Indicateur: 'Conducteurs',                  Valeur: drivers.length },
+            { Indicateur: 'Conso. moy. (L/100 km)',        Valeur: stats.avgL100 ?? 'N/A' },
+        ];
+        const wsKpi = XLSX.utils.json_to_sheet(kpiRows);
+        wsKpi['!cols'] = [{ wch: 35 }, { wch: 18 }];
+        XLSX.utils.book_append_sheet(wb, wsKpi, 'KPIs');
+
+        if (stats.recent.length > 0) {
+            const actRows = stats.recent.map(item => ({
+                Type:        item.type === 'maintenance' ? 'Maintenance' : 'Carburant',
+                Véhicule:    item.sub,
+                Description: item.title,
+                Date:        item.date.toLocaleDateString(locale),
+            }));
+            const wsAct = XLSX.utils.json_to_sheet(actRows);
+            wsAct['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 40 }, { wch: 14 }];
+            XLSX.utils.book_append_sheet(wb, wsAct, 'Activité récente');
+        }
+
+        XLSX.writeFile(wb, `dashboard-${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: '1rem' }}>
             <div style={{ width: '52px', height: '52px', border: '4px solid #e2e8f0', borderTopColor: '#0d6efd', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -384,13 +475,23 @@ export default function Dashboard() {
                             {t('dashboard.subtitle')}
                         </p>
 
-                        {/* Alert chip */}
-                        {stats.alerts.length > 0 && (
-                            <div onClick={() => navigate('/vehicles?status=maintenance,out_of_service')} style={{ marginTop: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,126,20,0.22)', border: '1px solid rgba(253,126,20,0.4)', borderRadius: '10px', padding: '5px 12px', cursor: 'pointer' }}>
-                                <span style={{ fontSize: '0.85rem' }}>⚠️</span>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbb03b' }}>{t('dashboard.vehicles_alert_chip', { count: stats.alerts.length })}</span>
-                            </div>
-                        )}
+                        {/* Alert chip + export buttons */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.9rem', flexWrap: 'wrap' }}>
+                            {stats.alerts.length > 0 && (
+                                <div onClick={() => navigate('/vehicles?status=maintenance,out_of_service')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,126,20,0.22)', border: '1px solid rgba(253,126,20,0.4)', borderRadius: '10px', padding: '5px 12px', cursor: 'pointer' }}>
+                                    <span style={{ fontSize: '0.85rem' }}>⚠️</span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbb03b' }}>{t('dashboard.vehicles_alert_chip', { count: stats.alerts.length })}</span>
+                                </div>
+                            )}
+                            <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '10px', border: '1px solid rgba(220,38,38,0.5)', background: 'rgba(220,38,38,0.18)', color: '#fca5a5', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                PDF
+                            </button>
+                            <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '10px', border: '1px solid rgba(22,163,74,0.5)', background: 'rgba(22,163,74,0.18)', color: '#86efac', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>
+                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                Excel
+                            </button>
+                        </div>
                     </div>
 
                     {/* Clock card */}
