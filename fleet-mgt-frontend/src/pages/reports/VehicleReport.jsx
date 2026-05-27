@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { addPdfHeader, addPdfSignatures } from "../../utils/pdfHelpers";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -65,12 +66,9 @@ export default function VehicleReport() {
         out_of_service: t('vehicles.status_out_of_service'),
     }[s] ?? s);
 
-    const exportPDF = () => {
+    const exportPDF = async () => {
         const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(14);
-        doc.text(t('reports.vehicle_report_title'), 14, 15);
-        doc.setFontSize(9);
-        doc.text(`${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
+        await addPdfHeader(doc, t('reports.vehicle_report_title'));
         autoTable(doc, {
             startY: 27,
             head: [[
@@ -90,7 +88,9 @@ export default function VehicleReport() {
             styles: { fontSize: 8 },
             headStyles: { fillColor: [13, 110, 253] },
             footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
+            margin: { bottom: 30 },
         });
+        addPdfSignatures(doc);
         doc.save(`rapport-vehicules-${new Date().toISOString().slice(0,10)}.pdf`);
     };
 

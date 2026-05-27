@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { addPdfHeader, addPdfSignatures } from "../../utils/pdfHelpers";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -64,12 +65,9 @@ export default function MaintenanceReport() {
         }
     };
 
-    const exportPDF = () => {
+    const exportPDF = async () => {
         const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(14);
-        doc.text(t('reports.maintenance_report_title'), 14, 15);
-        doc.setFontSize(9);
-        doc.text(`${filters.start_date} → ${filters.end_date}`, 14, 22);
+        await addPdfHeader(doc, t('reports.maintenance_report_title'), `Période : ${filters.start_date} → ${filters.end_date}`);
         autoTable(doc, {
             startY: 27,
             head: [[
@@ -92,7 +90,9 @@ export default function MaintenanceReport() {
             styles: { fontSize: 8 },
             headStyles: { fillColor: [249, 115, 22] },
             footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
+            margin: { bottom: 30 },
         });
+        addPdfSignatures(doc);
         doc.save(`rapport-maintenance-${filters.start_date}-${filters.end_date}.pdf`);
     };
 

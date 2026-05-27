@@ -7,9 +7,9 @@ import Footer from './Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const pageVariants = {
-  initial: { opacity: 0, x: 40 },
-  animate: { opacity: 1, x: 0 },
-  exit:    { opacity: 0, x: -40 },
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  exit:    { opacity: 0, y: -14 },
 };
 
 const pageTransition = { duration: 0.22, ease: 'easeInOut' };
@@ -23,7 +23,7 @@ export default function MainLayout({ children }) {
 
       <div style={{ display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         <Sidebar />
-        <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minWidth: 0, minHeight: 0, position: 'relative' }}>
+        <main style={{ flex: 1, overflowY: 'auto', minWidth: 0, minHeight: 0, position: 'relative' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
