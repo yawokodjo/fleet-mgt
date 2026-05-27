@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Container, Row, Col, Table, Form, Alert } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -62,15 +65,75 @@ export default function VehicleReport() {
         out_of_service: t('vehicles.status_out_of_service'),
     }[s] ?? s);
 
+    const exportPDF = () => {
+        const doc = new jsPDF({ orientation: 'landscape' });
+        doc.setFontSize(14);
+        doc.text(t('reports.vehicle_report_title'), 14, 15);
+        doc.setFontSize(9);
+        doc.text(`${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
+        autoTable(doc, {
+            startY: 27,
+            head: [[
+                t('vehicles.brand'), t('vehicles.model'), t('vehicles.license_plate'),
+                t('vehicles.year'), t('vehicles.fuel_type'), t('vehicles.mileage'), t('vehicles.status'),
+            ]],
+            body: data.map(v => [
+                v.marque, v.model, v.license_plate,
+                v.year ?? '-', v.fuel_type ?? '-',
+                v.mileage ? `${Number(v.mileage).toLocaleString('fr-FR')} km` : '-',
+                statusLabel(v.status),
+            ]),
+            foot: [[
+                '', '', '', '', t('reports.total'),
+                `${Number(totals.totalMileage).toLocaleString('fr-FR')} km`, '',
+            ]],
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [13, 110, 253] },
+            footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
+        });
+        doc.save(`rapport-vehicules-${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+
+    const exportExcel = () => {
+        const rows = data.map(v => ({
+            [t('vehicles.brand')]:         v.marque,
+            [t('vehicles.model')]:         v.model,
+            [t('vehicles.license_plate')]: v.license_plate,
+            [t('vehicles.year')]:          v.year ?? '',
+            [t('vehicles.fuel_type')]:     v.fuel_type ?? '',
+            [t('vehicles.mileage')]:       v.mileage ? Number(v.mileage) : '',
+            [t('vehicles.status')]:        statusLabel(v.status),
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [16,16,14,8,12,12,16].map(w => ({ wch: w }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Véhicules');
+        XLSX.writeFile(wb, `rapport-vehicules-${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
     return (
         <Container>
             <div style={{ paddingTop: '1rem', paddingBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #3b82f6, #0d6efd)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, boxShadow: '0 3px 10px rgba(13,110,253,0.3)' }}>🚗</div>
-                    <div>
-                        <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.2 }}>{t('reports.vehicle_report_title')}</h3>
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{t('reports.vehicles_section')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #3b82f6, #0d6efd)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, boxShadow: '0 3px 10px rgba(13,110,253,0.3)' }}>🚗</div>
+                        <div>
+                            <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.2 }}>{t('reports.vehicle_report_title')}</h3>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{t('reports.vehicles_section')}</span>
+                        </div>
                     </div>
+                    {fetched && data.length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0.45rem 1rem', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                PDF
+                            </button>
+                            <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0.45rem 1rem', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                Excel
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}

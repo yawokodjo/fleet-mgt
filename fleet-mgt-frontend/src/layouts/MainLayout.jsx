@@ -23,7 +23,7 @@ export default function MainLayout({ children }) {
 
       <div style={{ display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         <Sidebar />
-        <main style={{ flex: 1, overflowY: 'auto', minWidth: 0, minHeight: 0, position: 'relative' }}>
+        <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minWidth: 0, minHeight: 0, position: 'relative' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
