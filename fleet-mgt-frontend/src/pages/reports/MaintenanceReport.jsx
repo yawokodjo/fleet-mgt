@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Container, Row, Col, Table, Button, Form, Alert } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import api from "../../axios";
 import Pagination from "../../components/Pagination";
 
@@ -61,28 +64,54 @@ export default function MaintenanceReport() {
         }
     };
 
-    const exportReport = async (format) => {
-        if (!validate()) return;
-        try {
-            const res = await api.get("/reports/maintenanceBetweenDates", {
-                params: { ...buildParams(), format },
-                responseType: "blob",
-            });
-            const url = URL.createObjectURL(new Blob([res.data]));
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `rapport_maintenance_${filters.start_date}_${filters.end_date}.${format === "pdf" ? "pdf" : "xlsx"}`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            if (err.response?.data instanceof Blob) {
-                const text = await err.response.data.text();
-                try { setError(JSON.parse(text).message || t('reports.export_error')); }
-                catch { setError(t('reports.export_error')); }
-            } else {
-                setError(t('reports.export_error'));
-            }
-        }
+    const exportPDF = () => {
+        const doc = new jsPDF({ orientation: 'landscape' });
+        doc.setFontSize(14);
+        doc.text(t('reports.maintenance_report_title'), 14, 15);
+        doc.setFontSize(9);
+        doc.text(`${filters.start_date} → ${filters.end_date}`, 14, 22);
+        autoTable(doc, {
+            startY: 27,
+            head: [[
+                t('reports.col_planned_date'), t('reports.col_completed_date'), t('reports.col_vehicle'),
+                t('reports.col_type'), t('reports.col_company'), t('reports.col_cost'),
+                t('reports.col_status'), t('reports.col_description'),
+            ]],
+            body: data.map(item => [
+                item.date ? new Date(item.date).toLocaleDateString(locale) : '-',
+                item.completed_date ? new Date(item.completed_date).toLocaleDateString(locale) : '-',
+                item.vehicle, item.type, item.company,
+                Number(item.cost).toLocaleString(locale),
+                statusLabel(item.status), item.description ?? '',
+            ]),
+            foot: [[
+                '', '', '', '', t('reports.total') + ` (${totals.count})`,
+                `${Number(totals.total_cost).toLocaleString(locale)} FCFA`,
+                '', '',
+            ]],
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [249, 115, 22] },
+            footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30], fontStyle: 'bold' },
+        });
+        doc.save(`rapport-maintenance-${filters.start_date}-${filters.end_date}.pdf`);
+    };
+
+    const exportExcel = () => {
+        const rows = data.map(item => ({
+            [t('reports.col_planned_date')]:   item.date ? new Date(item.date).toLocaleDateString(locale) : '-',
+            [t('reports.col_completed_date')]: item.completed_date ? new Date(item.completed_date).toLocaleDateString(locale) : '-',
+            [t('reports.col_vehicle')]:        item.vehicle,
+            [t('reports.col_type')]:           item.type,
+            [t('reports.col_company')]:        item.company,
+            [t('reports.col_cost')]:           Number(item.cost),
+            [t('reports.col_status')]:         statusLabel(item.status),
+            [t('reports.col_description')]:    item.description ?? '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [12, 14, 16, 14, 18, 12, 14, 30].map(w => ({ wch: w }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Maintenances');
+        XLSX.writeFile(wb, `rapport-maintenance-${filters.start_date}-${filters.end_date}.xlsx`);
     };
 
     const statusLabel = (s) => ({
@@ -100,12 +129,26 @@ export default function MaintenanceReport() {
     return (
         <Container>
             <div style={{ background: '#f8f9fa', paddingBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '1rem', paddingBottom: '0.5rem' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #fb923c, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>🔧</div>
-                <div>
-                    <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.2 }}>{t('reports.maintenance_report_title')}</h3>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{t('reports.maintenances_section')}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', paddingTop: '1rem', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #fb923c, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>🔧</div>
+                    <div>
+                        <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.2 }}>{t('reports.maintenance_report_title')}</h3>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{t('reports.maintenances_section')}</span>
+                    </div>
                 </div>
+                {data.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0.45rem 1rem', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            PDF
+                        </button>
+                        <button onClick={exportExcel} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0.45rem 1rem', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Excel
+                        </button>
+                    </div>
+                )}
             </div>
 
             {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
@@ -207,10 +250,6 @@ export default function MaintenanceReport() {
                 />
             )}
 
-            <div className="mt-3 d-flex gap-2">
-                <Button variant="success" onClick={() => exportReport("excel")}>{t('reports.export_excel_btn')}</Button>
-                <Button variant="danger" onClick={() => exportReport("pdf")}>{t('reports.export_pdf_btn')}</Button>
-            </div>
         </Container>
     );
 }
