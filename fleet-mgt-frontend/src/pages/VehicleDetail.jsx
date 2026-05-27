@@ -50,7 +50,7 @@ export default function VehicleDetail() {
     return (
         <div style={{ padding: '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
             {/* Header card */}
-            <div style={{ background: 'linear-gradient(135deg, #dbeafe, #eff6ff)', border: '1.5px solid #bfdbfe', borderRadius: '0 0 18px 18px', padding: '0.9rem 1.5rem 1.1rem', marginBottom: '1.25rem', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 4px 20px rgba(13,110,253,0.1)' }}>
+            <div style={{ background: 'linear-gradient(135deg, #dbeafe, #eff6ff)', border: '1.5px solid #bfdbfe', borderRadius: '0 0 18px 18px', padding: '0.9rem 1.5rem 1.1rem', marginBottom: '1.25rem', boxShadow: '0 4px 20px rgba(13,110,253,0.1)' }}>
                 <button onClick={() => navigate('/vehicles')} style={{ background: 'none', border: 'none', color: '#60a5fa', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', padding: 0, marginBottom: '0.55rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     ‹ {t('common.back')}
                 </button>

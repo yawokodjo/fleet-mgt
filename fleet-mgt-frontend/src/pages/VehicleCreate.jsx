@@ -53,7 +53,7 @@ export default function VehicleCreate() {
     return (
         <div style={{ padding: '1.5rem', maxWidth: '740px', margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ marginBottom: '1.25rem', position: 'sticky', top: 0, zIndex: 100, background: '#fff', borderRadius: '0 0 16px 16px', boxShadow: '0 4px 20px rgba(13,110,253,0.1)', padding: '1rem 1.25rem' }}>
+            <div style={{ marginBottom: '1.25rem', background: '#fff', borderRadius: '0 0 16px 16px', boxShadow: '0 4px 20px rgba(13,110,253,0.1)', padding: '1rem 1.25rem' }}>
                 <button onClick={() => navigate('/vehicles')} style={{ background: 'none', border: 'none', color: '#94a3b8', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', padding: 0, marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     ‹ {t('common.back')}
                 </button>

@@ -12,10 +12,7 @@ export default function MainLayout({ children }) {
 
       {/* Corps principal — 1fr prend exactement l'espace restant */}
       <div style={{ display: 'flex', overflow: 'hidden' }}>
-        {/* Barre latérale */}
-        <div className="d-none d-md-block bg-white border-end" style={{ width: '250px', overflowY: 'auto', flexShrink: 0 }}>
-          <Sidebar />
-        </div>
+        <Sidebar />
 
         {/* Contenu principal — seule zone qui défile */}
         <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minWidth: 0 }}>

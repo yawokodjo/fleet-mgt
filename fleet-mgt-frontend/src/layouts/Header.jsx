@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import CommandSearch from "../components/CommandSearch";
 import { useAuth } from "../context/AuthContext";
+import logoCI from "../assets/logo-ci.png";
 
 /* ── Help Modal ── */
 function HelpModal({ onClose }) {
@@ -202,9 +203,9 @@ export default function Header() {
                 <div className="container">
                     {/* Desktop Layout */}
                     <div className="d-none d-lg-flex justify-content-between align-items-center">
-                        <a href="https://www.compassion.com/" target="_blank" rel="noopener noreferrer">
-                            <img src="/src/assets/logo-ci.png" alt="Logo" width={50} height={50} />
-                        </a>
+                        <Link to="/">
+                            <img src={logoCI} alt="Logo" width={50} height={50} />
+                        </Link>
 
                         <div className="text-center flex-grow-1 mx-3">
                             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
@@ -279,67 +280,36 @@ export default function Header() {
                         </div>
                     </div>
 
-                    {/* Mobile Layout */}
-                    <div className="d-lg-none">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <a href="https://www.compassion.com/" target="_blank" rel="noopener noreferrer">
-                                <img src="/src/assets/logo-ci.png" alt="Logo" width={40} height={40} />
-                            </a>
-                            <div className="d-flex align-items-center gap-2">
-                                <select
-                                    className="form-select form-select-sm bg-secondary text-white border-0"
-                                    style={{ width: 'auto' }}
-                                    value={i18n.language}
-                                    onChange={handleLangChange}
-                                >
-                                    <option value="fr">FR</option>
-                                    <option value="en">EN</option>
-                                </select>
-                                <button
-                                    onClick={() => setHelpOpen(true)}
-                                    style={{ ...iconBtnStyle, width: '32px', height: '32px', fontSize: '0.9rem' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                >
-                                    ?
-                                </button>
-                                {user && (
-                                    <button
-                                        onClick={logout}
-                                        style={{ ...iconBtnStyle, width: '32px', height: '32px' }}
-                                        title={t('header.logout')}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                    >
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                                    </button>
-                                )}
-                            </div>
+                    {/* Mobile Layout — single row */}
+                    <div className="d-lg-none d-flex align-items-center" style={{ gap: '8px' }}>
+                        {/* Space reserved for the hamburger button (fixed top-left by Sidebar) */}
+                        <div style={{ width: '48px', flexShrink: 0 }} />
+
+                        <div style={{ flex: 1, textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {t('header.title_short')}
                         </div>
 
-                        <h1 className="text-center text-white fs-6 fw-bold mb-2">
-                            {t('header.title_short')}
-                        </h1>
-
-                        <button
-                            onClick={() => setSearchOpen(true)}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                width: '100%',
-                                background: 'rgba(255,255,255,0.1)',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '10px',
-                                padding: '8px 14px',
-                                color: 'rgba(255,255,255,0.75)',
-                                cursor: 'pointer',
-                                fontSize: '0.88rem',
-                            }}
-                        >
-                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-                            </svg>
-                            {t('header.search_placeholder')}
-                        </button>
+                        <div className="d-flex align-items-center" style={{ gap: '6px', flexShrink: 0 }}>
+                            <select
+                                className="form-select form-select-sm bg-secondary text-white border-0"
+                                style={{ width: 'auto', fontSize: '0.78rem' }}
+                                value={i18n.language}
+                                onChange={handleLangChange}
+                            >
+                                <option value="fr">FR</option>
+                                <option value="en">EN</option>
+                            </select>
+                            <button
+                                onClick={() => setSearchOpen(true)}
+                                style={{ ...iconBtnStyle, width: '32px', height: '32px' }}
+                                title={t('header.search_placeholder')}
+                            >
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                                </svg>
+                            </button>
+                            {user && <UserMenu user={user} onLogout={logout} />}
+                        </div>
                     </div>
                 </div>
             </header>

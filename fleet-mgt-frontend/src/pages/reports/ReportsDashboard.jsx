@@ -329,8 +329,8 @@ export default function ReportsDashboard() {
             {/* ── Hero Banner ── */}
             <div style={{
                 background: 'linear-gradient(135deg, #0d1b36 0%, #0d4a8c 60%, #1a6fd4 100%)',
-                borderRadius: '0 0 24px 24px', marginBottom: '1.75rem', overflow: 'hidden', position: 'sticky',
-                top: 0, zIndex: 100, padding: '2rem 2.5rem',
+                borderRadius: '0 0 24px 24px', marginBottom: '1.75rem', overflow: 'hidden',
+                padding: '2rem 2.5rem',
             }}>
                 {/* BG blobs */}
                 <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '260px', height: '260px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />

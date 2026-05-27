@@ -92,7 +92,7 @@ export default function ConsumptionReport() {
 
     return (
         <Container>
-            <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#f8f9fa', paddingBottom: '0.5rem' }}>
+            <div style={{ background: '#f8f9fa', paddingBottom: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '1rem', paddingBottom: '0.5rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '11px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, boxShadow: '0 3px 10px rgba(22,163,74,0.3)' }}>⛽</div>
                 <div>

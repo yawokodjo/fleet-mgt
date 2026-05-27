@@ -110,7 +110,7 @@ export default function Users() {
 
     return (
         <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '3rem' }}>
-            <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', paddingTop: '1.25rem', paddingBottom: '1.1rem', boxShadow: '0 4px 24px rgba(102,126,234,0.35)' }}>
+            <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', paddingTop: '1.25rem', paddingBottom: '1.1rem', boxShadow: '0 4px 24px rgba(102,126,234,0.35)' }}>
             <Container fluid>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>

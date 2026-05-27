@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import logoCI from "../assets/logo-ci.png";
 
@@ -131,7 +131,7 @@ export default function Sidebar() {
                     borderBottom: '1px solid rgba(255,255,255,0.07)',
                     display: 'flex', alignItems: 'center', gap: '10px',
                 }}>
-                    <img src={logoCI} alt="CI" style={{ height: '34px', objectFit: 'contain' }} />
+                    <Link to="/"><img src={logoCI} alt="CI" style={{ height: '34px', objectFit: 'contain' }} /></Link>
                     <div>
                         <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
                             CI Togo
