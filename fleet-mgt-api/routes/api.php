@@ -21,9 +21,8 @@ use Illuminate\Support\Facades\Route;
 // ROUTES PUBLIQUES
 // ============================================================================
 
-// Messages et recherche
+// Message de bienvenue (public)
 Route::get('/message', [MessageController::class, 'index']);
-Route::get('/search', [SearchController::class, 'search']);
 
 // Authentification
 // throttle:10,1 = max 10 requêtes/minute par IP (OWASP : rate limiting par IP)
@@ -45,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ------------------------------------------------------------------------
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/search', [SearchController::class, 'search']);
     Route::get('/profile', [UserController::class, 'profile']);
     Route::put('/profile', [UserController::class, 'updateProfile']);
     Route::put('/change-password', [UserController::class, 'changePassword']);

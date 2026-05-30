@@ -20,7 +20,7 @@ function getCriteria(pw) {
 }
 
 export default function Register() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,10 +41,9 @@ export default function Register() {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { setError(t('register.password_mismatch')); return; }
     if (!allMet) { setError(t('register.password_requirements')); return; }
-    if (!form.role) { setError(t('register.role_required')); return; }
     setLoading(true);
     try {
-      const res = await api.post('/register', { name: form.name, email: form.email, password: form.password, password_confirmation: form.confirmPassword, role: form.role });
+      const res = await api.post('/register', { name: form.name, email: form.email, password: form.password, password_confirmation: form.confirmPassword });
       login(res.data.user, res.data.access_token);
     } catch (err) {
       if (err.response?.data?.errors) setError(Object.values(err.response.data.errors)[0][0]);
@@ -122,20 +121,6 @@ export default function Register() {
               <input type="text" name="name" value={form.name} onChange={handleChange} required disabled={loading}
                 placeholder="Jean Dupont" style={inp}
                 onFocus={e => e.target.style.borderColor = '#0d6efd'} onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
-            </div>
-
-            {/* Role */}
-            <div style={{ marginBottom: '0.9rem' }}>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: '5px' }}>{t('register.role')}</label>
-              <select name="role" value={form.role} onChange={handleChange} required disabled={loading}
-                style={{ ...inp, cursor: 'pointer' }}
-                onFocus={e => e.target.style.borderColor = '#0d6efd'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}>
-                <option value="">{t('register.select_role')}</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="driver">Driver</option>
-                <option value="accountant">Accountant</option>
-              </select>
             </div>
 
             {/* Email */}

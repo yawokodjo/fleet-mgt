@@ -22,7 +22,6 @@ export function AuthProvider({ children }) {
       if (savedUser && savedToken) {
         setUser(JSON.parse(savedUser));
         setToken(savedToken);
-        console.log('✅ Utilisateur restauré depuis localStorage');
       }
     } catch (e) {
       console.error("❌ Erreur de parsing user :", e);
@@ -34,30 +33,18 @@ export function AuthProvider({ children }) {
 
   // Connexion
   const login = (userData, accessToken) => {
-    console.log('🔐 Tentative de connexion...', userData);
-
     setUser(userData);
     setToken(accessToken);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', accessToken);
-
-    console.log('✅ Connexion réussie, redirection vers /dashboard');
-
-    // Redirection vers le dashboard après connexion
     navigate('/dashboard', { replace: true });
   };
 
   // Déconnexion
   const logout = () => {
-    console.log('👋 Déconnexion en cours...');
-
     setUser(null);
     setToken(null);
     localStorage.clear();
-
-    console.log('✅ Déconnexion réussie, redirection vers /');
-
-    // Redirection vers la page d'accueil après déconnexion
     navigate('/', { replace: true });
   };
 

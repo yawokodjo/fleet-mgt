@@ -41,8 +41,8 @@ services:
       MYSQL_DATABASE: fleet_mgt_db
       MYSQL_USER: laravel
       MYSQL_PASSWORD: david1
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
     volumes:
       - db_data:/var/lib/mysql
     restart: always
@@ -51,13 +51,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  adminer:
-    image: adminer
-    container_name: adminer_app
-    restart: always
-    ports:
-      - "8080:8080"
 
 volumes:
   db_data:
