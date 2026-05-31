@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
@@ -148,7 +149,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Revoke Bearer token (token mode)
         $request->user()->currentAccessToken()->delete();
+
+        // Invalidate session (SPA cookie mode)
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Déconnexion réussie']);
     }

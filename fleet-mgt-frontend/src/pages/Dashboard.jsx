@@ -162,8 +162,6 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const locale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
 
     /* ── State ── */
     const [vehicles,      setVehicles]      = useState([]);
@@ -244,7 +242,7 @@ export default function Dashboard() {
             api.get('/maintenances',              { headers }).catch(() => ({ data: [] })),
             api.get('/consumptions',              { headers }).catch(() => ({ data: [] })),
             api.get('/drivers',                  { headers }).catch(() => ({ data: [] })),
-            api.get('/vehicles/expiring-documents', { headers }).catch(() => ({ data: [] })),
+            api.get('/vehicles/expiring-documents').catch(() => ({ data: [] })),
         ]).then(([v, m, c, d, exp]) => {
             setVehicles(toArr(v));
             setMaintenances(toArr(m));

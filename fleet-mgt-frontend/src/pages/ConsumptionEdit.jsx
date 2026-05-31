@@ -21,8 +21,6 @@ export default function ConsumptionEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
-
     const [form, setForm] = useState({ date: '', fuel_volume: '', fuel_cost: '', vehicle_id: '', driver_id: '', mileage: '' });
     const [documentFile, setDocumentFile] = useState(null);
     const [existingDoc, setExistingDoc] = useState(null);
@@ -33,18 +31,17 @@ export default function ConsumptionEdit() {
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
-        const headers = { Authorization: `Bearer ${token}` };
-        api.get(`/consumptions/${id}`, { headers }).then(res => {
+        api.get(`/consumptions/${id}`).then(res => {
             const d = res.data;
             setForm({ date: d.date ? d.date.split('T')[0] : '', fuel_volume: d.fuel_volume || '', fuel_cost: d.fuel_cost || '', vehicle_id: d.vehicle?.id || '', driver_id: d.driver?.id || '', mileage: d.mileage || '' });
             setExistingDoc(d.document_url || null);
         });
         Promise.all([
-            api.get('/vehicles-list', { headers }),
-            api.get('/drivers',       { headers }),
+            api.get('/vehicles-list'),
+            api.get('/drivers'),
         ]).then(([v, d]) => { setVehicles(v.data); setDrivers(d.data); })
           .finally(() => setLoading(false));
-    }, [id, token]);
+    }, [id]);
 
     const handleSubmit = async e => {
         e.preventDefault();
@@ -59,7 +56,7 @@ export default function ConsumptionEdit() {
             if (form.mileage)  payload.append('mileage', parseInt(form.mileage));
             if (documentFile)  payload.append('document', documentFile);
             payload.append('_method', 'PUT');
-            await api.post(`/consumptions/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+            await api.post(`/consumptions/${id}`, payload);
             setSuccess(true);
             setTimeout(() => navigate('/consumptions'), 1500);
         } catch (err) {

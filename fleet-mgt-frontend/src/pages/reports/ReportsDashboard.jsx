@@ -255,8 +255,6 @@ function ReportEntryCard({ color, gradient, title, desc, features, route, IlluCo
 export default function ReportsDashboard() {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
 
     const [vehicles,     setVehicles]     = useState([]);
     const [maintenances, setMaintenances] = useState([]);
@@ -265,7 +263,7 @@ export default function ReportsDashboard() {
 
     useEffect(() => {
         Promise.all([
-            api.get('/vehicles-list', { headers }).catch(() => ({ data: [] })),
+            api.get('/vehicles-list').catch(() => ({ data: [] })),
             api.get('/maintenances',  { headers }).catch(() => ({ data: [] })),
             api.get('/consumptions',  { headers }).catch(() => ({ data: [] })),
         ]).then(([v, m, c]) => {

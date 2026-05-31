@@ -4,8 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import logoCI from '../assets/logo-ci.png';
 import carImg from '../assets/voiture.jpg';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import api, { fetchCsrfCookie } from '../axios';
 const MAX_ATTEMPTS = 3;
 const BLOCK_MINUTES = 5;
 
@@ -111,25 +110,21 @@ export default function Login() {
         setErrorMsg('');
 
         try {
-            /* Use fetch directly — bypasses axios interceptors entirely */
-            const res = await fetch(`${API}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
+            // Fetch the CSRF cookie so Laravel can validate the subsequent POST
+            await fetchCsrfCookie();
 
-            const data = await res.json();
+            const res = await api.post('/login', { email, password });
 
-            if (res.ok) {
-                /* ✅ Connexion réussie */
-                login(data.user, data.access_token);
-                return;
-            }
+            /* ✅ Connexion réussie */
+            login(res.data.user);
 
-            /* ❌ Erreur */
+        } catch (err) {
+            const data = err.response?.data;
             const code = data?.code;
 
-            if (code === 'ACCOUNT_BLOCKED') {
+            if (!err.response) {
+                triggerError('Impossible de contacter le serveur. Vérifiez votre connexion.');
+            } else if (code === 'ACCOUNT_BLOCKED') {
                 const secs = Math.round(data.remaining_seconds || BLOCK_MINUTES * 60);
                 setBlocked(true);
                 setCountdown(secs);
@@ -152,8 +147,6 @@ export default function Login() {
                 triggerError(data?.message || 'Email ou mot de passe incorrect.');
             }
 
-        } catch {
-            triggerError('Impossible de contacter le serveur. Vérifiez votre connexion.');
         } finally {
             setLoading(false);
         }

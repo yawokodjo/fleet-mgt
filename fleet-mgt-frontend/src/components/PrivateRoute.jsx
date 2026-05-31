@@ -37,9 +37,9 @@ function AccessDenied() {
 }
 
 export default function PrivateRoute({ children, roles }) {
-    const { token, user } = useAuth();
+    const { user } = useAuth();
 
-    if (!token) return <Navigate to="/login" replace />;
+    if (!user) return <Navigate to="/login" replace />;
 
     if (roles && user && !roles.includes(user.role)) {
         return <AccessDenied />;

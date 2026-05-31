@@ -21,7 +21,6 @@ const Err = ({ msg }) => msg ? <p style={{ fontSize: '0.76rem', color: '#dc2626'
 export default function ConsumptionCreate() {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
     const today = new Date().toISOString().split('T')[0];
 
     const [form, setForm] = useState({ date: '', fuel_volume: '', fuel_cost: '', vehicle_id: '', driver_id: '', mileage: '' });
@@ -35,12 +34,12 @@ export default function ConsumptionCreate() {
 
     useEffect(() => {
         Promise.all([
-            api.get('/vehicles-list', { headers: { Authorization: `Bearer ${token}` } }),
-            api.get('/drivers',       { headers: { Authorization: `Bearer ${token}` } }),
+            api.get('/vehicles-list'),
+            api.get('/drivers'),
         ]).then(([v, d]) => { setVehicles(v.data); setDrivers(d.data); })
           .catch(() => alert(t('common.error')))
           .finally(() => setLoading(false));
-    }, [token, t]);
+    }, [t]);
 
     const handleChange = e => {
         setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -72,7 +71,7 @@ export default function ConsumptionCreate() {
             payload.append('fuel_cost',   parseFloat(form.fuel_cost));
             if (form.mileage)  payload.append('mileage', parseInt(form.mileage));
             if (documentFile)  payload.append('document', documentFile);
-            await api.post('/consumptions', payload, { headers: { Authorization: `Bearer ${token}` } });
+            await api.post('/consumptions', payload);
             setSuccess(true);
             setTimeout(() => navigate('/consumptions'), 1500);
         } catch (err) {

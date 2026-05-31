@@ -11,10 +11,8 @@ export default function LiveSearch({ query, onSelectResult }) {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    // Ne rechercher que si la query a au moins 2 caractères
     if (!query || query.trim().length < 2) {
       setResults({ vehicles: [], drivers: [], maintenances: [], consumptions: [] });
       return;
@@ -23,14 +21,11 @@ export default function LiveSearch({ query, onSelectResult }) {
     const searchData = async () => {
       setLoading(true);
       try {
-        const headers = { Authorization: `Bearer ${token}` };
-
-        // Recherche dans toutes les collections
         const [vehiclesRes, driversRes, maintenancesRes, consumptionsRes] = await Promise.all([
-          api.get("/vehicles-list", { headers }).catch((err) => { console.error("Erreur vehicles:", err); return { data: [] }; }),
-          api.get("/drivers", { headers }).catch((err) => { console.error("Erreur drivers:", err); return { data: [] }; }),
-          api.get("/maintenances", { headers }).catch((err) => { console.error("Erreur maintenances:", err); return { data: [] }; }),
-          api.get("/consumptions", { headers }).catch((err) => { console.error("Erreur consumptions:", err); return { data: [] }; }),
+          api.get("/vehicles-list").catch(() => ({ data: [] })),
+          api.get("/drivers").catch(() => ({ data: [] })),
+          api.get("/maintenances").catch(() => ({ data: [] })),
+          api.get("/consumptions").catch(() => ({ data: [] })),
         ]);
 
         const lowerQuery = query.toLowerCase().trim();
@@ -40,8 +35,6 @@ export default function LiveSearch({ query, onSelectResult }) {
         const driversData = Array.isArray(driversRes.data) ? driversRes.data : (driversRes.data.data || []);
         const maintenancesData = Array.isArray(maintenancesRes.data) ? maintenancesRes.data : (maintenancesRes.data.data || []);
         const consumptionsData = Array.isArray(consumptionsRes.data) ? consumptionsRes.data : (consumptionsRes.data.data || []);
-
-        console.log("Données reçues:", { vehiclesData, driversData, maintenancesData, consumptionsData });
 
         // Filtrer les véhicules
         const filteredVehicles = vehiclesData.filter(v =>
@@ -77,8 +70,8 @@ export default function LiveSearch({ query, onSelectResult }) {
           maintenances: filteredMaintenances.slice(0, 5),
           consumptions: filteredConsumptions.slice(0, 5),
         });
-      } catch (err) {
-        console.error("Erreur de recherche:", err);
+      } catch {
+        // silently ignore search errors
       } finally {
         setLoading(false);
       }
@@ -87,7 +80,7 @@ export default function LiveSearch({ query, onSelectResult }) {
     // Debounce: attendre 300ms après la dernière saisie
     const timer = setTimeout(searchData, 300);
     return () => clearTimeout(timer);
-  }, [query, token]);
+  }, [query]);
 
   const handleClick = (type, id, item) => {
     onSelectResult(item);

@@ -35,7 +35,6 @@ export default function CommandSearch({ isOpen, onClose }) {
   const listRef = useRef(null);
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const token = localStorage.getItem('token');
 
   const go = useCallback((path) => { onClose(); navigate(path); }, [onClose, navigate]);
 
@@ -109,12 +108,11 @@ export default function CommandSearch({ isOpen, onClose }) {
     const search = async () => {
       setLoading(true);
       try {
-        const headers = { Authorization: `Bearer ${token}` };
         const [vRes, dRes, mRes, cRes] = await Promise.all([
-          api.get('/vehicles-list', { headers }).catch(() => ({ data: [] })),
-          api.get('/drivers', { headers }).catch(() => ({ data: [] })),
-          api.get('/maintenances', { headers }).catch(() => ({ data: [] })),
-          api.get('/consumptions', { headers }).catch(() => ({ data: [] })),
+          api.get('/vehicles-list').catch(() => ({ data: [] })),
+          api.get('/drivers').catch(() => ({ data: [] })),
+          api.get('/maintenances').catch(() => ({ data: [] })),
+          api.get('/consumptions').catch(() => ({ data: [] })),
         ]);
         const q = query.toLowerCase().trim();
         const arr = (r) => (Array.isArray(r.data) ? r.data : r.data.data || []);
@@ -142,7 +140,7 @@ export default function CommandSearch({ isOpen, onClose }) {
     };
     const timer = setTimeout(search, 300);
     return () => clearTimeout(timer);
-  }, [query, token]);
+  }, [query]);
 
   // Group rendering helpers
   const groups = [

@@ -21,7 +21,6 @@ const Err = ({ msg }) => msg ? <p style={{ fontSize: '0.76rem', color: '#dc2626'
 export default function MaintenanceCreate() {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
     const today = new Date().toISOString().split('T')[0];
 
     const [form, setForm] = useState({ scheduled_date: '', vehicle_id: '', driver_id: '', maintenance_type: '', maintenance_company: '', cost: '', description: '', mileage_at_service: '' });
@@ -34,14 +33,13 @@ export default function MaintenanceCreate() {
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
-        const headers = { Authorization: `Bearer ${token}` };
         Promise.all([
-            api.get('/vehicles-list', { headers }),
-            api.get('/drivers',       { headers }),
+            api.get('/vehicles-list'),
+            api.get('/drivers'),
         ]).then(([v, d]) => { setVehicles(v.data); setDrivers(d.data); })
           .catch(() => alert(t('common.error')))
           .finally(() => setLoading(false));
-    }, [token, t]);
+    }, [t]);
 
     const handleChange = e => {
         setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -70,7 +68,7 @@ export default function MaintenanceCreate() {
             Object.entries(form).forEach(([k, v]) => { if (v !== '') payload.append(k, v); });
             payload.set('cost', parseFloat(form.cost));
             if (documentFile) payload.append('document', documentFile);
-            await api.post('/maintenances', payload, { headers: { Authorization: `Bearer ${token}` } });
+            await api.post('/maintenances', payload);
             setSuccess(true);
             setTimeout(() => navigate('/maintenances'), 1500);
         } catch (err) {

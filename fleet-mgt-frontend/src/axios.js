@@ -1,83 +1,49 @@
 import axios from 'axios';
 
-// Configuration de base de l'API
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Base server URL without /api — used for the CSRF cookie endpoint
+const SERVER_URL = API_URL.replace(/\/api$/, '');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
   },
-  timeout: 10000, // Timeout de 10 secondes
+  withCredentials: true, // send session cookie + XSRF-TOKEN on every request
+  timeout: 10000,
 });
 
-// Intercepteur de requête - Ajouter le token
+// Fetch the CSRF cookie before the first mutating request (login).
+// Axios reads XSRF-TOKEN automatically and sends it as X-XSRF-TOKEN.
+export const fetchCsrfCookie = () =>
+  axios.get(`${SERVER_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+
+// Request interceptor — FormData fix only, no manual token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Laisser axios définir automatiquement Content-Type pour FormData (multipart/form-data + boundary)
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
-
-    // Log pour debug (à retirer en production)
-    console.log('📤 API Request:', config.method.toUpperCase(), config.url, config.params);
-
     return config;
   },
-  (error) => {
-    console.error('❌ Request Error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Intercepteur de réponse - Gérer les erreurs
+// Response interceptor — centralised 401 handling
 api.interceptors.response.use(
-  (response) => {
-    // Log pour debug (à retirer en production)
-    console.log('📥 API Response:', response.config.url, response.status);
-    return response;
-  },
+  (response) => response,
   (error) => {
-    const status  = error.response?.status;
-    const url     = error.config?.url || '';
-    const isLogin = url.includes('/login') || url.includes('/register');
+    const status = error.response?.status;
+    const url    = error.config?.url || '';
+    const isAuth = url.includes('/login') || url.includes('/register');
 
-    // Routes d'auth : laisser passer toutes les erreurs au composant appelant
-    if (isLogin) {
-      return Promise.reject(error);
-    }
+    // Auth routes: let the component handle all errors (blocked, invalid creds…)
+    if (isAuth) return Promise.reject(error);
 
-    if (error.response) {
-      switch (status) {
-        case 401:
-          // Session expirée en dehors du login → déconnexion
-          console.warn('⚠️ Session expirée');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-          break;
-
-        case 403:
-          console.error('🚫 Accès interdit');
-          break;
-
-        case 422:
-          console.error('⚠️ Erreur de validation:', error.response.data?.errors);
-          break;
-
-        case 500:
-          console.error('💥 Erreur serveur:', error.response.data?.message);
-          break;
-
-        default:
-          console.error(`❌ Erreur ${status}:`, error.response.data?.message);
-      }
-    } else if (error.request) {
-      console.error('🌐 Aucune réponse du serveur.');
+    if (status === 401) {
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
 
     return Promise.reject(error);

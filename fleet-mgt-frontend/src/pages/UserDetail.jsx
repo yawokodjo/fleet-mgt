@@ -7,8 +7,6 @@ export default function UserDetail() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
             fetchUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -17,9 +15,7 @@ export default function UserDetail() {
     const fetchUser = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/users/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.get(`/users/${id}`);
             setUser(res.data.data || res.data);
         } catch (err) {
             console.error("Erreur chargement utilisateur:", err);

@@ -21,8 +21,6 @@ export default function MaintenanceEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const token = localStorage.getItem('token');
-
     const [form, setForm] = useState({ scheduled_date: '', vehicle_id: '', driver_id: '', maintenance_type: '', maintenance_company: '', cost: '', description: '', mileage_at_service: '' });
     const [documentFile, setDocumentFile] = useState(null);
     const [existingDoc, setExistingDoc] = useState(null);
@@ -34,8 +32,7 @@ export default function MaintenanceEdit() {
     const [message, setMessage] = useState(null);
 
     useEffect(() => {
-        const headers = { Authorization: `Bearer ${token}` };
-        api.get(`/maintenances/${id}`, { headers }).then(res => {
+        api.get(`/maintenances/${id}`).then(res => {
             const d = res.data;
             setForm({
                 scheduled_date:     d.scheduled_date  || '',
@@ -53,11 +50,11 @@ export default function MaintenanceEdit() {
             else setMessage(t('common.error'));
         });
         Promise.all([
-            api.get('/vehicles-list', { headers }),
-            api.get('/drivers',       { headers }),
+            api.get('/vehicles-list'),
+            api.get('/drivers'),
         ]).then(([v, d]) => { setVehicles(v.data); setDrivers(d.data); })
           .finally(() => setLoading(false));
-    }, [id, token, navigate, t]);
+    }, [id, navigate, t]);
 
     const handleChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -75,9 +72,9 @@ export default function MaintenanceEdit() {
                 payload.set('cost', parseFloat(form.cost));
                 payload.append('document', documentFile);
                 payload.append('_method', 'PUT');
-                await api.post(`/maintenances/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+                await api.post(`/maintenances/${id}`, payload);
             } else {
-                await api.put(`/maintenances/${id}`, { ...form, cost: parseFloat(form.cost) }, { headers: { Authorization: `Bearer ${token}` } });
+                await api.put(`/maintenances/${id}`, { ...form, cost: parseFloat(form.cost) });
             }
             setSuccess(true);
             setTimeout(() => navigate('/maintenances'), 1500);
