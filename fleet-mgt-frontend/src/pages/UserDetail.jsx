@@ -16,7 +16,7 @@ export default function UserDetail() {
         setLoading(true);
         try {
             const res = await api.get(`/users/${id}`);
-            setUser(res.data.data || res.data);
+            setUser(res.data.user || res.data.data || res.data);
         } catch (err) {
             console.error("Erreur chargement utilisateur:", err);
             alert("❌ Impossible de charger les détails de l'utilisateur");

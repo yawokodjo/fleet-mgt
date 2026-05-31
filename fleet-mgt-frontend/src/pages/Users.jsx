@@ -120,8 +120,8 @@ export default function Users() {
         setSelectedUser(user);
     };
 
-    const handleView = () => { navigate(`/users/${selectedUser.id}`); setSelectedUser(null); };
-    const handleEdit = () => { navigate(`/users/${selectedUser.id}/edit`); setSelectedUser(null); };
+    const handleView = () => { if (selectedUser?.id) { navigate(`/users/${selectedUser.id}`); } setSelectedUser(null); };
+    const handleEdit = () => { if (selectedUser?.id) { navigate(`/users/${selectedUser.id}/edit`); } setSelectedUser(null); };
     const handleDelete = async () => {
         if (!window.confirm(t('users.delete_confirm', { name: selectedUser.name }))) { setSelectedUser(null); return; }
         try {
