@@ -76,14 +76,6 @@ function AccessDenied() {
                 </button>
             )}
 
-            {/* Info destinataire */}
-            <div style={{
-                marginTop: '0.75rem', padding: '0.5rem 1rem', borderRadius: '8px',
-                background: '#f8faff', border: '1px solid #e2e8f0',
-                fontSize: '0.78rem', color: '#94a3b8',
-            }}>
-                {t('access.request_to')} <strong style={{ color: '#667eea' }}>{ADMIN_EMAIL}</strong>
-            </div>
         </div>
     );
 }
