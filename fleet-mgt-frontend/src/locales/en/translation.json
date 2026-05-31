@@ -647,7 +647,10 @@
   },
   "access": {
     "denied_title": "Access Denied",
-    "denied_message": "You do not have access to this page.",
-    "contact_admin": "Ask your administrator to grant you the necessary permissions."
+    "denied_message": "You do not have the necessary permissions to access this page.",
+    "contact_admin": "Ask your administrator to grant you the necessary permissions.",
+    "request_button": "Request access by email",
+    "request_sent": "Email ready — check your mail client.",
+    "request_to": "The request will be sent to"
   }
 }
