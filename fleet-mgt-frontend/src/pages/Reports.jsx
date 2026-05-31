@@ -98,8 +98,8 @@ export default function Reports() {
     useEffect(() => {
         Promise.all([
             api.get('/vehicles-list').catch(() => ({ data: [] })),
-            api.get('/maintenances',  { headers }).catch(() => ({ data: [] })),
-            api.get('/consumptions',  { headers }).catch(() => ({ data: [] })),
+            api.get('/maintenances').catch(() => ({ data: [] })),
+            api.get('/consumptions').catch(() => ({ data: [] })),
         ]).then(([v, m, c]) => {
             const toArr = d => Array.isArray(d.data) ? d.data : (d.data?.data || []);
             setVehicles(toArr(v));

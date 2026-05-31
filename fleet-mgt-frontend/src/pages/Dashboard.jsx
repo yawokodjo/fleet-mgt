@@ -238,10 +238,10 @@ export default function Dashboard() {
     useEffect(() => {
         const toArr = d => Array.isArray(d.data) ? d.data : (d.data?.data ?? []);
         Promise.all([
-            api.get('/vehicles-list',            { headers }).catch(() => ({ data: [] })),
-            api.get('/maintenances',              { headers }).catch(() => ({ data: [] })),
-            api.get('/consumptions',              { headers }).catch(() => ({ data: [] })),
-            api.get('/drivers',                  { headers }).catch(() => ({ data: [] })),
+            api.get('/vehicles-list').catch(() => ({ data: [] })),
+            api.get('/maintenances').catch(() => ({ data: [] })),
+            api.get('/consumptions').catch(() => ({ data: [] })),
+            api.get('/drivers').catch(() => ({ data: [] })),
             api.get('/vehicles/expiring-documents').catch(() => ({ data: [] })),
         ]).then(([v, m, c, d, exp]) => {
             setVehicles(toArr(v));

@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-// Base server URL without /api — used for the CSRF cookie endpoint
+const API_URL    = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const SERVER_URL = API_URL.replace(/\/api$/, '');
 
 const api = axios.create({
@@ -10,21 +9,32 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: true, // send session cookie + XSRF-TOKEN on every request
+  withCredentials: true,
   timeout: 10000,
 });
 
-// Fetch the CSRF cookie before the first mutating request (login).
-// Axios reads XSRF-TOKEN automatically and sends it as X-XSRF-TOKEN.
+// Read a cookie value by name (needed for XSRF-TOKEN on mutating requests)
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// Fetch the CSRF cookie from Laravel before the first login POST.
 export const fetchCsrfCookie = () =>
   axios.get(`${SERVER_URL}/sanctum/csrf-cookie`, { withCredentials: true });
 
-// Request interceptor — FormData fix only, no manual token
+// Request interceptor — attach XSRF token + FormData fix
 api.interceptors.request.use(
   (config) => {
+    const xsrf = getCookie('XSRF-TOKEN');
+    if (xsrf) {
+      config.headers['X-XSRF-TOKEN'] = xsrf;
+    }
+
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -38,12 +48,15 @@ api.interceptors.response.use(
     const url    = error.config?.url || '';
     const isAuth = url.includes('/login') || url.includes('/register');
 
-    // Auth routes: let the component handle all errors (blocked, invalid creds…)
     if (isAuth) return Promise.reject(error);
 
     if (status === 401) {
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+      const isPublic = publicRoutes.some(r => window.location.pathname.startsWith(r));
+      if (!isPublic) {
+        window.location.href = '/login';
+      }
     }
 
     return Promise.reject(error);
