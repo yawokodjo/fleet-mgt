@@ -351,6 +351,8 @@
     "edit_user": "✏️ Modifier l'utilisateur",
     "detail_title": "👤 Détails de l'utilisateur",
     "total": "Total",
+    "active": "Actifs",
+    "inactive": "Désactivés",
     "admins": "Admins",
     "managers": "Managers",
     "drivers": "Chauffeurs",

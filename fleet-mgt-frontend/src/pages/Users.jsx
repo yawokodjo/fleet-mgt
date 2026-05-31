@@ -43,6 +43,7 @@ export default function Users() {
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [stats, setStats] = useState({ active: 0, inactive: 0 });
 
     const filtersRef = useRef({ search: '', role: 'all', sortBy: 'name', sortDir: 'asc', perPage: 15 });
     const searchTimeout = useRef(null);
@@ -66,6 +67,9 @@ export default function Users() {
             const d = response.data;
             const usersData = d.data || d.users || d || [];
             setUsers(Array.isArray(usersData) ? usersData : []);
+            if (d.active_count !== undefined) {
+                setStats({ active: d.active_count, inactive: d.inactive_count ?? 0 });
+            }
             setPagination({
                 currentPage: d.current_page ?? 1,
                 lastPage: d.last_page ?? 1,
@@ -211,6 +215,31 @@ export default function Users() {
                             style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', border: 'none', color: '#fff', borderRadius: '10px', padding: '0.48rem 1.1rem', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 10px rgba(102,126,234,0.3)', whiteSpace: 'nowrap' }}>
                             + {t('users.new_user')}
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Stats bar */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '140px', background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '0.75rem 1.1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>✓</div>
+                    <div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>{stats.active}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('users.active')}</div>
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: '140px', background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '0.75rem 1.1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>✗</div>
+                    <div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#dc2626', lineHeight: 1 }}>{stats.inactive}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('users.inactive')}</div>
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: '140px', background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '0.75rem 1.1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>👥</div>
+                    <div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0d6efd', lineHeight: 1 }}>{stats.active + stats.inactive}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('users.total')}</div>
                     </div>
                 </div>
             </div>

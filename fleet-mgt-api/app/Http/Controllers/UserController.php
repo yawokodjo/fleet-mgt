@@ -35,7 +35,12 @@ class UserController extends Controller
             $query->where('role', $role);
         }
 
-        return response()->json($query->paginate($perPage));
+        $paginated = $query->paginate($perPage);
+
+        return response()->json(array_merge($paginated->toArray(), [
+            'active_count'   => User::count(),
+            'inactive_count' => User::onlyTrashed()->count(),
+        ]));
     }
 
     /**
