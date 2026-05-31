@@ -43,7 +43,7 @@ export default function Users() {
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [stats, setStats] = useState({ active: 0, inactive: 0 });
+    const [stats, setStats] = useState({ active: 0, inactive: 0, byRole: {} });
 
     const filtersRef = useRef({ search: '', role: 'all', sortBy: 'name', sortDir: 'asc', perPage: 15 });
     const searchTimeout = useRef(null);
@@ -68,7 +68,7 @@ export default function Users() {
             const usersData = d.data || d.users || d || [];
             setUsers(Array.isArray(usersData) ? usersData : []);
             if (d.active_count !== undefined) {
-                setStats({ active: d.active_count, inactive: d.inactive_count ?? 0 });
+                setStats({ active: d.active_count, inactive: d.inactive_count ?? 0, byRole: d.by_role ?? {} });
             }
             setPagination({
                 currentPage: d.current_page ?? 1,
@@ -243,6 +243,33 @@ export default function Users() {
                     </div>
                 </div>
             </div>
+
+            {/* Stats par rôle */}
+            {Object.keys(stats.byRole).length > 0 && (() => {
+                const roles = [
+                    { key: 'admin',      icon: '👑', label: t('users.admins'),      bg: '#fee2e2', color: '#dc2626' },
+                    { key: 'manager',    icon: '👨‍💼', label: t('users.managers'),    bg: '#eff6ff', color: '#0d6efd' },
+                    { key: 'driver',     icon: '🚗', label: t('users.drivers'),     bg: '#dcfce7', color: '#16a34a' },
+                    { key: 'accountant', icon: '📊', label: t('users.accountants'), bg: '#f5f3ff', color: '#6d28d9' },
+                    { key: 'mechanic',   icon: '🔧', label: t('users.mechanics'),   bg: '#fff7ed', color: '#ea580c' },
+                ];
+                const present = roles.filter(r => stats.byRole[r.key] > 0);
+                if (!present.length) return null;
+                return (
+                    <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                        {present.map(r => (
+                            <div key={r.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '10px', padding: '0.55rem 0.9rem', cursor: 'pointer' }}
+                                onClick={() => { setFilterRole(r.key); filtersRef.current.role = r.key; fetchUsers(1); }}>
+                                <span style={{ fontSize: '1rem' }}>{r.icon}</span>
+                                <div>
+                                    <span style={{ fontSize: '1rem', fontWeight: 800, color: r.color }}>{stats.byRole[r.key]}</span>
+                                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600, marginLeft: '5px' }}>{r.label}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            })()}
 
             {success && <div className="alert alert-success alert-dismissible fade show mb-3"><span>✅ {success}</span><button type="button" className="btn-close" onClick={() => setSuccess('')} /></div>}
             {error && <div className="alert alert-danger alert-dismissible fade show mb-3"><span>❌ {error}</span><button type="button" className="btn-close" onClick={() => setError('')} /></div>}

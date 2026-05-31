@@ -37,9 +37,15 @@ class UserController extends Controller
 
         $paginated = $query->paginate($perPage);
 
+        $byRole = User::withTrashed()
+            ->selectRaw('role, COUNT(*) as count')
+            ->groupBy('role')
+            ->pluck('count', 'role');
+
         return response()->json(array_merge($paginated->toArray(), [
             'active_count'   => User::count(),
             'inactive_count' => User::onlyTrashed()->count(),
+            'by_role'        => $byRole,
         ]));
     }
 
