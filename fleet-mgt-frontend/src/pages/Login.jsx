@@ -116,7 +116,7 @@ export default function Login() {
             const res = await api.post('/login', { email, password });
 
             /* ✅ Connexion réussie */
-            login(res.data.user);
+            login(res.data.user, res.data.access_token ?? null);
 
         } catch (err) {
             const data = err.response?.data;

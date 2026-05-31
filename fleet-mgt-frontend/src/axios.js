@@ -13,7 +13,6 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Read a cookie value by name (needed for XSRF-TOKEN on mutating requests)
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : null;
@@ -23,12 +22,17 @@ function getCookie(name) {
 export const fetchCsrfCookie = () =>
   axios.get(`${SERVER_URL}/sanctum/csrf-cookie`, { withCredentials: true });
 
-// Request interceptor — attach XSRF token + FormData fix
+// Request interceptor:
+// - Same-domain (dev): XSRF-TOKEN cookie → X-XSRF-TOKEN header (session mode)
+// - Cross-domain (prod): Bearer token from sessionStorage
 api.interceptors.request.use(
   (config) => {
-    const xsrf = getCookie('XSRF-TOKEN');
-    if (xsrf) {
-      config.headers['X-XSRF-TOKEN'] = xsrf;
+    const sessionToken = sessionStorage.getItem('token');
+    if (sessionToken) {
+      config.headers['Authorization'] = `Bearer ${sessionToken}`;
+    } else {
+      const xsrf = getCookie('XSRF-TOKEN');
+      if (xsrf) config.headers['X-XSRF-TOKEN'] = xsrf;
     }
 
     if (config.data instanceof FormData) {
@@ -52,6 +56,7 @@ api.interceptors.response.use(
 
     if (status === 401) {
       localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
       const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
       const isPublic = publicRoutes.some(r => window.location.pathname.startsWith(r));
       if (!isPublic) {

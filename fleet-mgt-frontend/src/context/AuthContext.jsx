@@ -13,13 +13,13 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Restore user from localStorage for an instant first render
+    // Restore user optimistically for instant first render
     const saved = localStorage.getItem('user');
     if (saved) {
       try { setUser(JSON.parse(saved)); } catch { localStorage.removeItem('user'); }
     }
 
-    // Verify the session cookie is still valid with the server
+    // Verify session (cookie mode) or Bearer token (cross-domain mode)
     api.get('/me')
       .then(res => {
         setUser(res.data.user);
@@ -28,20 +28,26 @@ export function AuthProvider({ children }) {
       .catch(() => {
         setUser(null);
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const login = (userData) => {
+  // accessToken is optional — present in cross-domain (production) mode
+  const login = (userData, accessToken = null) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    if (accessToken) {
+      sessionStorage.setItem('token', accessToken);
+    }
     navigate('/dashboard', { replace: true });
   };
 
   const logout = async () => {
-    try { await api.post('/logout'); } catch { /* session may already be gone */ }
+    try { await api.post('/logout'); } catch { /* ignore */ }
     setUser(null);
     localStorage.clear();
+    sessionStorage.removeItem('token');
     navigate('/', { replace: true });
   };
 
