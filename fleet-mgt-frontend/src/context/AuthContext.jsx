@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../axios';
+import { useInactivityTimer } from '../hooks/useInactivityTimer';
+import SessionWarningModal from '../components/SessionWarningModal';
 
 const AuthContext = createContext();
 
@@ -10,6 +12,7 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,13 +46,23 @@ export function AuthProvider({ children }) {
     navigate('/dashboard', { replace: true });
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
+    setShowWarning(false);
     try { await api.post('/logout'); } catch { /* ignore */ }
     setUser(null);
     localStorage.clear();
     sessionStorage.removeItem('token');
     navigate('/', { replace: true });
-  };
+  }, [navigate]);
+
+  const handleWarn   = useCallback(() => setShowWarning(true), []);
+  const handleStay   = useCallback(() => setShowWarning(false), []);
+
+  useInactivityTimer({
+    onWarn:   handleWarn,
+    onLogout: logout,
+    enabled:  !!user,
+  });
 
   if (loading) {
     return (
@@ -72,6 +85,11 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{ user, setUser, login, logout }}>
       {children}
+      <SessionWarningModal
+        visible={showWarning}
+        onStay={handleStay}
+        onLogout={logout}
+      />
     </AuthContext.Provider>
   );
 }

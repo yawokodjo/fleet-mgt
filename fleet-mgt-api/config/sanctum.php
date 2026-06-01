@@ -44,7 +44,7 @@ return [
     | "expires_at" attribute, but first-party sessions are not affected.
     |
     */
-    'expiration' => null,
+    'expiration' => env('SANCTUM_EXPIRATION', 480), // 8 heures
 
     /*
     |--------------------------------------------------------------------------
