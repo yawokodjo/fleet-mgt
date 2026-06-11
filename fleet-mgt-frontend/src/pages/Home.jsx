@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { useTranslation } from 'react-i18next';
 import logoCI from '../assets/logo-ci.png';
 import carBg from '../assets/voiture.jpg';
