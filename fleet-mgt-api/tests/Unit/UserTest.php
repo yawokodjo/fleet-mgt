@@ -9,8 +9,9 @@ class UserTest extends TestCase
 {
     private function makeUser(string $role): User
     {
-        $user = new User();
+        $user = new User;
         $user->role = $role;
+
         return $user;
     }
 

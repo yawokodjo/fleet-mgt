@@ -67,7 +67,7 @@ export default function Maintenances() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async (page = 1, perPage = filtersRef.current.perPage) => {
     setLoading(true);

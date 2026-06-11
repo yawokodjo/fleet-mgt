@@ -10,21 +10,21 @@ return new class extends Migration
     {
         Schema::table('consumptions', function (Blueprint $table) {
             $table->unsignedInteger('mileage')->nullable()->after('fuel_cost')
-                  ->comment('Kilométrage compteur au moment du plein');
+                ->comment('Kilométrage compteur au moment du plein');
             $table->string('document_path')->nullable()->after('mileage')
-                  ->comment('Reçu de carburant (chemin fichier)');
+                ->comment('Reçu de carburant (chemin fichier)');
         });
 
         Schema::table('maintenances', function (Blueprint $table) {
             $table->unsignedInteger('mileage_at_service')->nullable()->after('cost')
-                  ->comment('Kilométrage compteur au moment de l\'entretien');
+                ->comment('Kilométrage compteur au moment de l\'entretien');
             $table->string('document_path')->nullable()->after('mileage_at_service')
-                  ->comment('Facture proforma/reçu (chemin fichier)');
+                ->comment('Facture proforma/reçu (chemin fichier)');
         });
 
         Schema::table('vehicles', function (Blueprint $table) {
             $table->string('document_path')->nullable()->after('mileage')
-                  ->comment('Facture d\'achat (chemin fichier)');
+                ->comment('Facture d\'achat (chemin fichier)');
         });
     }
 

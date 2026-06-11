@@ -3,15 +3,15 @@
 namespace App\Notifications;
 
 use App\Models\Vehicle;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class DocumentExpiringNotification extends Notification
 {
     /** @param array<array{label: string, expiry: string, days: int}> $documents */
     public function __construct(
         public Vehicle $vehicle,
-        public array   $documents
+        public array $documents
     ) {}
 
     public function via(object $notifiable): array
@@ -22,13 +22,13 @@ class DocumentExpiringNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $appName = config('app.name', 'Gestion de Flotte');
-        $appUrl  = config('app.frontend_url', config('app.url'));
-        $plate   = $this->vehicle->license_plate;
-        $marque  = "{$this->vehicle->marque} {$this->vehicle->model}";
+        $appUrl = config('app.frontend_url', config('app.url'));
+        $plate = $this->vehicle->license_plate;
+        $marque = "{$this->vehicle->marque} {$this->vehicle->model}";
 
         $mail = (new MailMessage)
             ->subject("⚠️ Document(s) expirant bientôt — {$plate}")
-            ->greeting("Bonjour,")
+            ->greeting('Bonjour,')
             ->line("Les documents suivants du véhicule **{$marque}** ({$plate}) arrivent à expiration :");
 
         foreach ($this->documents as $doc) {
@@ -40,7 +40,7 @@ class DocumentExpiringNotification extends Notification
 
         return $mail
             ->action('Voir le véhicule', "{$appUrl}/vehicles/{$this->vehicle->id}")
-            ->line("Merci de renouveler ces documents au plus vite.")
+            ->line('Merci de renouveler ces documents au plus vite.')
             ->line("— {$appName}");
     }
 }

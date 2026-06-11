@@ -18,10 +18,10 @@ class Consumption extends Model
     ];
 
     protected $casts = [
-        'date'        => 'datetime',
+        'date' => 'datetime',
         'fuel_volume' => 'decimal:2',
-        'fuel_cost'   => 'decimal:2',
-        'mileage'     => 'integer',
+        'fuel_cost' => 'decimal:2',
+        'mileage' => 'integer',
     ];
 
     // Relation avec le véhicule

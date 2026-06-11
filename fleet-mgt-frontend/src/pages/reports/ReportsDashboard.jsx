@@ -182,6 +182,7 @@ function StatusRow({ label, count, total, color, onClick }) {
 }
 
 /* ── Report Entry Card ── */
+// eslint-disable-next-line no-unused-vars
 function ReportEntryCard({ color, gradient, title, desc, features, route, IlluComp, stat, statLabel }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -272,7 +273,7 @@ export default function ReportsDashboard() {
             setMaintenances(toArr(m));
             setConsumptions(toArr(c));
         }).finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, []);
 
     const stats = useMemo(() => {

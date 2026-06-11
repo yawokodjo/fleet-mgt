@@ -231,7 +231,7 @@ export default function Dashboard() {
         events.forEach(e => document.addEventListener(e, reset));
         reset();
         return () => { clearTimeout(idleT); clearTimeout(warnT); clearInterval(cntT); events.forEach(e => document.removeEventListener(e, reset)); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, [logout]);
 
     /* ── Fetch data ── */
@@ -250,7 +250,7 @@ export default function Dashboard() {
             setDrivers(Array.isArray(d.data) ? d.data : (d.data?.data ?? []));
             setExpiringDocs(Array.isArray(exp.data) ? exp.data : []);
         }).finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, []);
 
     /* ── Computed stats ── */

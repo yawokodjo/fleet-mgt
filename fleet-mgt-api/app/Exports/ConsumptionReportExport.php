@@ -18,20 +18,26 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $startDate;
+
     protected $endDate;
+
     protected $order;
+
     protected $vehicleId;
+
     protected $rowNumber = 1;
+
     protected $data;
+
     protected $mileageData = [];
 
     public function __construct($startDate, $endDate, $order = 'asc', $vehicleId = null)
     {
         $this->startDate = $startDate;
-        $this->endDate   = $endDate;
-        $this->order     = $order;
+        $this->endDate = $endDate;
+        $this->order = $order;
         $this->vehicleId = $vehicleId;
-        $this->data      = $this->getData();
+        $this->data = $this->getData();
 
         if ($this->vehicleId) {
             $this->mileageData = $this->computeMileageData($this->data);
@@ -68,6 +74,7 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
                 $result[$c->id] = ['distance' => $dist, 'taux' => $taux];
             }
         }
+
         return $result;
     }
 
@@ -90,6 +97,7 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
                 'Coût Total (FCFA)', 'Coût / Litre (FCFA)', 'Document',
             ];
         }
+
         return ['N°', 'Date', 'Véhicule', 'Conducteur', 'Volume (L)', 'Coût Total (FCFA)', 'Coût / Litre (FCFA)', 'Document'];
     }
 
@@ -132,21 +140,21 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
 
     public function styles(Worksheet $sheet)
     {
-        $lastRow    = $sheet->getHighestRow();
+        $lastRow = $sheet->getHighestRow();
         $lastColumn = $sheet->getHighestColumn();
 
         // En-tête
         $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
-            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '198754']],
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '198754']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
 
         // Données
         if ($lastRow > 1) {
             $sheet->getStyle('A2:'.$lastColumn.$lastRow)->applyFromArray([
-                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
 
@@ -160,11 +168,11 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
         }
 
         // Ligne de totaux
-        $totalRow  = $lastRow + 1;
-        $totalVol  = $this->data->sum('fuel_volume');
+        $totalRow = $lastRow + 1;
+        $totalVol = $this->data->sum('fuel_volume');
         $totalCost = $this->data->sum('fuel_cost');
         $totalDist = $this->vehicleId
-            ? array_sum(array_column(array_filter($this->mileageData, fn($d) => $d['distance']), 'distance'))
+            ? array_sum(array_column(array_filter($this->mileageData, fn ($d) => $d['distance']), 'distance'))
             : 0;
         $avgTaux = ($this->vehicleId && $totalDist > 0)
             ? round($totalVol / $totalDist * 100, 2)
@@ -186,10 +194,10 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
         }
 
         $sheet->getStyle('A'.$totalRow.':'.$lastColumn.$totalRow)->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 11],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D4EDDA']],
+            'font' => ['bold' => true, 'size' => 11],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D4EDDA']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '198754']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '198754']]],
         ]);
 
         // Hauteurs
@@ -204,7 +212,7 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
         $sheet->mergeCells('A1:'.$lastColumn.'1');
         $sheet->setCellValue('A1', 'RAPPORT DE CONSOMMATION CARBURANT');
         $sheet->getStyle('A1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 16, 'color' => ['rgb' => '198754']],
+            'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => '198754']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
         $sheet->getRowDimension(1)->setRowHeight(35);
@@ -223,7 +231,7 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
         $period .= ' | '.$this->data->count().' enregistrement(s)';
         $sheet->setCellValue('A2', $period);
         $sheet->getStyle('A2')->applyFromArray([
-            'font'      => ['italic' => true, 'size' => 10, 'color' => ['rgb' => '6C757D']],
+            'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => '6C757D']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
         $sheet->getRowDimension(2)->setRowHeight(22);
@@ -243,6 +251,7 @@ class ConsumptionReportExport implements FromCollection, ShouldAutoSize, WithCol
         if ($this->vehicleId) {
             return ['A' => 5, 'B' => 12, 'C' => 22, 'D' => 12, 'E' => 14, 'F' => 14, 'G' => 14, 'H' => 18, 'I' => 18, 'J' => 10];
         }
+
         return ['A' => 5, 'B' => 12, 'C' => 15, 'D' => 22, 'E' => 12, 'F' => 18, 'G' => 18, 'H' => 10];
     }
 }

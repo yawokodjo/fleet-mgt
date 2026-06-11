@@ -12,9 +12,11 @@ class MaintenanceSeeder extends Seeder
     public function run(): void
     {
         $vehicles = Vehicle::all();
-        $drivers  = User::where('role', 'driver')->get();
+        $drivers = User::where('role', 'driver')->get();
 
-        if ($vehicles->isEmpty()) return;
+        if ($vehicles->isEmpty()) {
+            return;
+        }
 
         /*
          * Format :
@@ -34,11 +36,11 @@ class MaintenanceSeeder extends Seeder
             // Toyota Land Cruiser 200
             [1, 1, 'freins',     'Garage Mécanique Plus', 75, 73,  65000, 'completed',    'Remplacement plaquettes + disques avant', 75760],
             [1, 1, 'batterie',   'Electro Auto TG',       45, 43,  35000, 'completed',    'Remplacement batterie 80Ah',             76900],
-            [1, 1, 'révision',   'Toyota Center TG',      14,  null, 130000, 'in_progress','Révision 80 000 km en cours',           78080],
+            [1, 1, 'révision',   'Toyota Center TG',      14,  null, 130000, 'in_progress', 'Révision 80 000 km en cours',           78080],
 
             // Mitsubishi Pajero
-            [2, 2, 'carrosserie','Carrosserie Nationale',  50, 47, 150000, 'completed',   'Réparation choc avant + peinture',       90400],
-            [2, 2, 'freins',     'Garage Mécanique Plus',  20,  null, 70000, 'in_progress','Remplacement freins arrière',           91540],
+            [2, 2, 'carrosserie', 'Carrosserie Nationale',  50, 47, 150000, 'completed',   'Réparation choc avant + peinture',       90400],
+            [2, 2, 'freins',     'Garage Mécanique Plus',  20,  null, 70000, 'in_progress', 'Remplacement freins arrière',           91540],
 
             // Ford Ranger
             [3, 3, 'vidange',    'Auto Service Lomé',      80, 78,  25000, 'completed',   'Vidange huile moteur',                   28900],
@@ -62,24 +64,28 @@ class MaintenanceSeeder extends Seeder
         ];
 
         // Ne pas insérer si des données existent déjà
-        if (Maintenance::count() > 0) return;
+        if (Maintenance::count() > 0) {
+            return;
+        }
 
         foreach ($records as [$vi, $di, $type, $company, $schedDaysAgo, $compDaysAgo, $cost, $status, $desc, $mileage]) {
             $vehicle = $vehicles->values()->get($vi % $vehicles->count());
-            $driver  = $drivers->values()->get($di % $drivers->count());
-            if (!$vehicle) continue;
+            $driver = $drivers->values()->get($di % $drivers->count());
+            if (! $vehicle) {
+                continue;
+            }
 
             Maintenance::create([
-                'vehicle_id'          => $vehicle->id,
-                'driver_id'           => $driver?->id,
-                'maintenance_type'    => $type,
+                'vehicle_id' => $vehicle->id,
+                'driver_id' => $driver?->id,
+                'maintenance_type' => $type,
                 'maintenance_company' => $company,
-                'scheduled_date'      => now()->subDays($schedDaysAgo)->toDateTimeString(),
-                'completed_date'      => $compDaysAgo !== null ? now()->subDays($compDaysAgo)->toDateTimeString() : null,
-                'cost'                => $cost,
-                'status'              => $status,
-                'description'         => $desc,
-                'mileage_at_service'  => $mileage,
+                'scheduled_date' => now()->subDays($schedDaysAgo)->toDateTimeString(),
+                'completed_date' => $compDaysAgo !== null ? now()->subDays($compDaysAgo)->toDateTimeString() : null,
+                'cost' => $cost,
+                'status' => $status,
+                'description' => $desc,
+                'mileage_at_service' => $mileage,
             ]);
         }
     }

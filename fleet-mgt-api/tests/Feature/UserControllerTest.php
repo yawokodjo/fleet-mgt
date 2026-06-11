@@ -73,13 +73,13 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/users', [
-                'name'                  => 'Nouveau Manager',
-                'email'                 => 'manager@example.com',
-                'password'              => self::PASSWORD,
+                'name' => 'Nouveau Manager',
+                'email' => 'manager@example.com',
+                'password' => self::PASSWORD,
                 'password_confirmation' => self::PASSWORD,
-                'role'                  => 'manager',
+                'role' => 'manager',
             ])->assertStatus(201)
-              ->assertJsonPath('user.email', 'manager@example.com');
+            ->assertJsonPath('user.email', 'manager@example.com');
 
         $this->assertDatabaseHas('users', ['email' => 'manager@example.com']);
     }
@@ -90,11 +90,11 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($manager)
             ->postJson('/api/users', [
-                'name'                  => 'Test',
-                'email'                 => 'test@example.com',
-                'password'              => self::PASSWORD,
+                'name' => 'Test',
+                'email' => 'test@example.com',
+                'password' => self::PASSWORD,
                 'password_confirmation' => self::PASSWORD,
-                'role'                  => 'driver',
+                'role' => 'driver',
             ])->assertStatus(403);
     }
 
@@ -105,13 +105,13 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/users', [
-                'name'                  => 'Doublon',
-                'email'                 => 'existing@example.com',
-                'password'              => self::PASSWORD,
+                'name' => 'Doublon',
+                'email' => 'existing@example.com',
+                'password' => self::PASSWORD,
                 'password_confirmation' => self::PASSWORD,
-                'role'                  => 'driver',
+                'role' => 'driver',
             ])->assertStatus(422)
-              ->assertJsonValidationErrors(['email']);
+            ->assertJsonValidationErrors(['email']);
     }
 
     public function test_store_fails_with_invalid_role(): void
@@ -120,13 +120,13 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/users', [
-                'name'                  => 'Invalid',
-                'email'                 => 'invalid@example.com',
-                'password'              => self::PASSWORD,
+                'name' => 'Invalid',
+                'email' => 'invalid@example.com',
+                'password' => self::PASSWORD,
                 'password_confirmation' => self::PASSWORD,
-                'role'                  => 'superuser',
+                'role' => 'superuser',
             ])->assertStatus(422)
-              ->assertJsonValidationErrors(['role']);
+            ->assertJsonValidationErrors(['role']);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ class UserControllerTest extends TestCase
 
     public function test_admin_can_view_any_user(): void
     {
-        $admin  = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $target = User::factory()->driver()->create();
 
         $this->actingAs($admin)
@@ -156,8 +156,8 @@ class UserControllerTest extends TestCase
 
     public function test_user_cannot_view_another_users_profile(): void
     {
-        $user   = User::factory()->driver()->create();
-        $other  = User::factory()->driver()->create();
+        $user = User::factory()->driver()->create();
+        $other = User::factory()->driver()->create();
 
         $this->actingAs($user)
             ->getJson("/api/users/{$other->id}")
@@ -192,7 +192,7 @@ class UserControllerTest extends TestCase
 
     public function test_admin_can_change_user_role(): void
     {
-        $admin  = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $target = User::factory()->driver()->create();
 
         $this->actingAs($admin)
@@ -208,7 +208,7 @@ class UserControllerTest extends TestCase
 
     public function test_admin_can_soft_delete_user(): void
     {
-        $admin  = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $target = User::factory()->driver()->create();
 
         $this->actingAs($admin)
@@ -221,7 +221,7 @@ class UserControllerTest extends TestCase
     public function test_manager_cannot_delete_user(): void
     {
         $manager = User::factory()->manager()->create();
-        $target  = User::factory()->driver()->create();
+        $target = User::factory()->driver()->create();
 
         $this->actingAs($manager)
             ->deleteJson("/api/users/{$target->id}")
@@ -242,8 +242,8 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($user)
             ->putJson('/api/change-password', [
-                'current_password'          => self::PASSWORD,
-                'new_password'              => $newPass,
+                'current_password' => self::PASSWORD,
+                'new_password' => $newPass,
                 'new_password_confirmation' => $newPass,
             ])->assertStatus(200);
     }
@@ -256,8 +256,8 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($user)
             ->putJson('/api/change-password', [
-                'current_password'          => 'WrongPass99!',
-                'new_password'              => 'NewSecure99!',
+                'current_password' => 'WrongPass99!',
+                'new_password' => 'NewSecure99!',
                 'new_password_confirmation' => 'NewSecure99!',
             ])->assertStatus(401);
     }
@@ -270,8 +270,8 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($user)
             ->putJson('/api/change-password', [
-                'current_password'          => self::PASSWORD,
-                'new_password'              => self::PASSWORD,
+                'current_password' => self::PASSWORD,
+                'new_password' => self::PASSWORD,
                 'new_password_confirmation' => self::PASSWORD,
             ])->assertStatus(422);
     }

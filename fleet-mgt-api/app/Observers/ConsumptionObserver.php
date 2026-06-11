@@ -112,7 +112,7 @@ class ConsumptionObserver
             try {
                 $user->notify($notification);
             } catch (\Exception $e) {
-                Log::error("Notification failed for user {$user->id}: " . $e->getMessage());
+                Log::error("Notification failed for user {$user->id}: ".$e->getMessage());
             }
         }
     }

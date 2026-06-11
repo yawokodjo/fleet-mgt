@@ -36,14 +36,14 @@ class ConsumptionController extends Controller
         if ($request->filled('search')) {
             $s = $request->get('search');
             $query->where(function ($q) use ($s) {
-                $q->whereHas('vehicle', fn($v) => $v->where('license_plate', 'like', "%{$s}%")
-                                                      ->orWhere('marque', 'like', "%{$s}%"))
-                  ->orWhereHas('driver', fn($d) => $d->where('name', 'like', "%{$s}%"));
+                $q->whereHas('vehicle', fn ($v) => $v->where('license_plate', 'like', "%{$s}%")
+                    ->orWhere('marque', 'like', "%{$s}%"))
+                    ->orWhereHas('driver', fn ($d) => $d->where('name', 'like', "%{$s}%"));
             });
         }
 
         $allowed = ['date', 'fuel_volume', 'fuel_cost', 'mileage'];
-        $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'date';
+        $sortBy = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'date';
         $sortDir = $request->get('sort_dir') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortDir);
 
@@ -59,13 +59,13 @@ class ConsumptionController extends Controller
         }
 
         $data = $request->validate([
-            'vehicle_id'  => 'required|exists:vehicles,id',
-            'driver_id'   => 'required|exists:users,id',
-            'date'        => 'required|date',
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'driver_id' => 'required|exists:users,id',
+            'date' => 'required|date',
             'fuel_volume' => 'required|numeric|min:0.01',
-            'fuel_cost'   => 'required|numeric|min:0.01',
-            'mileage'     => 'nullable|integer|min:0',
-            'document'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'fuel_cost' => 'required|numeric|min:0.01',
+            'mileage' => 'nullable|integer|min:0',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         if ($request->hasFile('document')) {
@@ -104,13 +104,13 @@ class ConsumptionController extends Controller
         }
 
         $data = $request->validate([
-            'vehicle_id'  => 'sometimes|exists:vehicles,id',
-            'driver_id'   => 'sometimes|exists:users,id',
-            'date'        => 'sometimes|date',
+            'vehicle_id' => 'sometimes|exists:vehicles,id',
+            'driver_id' => 'sometimes|exists:users,id',
+            'date' => 'sometimes|date',
             'fuel_volume' => 'sometimes|numeric|min:0.01',
-            'fuel_cost'   => 'sometimes|numeric|min:0.01',
-            'mileage'     => 'nullable|integer|min:0',
-            'document'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'fuel_cost' => 'sometimes|numeric|min:0.01',
+            'mileage' => 'nullable|integer|min:0',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         if ($request->hasFile('document')) {

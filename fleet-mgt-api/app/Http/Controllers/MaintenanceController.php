@@ -33,9 +33,9 @@ class MaintenanceController extends Controller
             $s = $request->get('search');
             $query->where(function ($q) use ($s) {
                 $q->where('maintenance_company', 'like', "%{$s}%")
-                  ->orWhere('description', 'like', "%{$s}%")
-                  ->orWhereHas('vehicle', fn($v) => $v->where('license_plate', 'like', "%{$s}%"))
-                  ->orWhereHas('driver',  fn($d) => $d->where('name', 'like', "%{$s}%"));
+                    ->orWhere('description', 'like', "%{$s}%")
+                    ->orWhereHas('vehicle', fn ($v) => $v->where('license_plate', 'like', "%{$s}%"))
+                    ->orWhereHas('driver', fn ($d) => $d->where('name', 'like', "%{$s}%"));
             });
         }
 
@@ -48,7 +48,7 @@ class MaintenanceController extends Controller
         }
 
         $allowed = ['scheduled_date', 'maintenance_type', 'cost', 'status', 'maintenance_company'];
-        $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'scheduled_date';
+        $sortBy = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'scheduled_date';
         $sortDir = $request->get('sort_dir') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortDir);
 
@@ -62,15 +62,15 @@ class MaintenanceController extends Controller
         }
 
         $data = $request->validate([
-            'vehicle_id'          => 'required|exists:vehicles,id',
-            'driver_id'           => 'nullable|exists:users,id',
-            'maintenance_type'    => 'required|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'driver_id' => 'nullable|exists:users,id',
+            'maintenance_type' => 'required|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
             'maintenance_company' => 'required|string|max:100',
-            'scheduled_date'      => 'required|date',
-            'cost'                => 'required|numeric|min:0',
-            'description'         => 'nullable|string',
-            'mileage_at_service'  => 'nullable|integer|min:0',
-            'document'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'scheduled_date' => 'required|date',
+            'cost' => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'mileage_at_service' => 'nullable|integer|min:0',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         if ($request->hasFile('document')) {
@@ -109,17 +109,17 @@ class MaintenanceController extends Controller
         }
 
         $data = $request->validate([
-            'vehicle_id'          => 'sometimes|exists:vehicles,id',
-            'driver_id'           => 'nullable|exists:users,id',
-            'maintenance_type'    => 'sometimes|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
+            'vehicle_id' => 'sometimes|exists:vehicles,id',
+            'driver_id' => 'nullable|exists:users,id',
+            'maintenance_type' => 'sometimes|in:vidange,pneus,freins,batterie,révision,carrosserie,électricité,climatisation,autre',
             'maintenance_company' => 'sometimes|string|max:100',
-            'scheduled_date'      => 'sometimes|date',
-            'completed_date'      => 'nullable|date',
-            'cost'                => 'sometimes|numeric|min:0',
-            'description'         => 'nullable|string',
-            'status'              => 'sometimes|in:planned,in_progress,completed,cancelled',
-            'mileage_at_service'  => 'nullable|integer|min:0',
-            'document'            => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'scheduled_date' => 'sometimes|date',
+            'completed_date' => 'nullable|date',
+            'cost' => 'sometimes|numeric|min:0',
+            'description' => 'nullable|string',
+            'status' => 'sometimes|in:planned,in_progress,completed,cancelled',
+            'mileage_at_service' => 'nullable|integer|min:0',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         if ($request->hasFile('document')) {
@@ -160,7 +160,7 @@ class MaintenanceController extends Controller
         $maintenance->markAsCompleted();
 
         return response()->json([
-            'message'     => 'Maintenance marquée comme complétée',
+            'message' => 'Maintenance marquée comme complétée',
             'maintenance' => $maintenance,
         ]);
     }

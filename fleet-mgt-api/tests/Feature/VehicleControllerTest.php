@@ -14,13 +14,13 @@ class VehicleControllerTest extends TestCase
     private function vehiclePayload(array $overrides = []): array
     {
         return array_merge([
-            'marque'        => 'Toyota',
-            'model'         => 'Corolla',
+            'marque' => 'Toyota',
+            'model' => 'Corolla',
             'license_plate' => 'AB-123-CD',
-            'year'          => 2022,
-            'fuel_type'     => 'essence',
-            'mileage'       => 15000,
-            'status'        => 'operational',
+            'year' => 2022,
+            'fuel_type' => 'essence',
+            'mileage' => 15000,
+            'status' => 'operational',
         ], $overrides);
     }
 
@@ -151,7 +151,7 @@ class VehicleControllerTest extends TestCase
 
     public function test_authenticated_user_can_view_vehicle(): void
     {
-        $driver  = User::factory()->driver()->create();
+        $driver = User::factory()->driver()->create();
         $vehicle = Vehicle::factory()->create();
 
         $this->actingAs($driver)
@@ -166,7 +166,7 @@ class VehicleControllerTest extends TestCase
 
     public function test_admin_can_update_vehicle(): void
     {
-        $admin   = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $vehicle = Vehicle::factory()->create();
 
         $this->actingAs($admin)
@@ -187,7 +187,7 @@ class VehicleControllerTest extends TestCase
 
     public function test_driver_cannot_update_vehicle(): void
     {
-        $driver  = User::factory()->driver()->create();
+        $driver = User::factory()->driver()->create();
         $vehicle = Vehicle::factory()->create();
 
         $this->actingAs($driver)
@@ -201,7 +201,7 @@ class VehicleControllerTest extends TestCase
 
     public function test_admin_can_delete_vehicle(): void
     {
-        $admin   = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $vehicle = Vehicle::factory()->create();
 
         $this->actingAs($admin)
@@ -227,20 +227,20 @@ class VehicleControllerTest extends TestCase
 
     public function test_admin_can_assign_driver_to_vehicle(): void
     {
-        $admin   = User::factory()->admin()->create();
-        $driver  = User::factory()->driver()->create();
+        $admin = User::factory()->admin()->create();
+        $driver = User::factory()->driver()->create();
         $vehicle = Vehicle::factory()->create();
 
         $this->actingAs($admin)
             ->postJson("/api/vehicles/{$vehicle->id}/assign-driver", [
                 'driver_id' => $driver->id,
             ])->assertStatus(200)
-              ->assertJsonPath('vehicle.current_driver_id', $driver->id);
+            ->assertJsonPath('vehicle.current_driver_id', $driver->id);
     }
 
     public function test_cannot_assign_non_driver_role_to_vehicle(): void
     {
-        $admin   = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $manager = User::factory()->manager()->create();
         $vehicle = Vehicle::factory()->create();
 
@@ -252,10 +252,10 @@ class VehicleControllerTest extends TestCase
 
     public function test_cannot_assign_driver_already_assigned_to_another_vehicle(): void
     {
-        $admin        = User::factory()->admin()->create();
-        $driver       = User::factory()->driver()->create();
-        $vehicleA     = Vehicle::factory()->create(['current_driver_id' => $driver->id]);
-        $vehicleB     = Vehicle::factory()->create();
+        $admin = User::factory()->admin()->create();
+        $driver = User::factory()->driver()->create();
+        $vehicleA = Vehicle::factory()->create(['current_driver_id' => $driver->id]);
+        $vehicleB = Vehicle::factory()->create();
 
         $this->actingAs($admin)
             ->postJson("/api/vehicles/{$vehicleB->id}/assign-driver", [
@@ -265,9 +265,9 @@ class VehicleControllerTest extends TestCase
 
     public function test_driver_cannot_assign_driver(): void
     {
-        $driver  = User::factory()->driver()->create();
+        $driver = User::factory()->driver()->create();
         $vehicle = Vehicle::factory()->create();
-        $other   = User::factory()->driver()->create();
+        $other = User::factory()->driver()->create();
 
         $this->actingAs($driver)
             ->postJson("/api/vehicles/{$vehicle->id}/assign-driver", [
@@ -281,9 +281,9 @@ class VehicleControllerTest extends TestCase
 
     public function test_assigned_driver_can_update_mileage(): void
     {
-        $driver  = User::factory()->driver()->create();
+        $driver = User::factory()->driver()->create();
         $vehicle = Vehicle::factory()->create([
-            'mileage'           => 10000,
+            'mileage' => 10000,
             'current_driver_id' => $driver->id,
         ]);
 
@@ -295,7 +295,7 @@ class VehicleControllerTest extends TestCase
 
     public function test_mileage_cannot_decrease(): void
     {
-        $admin   = User::factory()->admin()->create();
+        $admin = User::factory()->admin()->create();
         $vehicle = Vehicle::factory()->create(['mileage' => 10000]);
 
         $this->actingAs($admin)
@@ -306,7 +306,7 @@ class VehicleControllerTest extends TestCase
 
     public function test_unassigned_driver_cannot_update_mileage(): void
     {
-        $driver  = User::factory()->driver()->create();
+        $driver = User::factory()->driver()->create();
         $vehicle = Vehicle::factory()->create(['mileage' => 10000, 'current_driver_id' => null]);
 
         $this->actingAs($driver)

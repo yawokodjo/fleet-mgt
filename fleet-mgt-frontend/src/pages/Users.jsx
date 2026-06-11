@@ -54,7 +54,7 @@ export default function Users() {
         const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setSelectedUser(null); };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchUsers = useCallback(async (page = 1, perPage = filtersRef.current.perPage) => {
         setLoading(true);

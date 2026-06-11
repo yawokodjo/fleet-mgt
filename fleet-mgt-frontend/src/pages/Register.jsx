@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../axios';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import logoCI from '../assets/logo-ci.png';
 import carImg from '../assets/voiture.jpg';
 
@@ -25,7 +25,6 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
   const criteria = getCriteria(form.password);
@@ -54,7 +53,6 @@ export default function Register() {
   };
 
   const strengthColor = ['#e2e8f0','#dc2626','#f59e0b','#f59e0b','#16a34a','#16a34a'][strength];
-  const strengthLabel = ['',' Très faible',' Faible',' Moyen',' Fort',' Très fort'][strength];
 
   const inp = {
     width: '100%', background: '#f8faff', border: '1.5px solid #e2e8f0',

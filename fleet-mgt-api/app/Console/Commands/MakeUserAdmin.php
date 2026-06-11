@@ -19,12 +19,13 @@ class MakeUserAdmin extends Command
 
         if (! $user) {
             $this->error("Aucun utilisateur trouvé avec l'email : {$email}");
+
             return 1;
         }
 
         if ($user->trashed()) {
             $user->restore();
-            $this->info("Compte restauré (il était soft-deleted).");
+            $this->info('Compte restauré (il était soft-deleted).');
         }
 
         $user->role = 'admin';
@@ -34,6 +35,7 @@ class MakeUserAdmin extends Command
         $user->save();
 
         $this->info("✅ {$user->name} ({$email}) est maintenant admin.");
+
         return 0;
     }
 }

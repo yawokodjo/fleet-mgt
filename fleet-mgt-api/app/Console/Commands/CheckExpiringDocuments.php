@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 class CheckExpiringDocuments extends Command
 {
-    protected $signature   = 'vehicles:check-documents {--days=30 : Nombre de jours avant expiration}';
+    protected $signature = 'vehicles:check-documents {--days=30 : Nombre de jours avant expiration}';
+
     protected $description = 'Envoie un email pour chaque véhicule avec un document expirant dans les N jours';
 
     public function handle(): int
@@ -22,9 +23,9 @@ class CheckExpiringDocuments extends Command
         $vehicles = Vehicle::whereNotNull('license_plate')->get();
 
         $docFields = [
-            'insurance_expiry'            => 'Assurance',
+            'insurance_expiry' => 'Assurance',
             'technical_inspection_expiry' => 'Visite technique',
-            'tvm_expiry'                  => 'TVM',
+            'tvm_expiry' => 'TVM',
         ];
 
         $recipients = User::whereIn('role', ['admin', 'manager'])
@@ -33,6 +34,7 @@ class CheckExpiringDocuments extends Command
 
         if ($recipients->isEmpty()) {
             $this->warn('Aucun administrateur ou manager trouvé.');
+
             return self::SUCCESS;
         }
 
@@ -52,9 +54,9 @@ class CheckExpiringDocuments extends Command
                 if ($expiry->lte($threshold)) {
                     $daysLeft = (int) $today->diffInDays($expiry, false);
                     $expiring[] = [
-                        'label'  => $label,
+                        'label' => $label,
                         'expiry' => $expiry->format('d/m/Y'),
-                        'days'   => $daysLeft,
+                        'days' => $daysLeft,
                     ];
                 }
             }
@@ -70,7 +72,7 @@ class CheckExpiringDocuments extends Command
                     $user->notify($notification);
                     $sent++;
                 } catch (\Exception $e) {
-                    Log::error("Document expiry notification failed for user {$user->id}: " . $e->getMessage());
+                    Log::error("Document expiry notification failed for user {$user->id}: ".$e->getMessage());
                 }
             }
 
@@ -80,6 +82,7 @@ class CheckExpiringDocuments extends Command
         }
 
         $this->info("Terminé. {$sent} email(s) envoyé(s).");
+
         return self::SUCCESS;
     }
 }

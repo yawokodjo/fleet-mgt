@@ -86,7 +86,7 @@ export default function Login() {
             });
         }, 1000);
         return () => clearInterval(t);
-    }, [blocked]);
+    }, [blocked]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /* shake animation reset */
     useEffect(() => {

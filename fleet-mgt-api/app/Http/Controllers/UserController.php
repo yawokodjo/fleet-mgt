@@ -19,15 +19,15 @@ class UserController extends Controller
         Gate::authorize('admin-action');
 
         $perPage = $request->get('per_page', 15);
-        $search  = $request->get('search', '');
-        $role    = $request->get('role', '');
+        $search = $request->get('search', '');
+        $role = $request->get('role', '');
 
         $query = User::withTrashed();
 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -43,9 +43,9 @@ class UserController extends Controller
             ->pluck('count', 'role');
 
         return response()->json(array_merge($paginated->toArray(), [
-            'active_count'   => User::count(),
+            'active_count' => User::count(),
             'inactive_count' => User::onlyTrashed()->count(),
-            'by_role'        => $byRole,
+            'by_role' => $byRole,
         ]));
     }
 

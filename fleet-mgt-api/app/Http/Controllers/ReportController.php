@@ -169,17 +169,17 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
-            'order'      => 'nullable|in:asc,desc',
-            'format'     => 'nullable|in:json,pdf,excel',
+            'order' => 'nullable|in:asc,desc',
+            'format' => 'nullable|in:json,pdf,excel',
         ]);
 
-        $start     = $validated['start_date'];
-        $end       = $validated['end_date'];
+        $start = $validated['start_date'];
+        $end = $validated['end_date'];
         $vehicleId = $validated['vehicle_id'] ?? null;
-        $order     = $validated['order'] ?? 'asc';
-        $format    = $validated['format'] ?? 'json';
+        $order = $validated['order'] ?? 'asc';
+        $format = $validated['format'] ?? 'json';
 
         $query = Consumption::with(['vehicle', 'driver'])
             ->whereBetween('date', [$start, $end]);
@@ -198,23 +198,23 @@ class ReportController extends Controller
                         : null;
 
                     return [
-                        'id'            => $c->id,
-                        'date'          => $c->date,
-                        'vehicle'       => $c->vehicle->license_plate ?? 'N/A',
-                        'vehicle_id'    => $c->vehicle_id,
-                        'driver'        => $c->driver->name ?? 'N/A',
-                        'fuel_volume'   => $c->fuel_volume,
-                        'fuel_cost'     => $c->fuel_cost,
+                        'id' => $c->id,
+                        'date' => $c->date,
+                        'vehicle' => $c->vehicle->license_plate ?? 'N/A',
+                        'vehicle_id' => $c->vehicle_id,
+                        'driver' => $c->driver->name ?? 'N/A',
+                        'fuel_volume' => $c->fuel_volume,
+                        'fuel_cost' => $c->fuel_cost,
                         'cost_per_liter' => $costPerLiter,
-                        'mileage'        => $c->mileage,
-                        'document_path'  => $c->document_path,
+                        'mileage' => $c->mileage,
+                        'document_path' => $c->document_path,
                     ];
                 }),
                 'filters' => [
                     'start_date' => $start,
-                    'end_date'   => $end,
+                    'end_date' => $end,
                     'vehicle_id' => $vehicleId,
-                    'order'      => $order,
+                    'order' => $order,
                 ],
                 'totals' => [
                     'total_fuel' => round($consumptions->sum('fuel_volume'), 2),
@@ -261,17 +261,17 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'vehicle_id' => 'nullable|exists:vehicles,id',
-            'order'      => 'nullable|in:asc,desc',
-            'format'     => 'nullable|in:json,pdf,excel',
+            'order' => 'nullable|in:asc,desc',
+            'format' => 'nullable|in:json,pdf,excel',
         ]);
 
-        $start     = $validated['start_date'];
-        $end       = $validated['end_date'];
+        $start = $validated['start_date'];
+        $end = $validated['end_date'];
         $vehicleId = $validated['vehicle_id'] ?? null;
-        $order     = $validated['order'] ?? 'asc';
-        $format    = $validated['format'] ?? 'json';
+        $order = $validated['order'] ?? 'asc';
+        $format = $validated['format'] ?? 'json';
 
         $query = Maintenance::with(['vehicle', 'driver'])
             ->whereBetween('scheduled_date', [$start, $end]);
@@ -286,29 +286,29 @@ class ReportController extends Controller
             return response()->json([
                 'maintenances' => $maintenances->map(function ($m) {
                     return [
-                        'id'                 => $m->id,
-                        'date'               => $m->scheduled_date,
-                        'completed_date'     => $m->completed_date,
-                        'vehicle'            => $m->vehicle->license_plate ?? 'N/A',
-                        'vehicle_id'         => $m->vehicle_id,
-                        'type'               => $m->maintenance_type,
-                        'company'            => $m->maintenance_company ?? 'N/A',
-                        'cost'               => $m->cost,
-                        'status'             => $m->status,
-                        'description'        => $m->description ?? '',
+                        'id' => $m->id,
+                        'date' => $m->scheduled_date,
+                        'completed_date' => $m->completed_date,
+                        'vehicle' => $m->vehicle->license_plate ?? 'N/A',
+                        'vehicle_id' => $m->vehicle_id,
+                        'type' => $m->maintenance_type,
+                        'company' => $m->maintenance_company ?? 'N/A',
+                        'cost' => $m->cost,
+                        'status' => $m->status,
+                        'description' => $m->description ?? '',
                         'mileage_at_service' => $m->mileage_at_service,
-                        'document_path'      => $m->document_path,
+                        'document_path' => $m->document_path,
                     ];
                 }),
                 'filters' => [
                     'start_date' => $start,
-                    'end_date'   => $end,
+                    'end_date' => $end,
                     'vehicle_id' => $vehicleId,
-                    'order'      => $order,
+                    'order' => $order,
                 ],
                 'totals' => [
                     'total_cost' => $maintenances->sum('cost'),
-                    'count'      => $maintenances->count(),
+                    'count' => $maintenances->count(),
                 ],
             ]);
         }

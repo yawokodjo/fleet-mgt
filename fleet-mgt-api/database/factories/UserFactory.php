@@ -71,8 +71,8 @@ class UserFactory extends Factory
     {
         return $this->state([
             'login_attempts' => 0,
-            'block_count'    => 2,
-            'blocked_until'  => now()->addMinutes($minutes),
+            'block_count' => 2,
+            'blocked_until' => now()->addMinutes($minutes),
         ]);
     }
 }

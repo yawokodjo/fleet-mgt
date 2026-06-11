@@ -12,9 +12,11 @@ class ConsumptionSeeder extends Seeder
     public function run(): void
     {
         $vehicles = Vehicle::all();
-        $drivers  = User::where('role', 'driver')->get();
+        $drivers = User::where('role', 'driver')->get();
 
-        if ($vehicles->isEmpty() || $drivers->isEmpty()) return;
+        if ($vehicles->isEmpty() || $drivers->isEmpty()) {
+            return;
+        }
 
         /*
          * Format : [vehicle_index, driver_index, days_ago, litres, cout_total, mileage]
@@ -80,20 +82,24 @@ class ConsumptionSeeder extends Seeder
         ];
 
         // Ne pas insérer si des données existent déjà
-        if (Consumption::count() > 0) return;
+        if (Consumption::count() > 0) {
+            return;
+        }
 
         foreach ($records as [$vi, $di, $daysAgo, $litres, $cout, $mileage]) {
             $vehicle = $vehicles->values()->get($vi % $vehicles->count());
-            $driver  = $drivers->values()->get($di % $drivers->count());
-            if (!$vehicle || !$driver) continue;
+            $driver = $drivers->values()->get($di % $drivers->count());
+            if (! $vehicle || ! $driver) {
+                continue;
+            }
 
             Consumption::create([
-                'vehicle_id'  => $vehicle->id,
-                'driver_id'   => $driver->id,
-                'date'        => now()->subDays($daysAgo)->toDateTimeString(),
+                'vehicle_id' => $vehicle->id,
+                'driver_id' => $driver->id,
+                'date' => now()->subDays($daysAgo)->toDateTimeString(),
                 'fuel_volume' => $litres,
-                'fuel_cost'   => $cout,
-                'mileage'     => $mileage,
+                'fuel_cost' => $cout,
+                'mileage' => $mileage,
             ]);
         }
     }

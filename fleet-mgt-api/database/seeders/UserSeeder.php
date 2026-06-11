@@ -26,11 +26,11 @@ class UserSeeder extends Seeder
             User::updateOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name'              => $data['name'],
+                    'name' => $data['name'],
                     'email_verified_at' => now(),
-                    'password'          => Hash::make('fleet123'),
-                    'role'              => $data['role'],
-                    'remember_token'    => Str::random(10),
+                    'password' => Hash::make('fleet123'),
+                    'role' => $data['role'],
+                    'remember_token' => Str::random(10),
                 ]
             );
         }

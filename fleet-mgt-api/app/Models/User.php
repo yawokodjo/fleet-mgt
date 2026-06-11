@@ -39,8 +39,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'blocked_until'     => 'datetime',
-        'password'          => 'hashed',
+        'blocked_until' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /* =====================================================

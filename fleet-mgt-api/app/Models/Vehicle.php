@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Vehicle extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'marque',
         'model',
@@ -26,10 +27,10 @@ class Vehicle extends Model
     ];
 
     protected $casts = [
-        'year'                        => 'integer',
-        'insurance_expiry'            => 'date',
+        'year' => 'integer',
+        'insurance_expiry' => 'date',
         'technical_inspection_expiry' => 'date',
-        'tvm_expiry'                  => 'date',
+        'tvm_expiry' => 'date',
     ];
 
     // Relation avec le conducteur actuel

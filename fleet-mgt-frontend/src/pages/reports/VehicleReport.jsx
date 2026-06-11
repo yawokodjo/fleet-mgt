@@ -48,7 +48,7 @@ export default function VehicleReport() {
         }
     };
 
-    useEffect(() => { fetchReport(); }, []);
+    useEffect(() => { fetchReport(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const totals = useMemo(() => {
         const byStatus = { operational: 0, maintenance: 0, out_of_service: 0 };

@@ -49,6 +49,7 @@ function StatusBar({ label, count, total, color }) {
 
 function ReportCard({ icon, color, title, desc, features, route }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     return (
         <div style={{ background: '#fff', borderRadius: '18px', border: `1.5px solid ${color}22`, boxShadow: '0 2px 14px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
             <div style={{ background: `linear-gradient(135deg, ${color}18, ${color}08)`, borderBottom: `3px solid ${color}`, padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -106,7 +107,7 @@ export default function Reports() {
             setMaintenances(toArr(m));
             setConsumptions(toArr(c));
         }).finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, []);
 
     /* ── computed stats ── */

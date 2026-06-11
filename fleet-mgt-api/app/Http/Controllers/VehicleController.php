@@ -37,8 +37,8 @@ class VehicleController extends Controller
             $s = $request->get('search');
             $query->where(function ($q) use ($s) {
                 $q->where('marque', 'like', "%{$s}%")
-                  ->orWhere('model', 'like', "%{$s}%")
-                  ->orWhere('license_plate', 'like', "%{$s}%");
+                    ->orWhere('model', 'like', "%{$s}%")
+                    ->orWhere('license_plate', 'like', "%{$s}%");
             });
         }
 
@@ -51,7 +51,7 @@ class VehicleController extends Controller
         }
 
         $allowed = ['marque', 'model', 'license_plate', 'status', 'year', 'mileage'];
-        $sortBy  = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'license_plate';
+        $sortBy = in_array($request->get('sort_by'), $allowed) ? $request->get('sort_by') : 'license_plate';
         $sortDir = $request->get('sort_dir') === 'desc' ? 'desc' : 'asc';
         $query->orderBy($sortBy, $sortDir);
 
@@ -74,19 +74,19 @@ class VehicleController extends Controller
         }
 
         $data = $request->validate([
-            'marque'                       => 'required|string|max:50',
-            'model'                        => 'required|string|max:50',
-            'license_plate'                => 'required|string|unique:vehicles|max:20',
-            'year'                         => 'required|integer|min:1900|max:'.(date('Y') + 1),
-            'fuel_type'                    => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
-            'fuel_card'                    => 'nullable|string|max:50',
-            'mileage'                      => 'required|integer|min:0',
-            'status'                       => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id'            => 'nullable|exists:users,id',
-            'document'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'insurance_expiry'             => 'nullable|date',
-            'technical_inspection_expiry'  => 'nullable|date',
-            'tvm_expiry'                   => 'nullable|date',
+            'marque' => 'required|string|max:50',
+            'model' => 'required|string|max:50',
+            'license_plate' => 'required|string|unique:vehicles|max:20',
+            'year' => 'required|integer|min:1900|max:'.(date('Y') + 1),
+            'fuel_type' => ['required', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
+            'fuel_card' => 'nullable|string|max:50',
+            'mileage' => 'required|integer|min:0',
+            'status' => ['required', Rule::in(['operational', 'maintenance', 'out_of_service'])],
+            'current_driver_id' => 'nullable|exists:users,id',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'insurance_expiry' => 'nullable|date',
+            'technical_inspection_expiry' => 'nullable|date',
+            'tvm_expiry' => 'nullable|date',
         ]);
 
         if ($request->hasFile('document')) {
@@ -129,19 +129,19 @@ class VehicleController extends Controller
         }
 
         $data = $request->validate([
-            'marque'                       => 'sometimes|string|max:50',
-            'model'                        => 'sometimes|string|max:50',
-            'license_plate'                => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
-            'year'                         => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
-            'fuel_type'                    => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
-            'fuel_card'                    => 'nullable|string|max:50',
-            'mileage'                      => 'sometimes|integer|min:0',
-            'status'                       => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
-            'current_driver_id'            => 'nullable|exists:users,id',
-            'document'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'insurance_expiry'             => 'nullable|date',
-            'technical_inspection_expiry'  => 'nullable|date',
-            'tvm_expiry'                   => 'nullable|date',
+            'marque' => 'sometimes|string|max:50',
+            'model' => 'sometimes|string|max:50',
+            'license_plate' => 'sometimes|string|unique:vehicles,license_plate,'.$vehicle->id.'|max:20',
+            'year' => 'sometimes|integer|min:1900|max:'.(date('Y') + 1),
+            'fuel_type' => ['sometimes', Rule::in(['essence', 'diesel', 'hybride', 'électrique', 'gpl', 'autre'])],
+            'fuel_card' => 'nullable|string|max:50',
+            'mileage' => 'sometimes|integer|min:0',
+            'status' => ['sometimes', Rule::in(['operational', 'maintenance', 'out_of_service'])],
+            'current_driver_id' => 'nullable|exists:users,id',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'insurance_expiry' => 'nullable|date',
+            'technical_inspection_expiry' => 'nullable|date',
+            'tvm_expiry' => 'nullable|date',
         ]);
 
         if ($request->hasFile('document')) {
@@ -386,19 +386,19 @@ class VehicleController extends Controller
             ->map(function ($v) {
                 $today = Carbon::today();
                 $fmt = fn ($d) => $d ? [
-                    'date'      => $d->format('Y-m-d'),
+                    'date' => $d->format('Y-m-d'),
                     'days_left' => $today->diffInDays($d, false),
-                    'expired'   => $d->lt($today),
+                    'expired' => $d->lt($today),
                 ] : null;
 
                 return [
-                    'id'            => $v->id,
+                    'id' => $v->id,
                     'license_plate' => $v->license_plate,
-                    'marque'        => $v->marque,
-                    'model'         => $v->model,
-                    'insurance'     => $fmt($v->insurance_expiry),
-                    'inspection'    => $fmt($v->technical_inspection_expiry),
-                    'tvm'           => $fmt($v->tvm_expiry),
+                    'marque' => $v->marque,
+                    'model' => $v->model,
+                    'insurance' => $fmt($v->insurance_expiry),
+                    'inspection' => $fmt($v->technical_inspection_expiry),
+                    'tvm' => $fmt($v->tvm_expiry),
                 ];
             });
 

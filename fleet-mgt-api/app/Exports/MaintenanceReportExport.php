@@ -18,19 +18,24 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $startDate;
+
     protected $endDate;
+
     protected $order;
+
     protected $vehicleId;
+
     protected $rowNumber = 1;
+
     protected $data;
 
     public function __construct($startDate, $endDate, $order = 'asc', $vehicleId = null)
     {
         $this->startDate = $startDate;
-        $this->endDate   = $endDate;
-        $this->order     = $order;
+        $this->endDate = $endDate;
+        $this->order = $order;
         $this->vehicleId = $vehicleId;
-        $this->data      = $this->getData();
+        $this->data = $this->getData();
     }
 
     private function getData()
@@ -64,6 +69,7 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
                 'Coût (FCFA)', 'Statut', 'Description', 'Document',
             ];
         }
+
         return [
             'N°', 'Date prévue', 'Date réalisée',
             'Véhicule', 'Type de maintenance', 'Société / Atelier',
@@ -112,30 +118,30 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
     private function getStatusLabel($status): string
     {
         return [
-            'planned'     => 'Planifié',
+            'planned' => 'Planifié',
             'in_progress' => 'En cours',
-            'completed'   => 'Terminé',
-            'cancelled'   => 'Annulé',
+            'completed' => 'Terminé',
+            'cancelled' => 'Annulé',
         ][$status] ?? ucfirst($status ?? '');
     }
 
     public function styles(Worksheet $sheet)
     {
-        $lastRow    = $sheet->getHighestRow();
+        $lastRow = $sheet->getHighestRow();
         $lastColumn = $sheet->getHighestColumn();
 
         // En-tête
         $sheet->getStyle('A1:'.$lastColumn.'1')->applyFromArray([
-            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0d6efd']],
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0d6efd']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
         ]);
 
         // Données
         if ($lastRow > 1) {
             $sheet->getStyle('A2:'.$lastColumn.$lastRow)->applyFromArray([
-                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
 
@@ -149,7 +155,7 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
         }
 
         // Ligne de total
-        $totalRow  = $lastRow + 1;
+        $totalRow = $lastRow + 1;
         $totalCost = $this->data->sum('cost');
 
         // Coût est toujours en colonne G (7) dans les deux layouts
@@ -157,10 +163,10 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
         $sheet->setCellValue('G'.$totalRow, number_format($totalCost, 0, ',', ' ').' FCFA');
 
         $sheet->getStyle('A'.$totalRow.':'.$lastColumn.$totalRow)->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 11],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E9ECEF']],
+            'font' => ['bold' => true, 'size' => 11],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E9ECEF']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
         ]);
 
         // Hauteurs
@@ -175,7 +181,7 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
         $sheet->mergeCells('A1:'.$lastColumn.'1');
         $sheet->setCellValue('A1', 'RAPPORT DE MAINTENANCE DES VEHICULES');
         $sheet->getStyle('A1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 16, 'color' => ['rgb' => '0d6efd']],
+            'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => '0d6efd']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
         $sheet->getRowDimension(1)->setRowHeight(30);
@@ -194,7 +200,7 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
         $period .= ' | '.$this->data->count().' enregistrement(s)';
         $sheet->setCellValue('A2', $period);
         $sheet->getStyle('A2')->applyFromArray([
-            'font'      => ['italic' => true, 'size' => 10, 'color' => ['rgb' => '6C757D']],
+            'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => '6C757D']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
         $sheet->getRowDimension(2)->setRowHeight(20);
@@ -214,6 +220,7 @@ class MaintenanceReportExport implements FromCollection, ShouldAutoSize, WithCol
         if ($this->vehicleId) {
             return ['A' => 5, 'B' => 13, 'C' => 13, 'D' => 20, 'E' => 22, 'F' => 14, 'G' => 14, 'H' => 11, 'I' => 35, 'J' => 10];
         }
+
         return ['A' => 5, 'B' => 13, 'C' => 13, 'D' => 14, 'E' => 20, 'F' => 22, 'G' => 14, 'H' => 11, 'I' => 35, 'J' => 10];
     }
 }

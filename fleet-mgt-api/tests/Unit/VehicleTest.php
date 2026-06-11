@@ -9,8 +9,9 @@ class VehicleTest extends TestCase
 {
     private function makeVehicle(string $status): Vehicle
     {
-        $v = new Vehicle();
+        $v = new Vehicle;
         $v->status = $status;
+
         return $v;
     }
 
