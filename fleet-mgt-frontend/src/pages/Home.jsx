@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+// import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import logoCI from '../assets/logo-ci.png';
 import carBg from '../assets/voiture.jpg';
@@ -53,9 +53,9 @@ function HelpModal({ onClose }) {
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
                 </div>
                 {[
-                    { title: t('home.help_access'),  desc: t('home.help_access_desc'),  icon: '🔑' },
-                    { title: t('home.help_forgot'),   desc: t('home.help_forgot_desc'),   icon: '🔒' },
-                    { title: t('home.help_contact'),  desc: t('home.help_contact_desc'),  icon: '📧' },
+                    { title: t('home.help_access'), desc: t('home.help_access_desc'), icon: '🔑' },
+                    { title: t('home.help_forgot'), desc: t('home.help_forgot_desc'), icon: '🔒' },
+                    { title: t('home.help_contact'), desc: t('home.help_contact_desc'), icon: '📧' },
                 ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.2rem' }}>
                         <div style={{ fontSize: '1.4rem', flexShrink: 0, marginTop: '2px' }}>{item.icon}</div>
@@ -254,9 +254,9 @@ export default function Home() {
                                     </div>
                                 )}
                                 {[
-                                    { name: 'name',    label: t('home.contact_name'),        type: 'text',  placeholder: 'Jean Dupont' },
-                                    { name: 'email',   label: t('home.contact_email_label'),  type: 'email', placeholder: 'jean@example.com' },
-                                    { name: 'subject', label: t('home.contact_subject'),      type: 'text',  placeholder: t('home.contact_subject') },
+                                    { name: 'name', label: t('home.contact_name'), type: 'text', placeholder: 'Jean Dupont' },
+                                    { name: 'email', label: t('home.contact_email_label'), type: 'email', placeholder: 'jean@example.com' },
+                                    { name: 'subject', label: t('home.contact_subject'), type: 'text', placeholder: t('home.contact_subject') },
                                 ].map(field => (
                                     <div key={field.name} style={{ marginBottom: '0.9rem' }}>
                                         <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#7a90b5', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{field.label}</label>

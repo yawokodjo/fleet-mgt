@@ -152,10 +152,12 @@ class AuthController extends Controller
         // Revoke Bearer token (token mode)
         $request->user()->currentAccessToken()->delete();
 
-        // Invalidate session (SPA cookie mode)
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Invalidate session (SPA cookie mode only — no session in Bearer token mode)
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['message' => 'Déconnexion réussie']);
     }

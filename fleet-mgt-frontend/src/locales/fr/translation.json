@@ -651,6 +651,7 @@
     "contact_admin": "Demandez à l'administrateur de vous accorder les droits nécessaires.",
     "request_button": "Demander l'accès par email",
     "request_sent": "Email préparé — vérifiez votre client mail.",
-    "request_to": "La demande sera envoyée à"
+    "request_to": "La demande sera envoyée à",
+    "back_to_dashboard": "← Retour au tableau de bord"
   }
 }

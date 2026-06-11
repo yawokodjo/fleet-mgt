@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
@@ -57,6 +57,7 @@ function AccessDenied() {
                     padding: '0.7rem 1.4rem', borderRadius: '10px',
                     background: '#dcfce7', border: '1.5px solid #86efac',
                     fontSize: '0.88rem', fontWeight: 600, color: '#16a34a',
+                    marginBottom: '1rem',
                 }}>
                     ✓ {t('access.request_sent')}
                 </div>
@@ -75,6 +76,19 @@ function AccessDenied() {
                     ✉️ {t('access.request_button')}
                 </button>
             )}
+
+            {/* Lien retour dashboard */}
+            <Link
+                to="/dashboard"
+                style={{
+                    fontSize: '0.88rem', fontWeight: 600, color: '#64748b',
+                    textDecoration: 'none',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#0f172a'}
+                onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
+            >
+                {t('access.back_to_dashboard')}
+            </Link>
 
         </div>
     );

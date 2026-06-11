@@ -4,7 +4,7 @@ import api from '../axios';
 import { useInactivityTimer } from '../hooks/useInactivityTimer';
 import SessionWarningModal from '../components/SessionWarningModal';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

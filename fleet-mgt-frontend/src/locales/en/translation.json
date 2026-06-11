@@ -651,6 +651,7 @@
     "contact_admin": "Ask your administrator to grant you the necessary permissions.",
     "request_button": "Request access by email",
     "request_sent": "Email ready — check your mail client.",
-    "request_to": "The request will be sent to"
+    "request_to": "The request will be sent to",
+    "back_to_dashboard": "← Back to dashboard"
   }
 }

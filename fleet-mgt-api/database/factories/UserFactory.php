@@ -41,4 +41,38 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    public function admin(): static
+    {
+        return $this->state(['role' => 'admin']);
+    }
+
+    public function manager(): static
+    {
+        return $this->state(['role' => 'manager']);
+    }
+
+    public function driver(): static
+    {
+        return $this->state(['role' => 'driver']);
+    }
+
+    public function accountant(): static
+    {
+        return $this->state(['role' => 'accountant']);
+    }
+
+    public function mechanic(): static
+    {
+        return $this->state(['role' => 'mechanic']);
+    }
+
+    public function blocked(int $minutes = 30): static
+    {
+        return $this->state([
+            'login_attempts' => 0,
+            'block_count'    => 2,
+            'blocked_until'  => now()->addMinutes($minutes),
+        ]);
+    }
 }
