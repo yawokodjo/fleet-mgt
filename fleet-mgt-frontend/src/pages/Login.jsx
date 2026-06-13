@@ -57,22 +57,22 @@ export default function Login() {
     const navigate = useNavigate();
     const { i18n } = useTranslation();
 
-    const [email,    setEmail]    = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [showPwd,  setShowPwd]  = useState(false);
-    const [loading,  setLoading]  = useState(false);
+    const [showPwd, setShowPwd] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     /* error states */
-    const [errorMsg,   setErrorMsg]   = useState('');
-    const [remaining,  setRemaining]  = useState(MAX_ATTEMPTS);
-    const [shake,      setShake]      = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+    const [remaining, setRemaining] = useState(MAX_ATTEMPTS);
+    const [shake, setShake] = useState(false);
 
     /* block states */
-    const [blocked,    setBlocked]    = useState(false);
-    const [countdown,  setCountdown]  = useState(0);
+    const [blocked, setBlocked] = useState(false);
+    const [countdown, setCountdown] = useState(0);
 
     /* deleted modal */
-    const [deleted,    setDeleted]    = useState(false);
+    const [deleted, setDeleted] = useState(false);
 
     const emailRef = useRef(null);
 
@@ -171,7 +171,7 @@ export default function Login() {
     });
 
     const [focusEmail, setFocusEmail] = useState(false);
-    const [focusPwd,   setFocusPwd]   = useState(false);
+    const [focusPwd, setFocusPwd] = useState(false);
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
@@ -199,11 +199,11 @@ export default function Login() {
                         Gestion de Flotte<br />Véhicule
                     </h2>
                     <p style={{ color: 'rgba(255,255,255,.7)', fontSize: '.95rem', maxWidth: '360px', lineHeight: 1.65, marginBottom: '2rem' }}>
-                        Suivez, planifiez et optimisez votre parc automobile.
+                        Suivre, planifier et optimiser le  parc automobile de Compassion International Togo.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.85rem', maxWidth: '340px' }}>
                         {[
-                            { icon: '🚗', text: 'Suivi en temps réel de vos véhicules' },
+                            { icon: '🚗', text: 'Suivi en temps réel des véhicules' },
                             { icon: '⛽', text: 'Analyse de la consommation carburant' },
                             { icon: '🔧', text: 'Maintenance planifiée & historique' },
                         ].map((item, i) => (
@@ -227,13 +227,13 @@ export default function Login() {
 
                     {/* Language */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem', gap: '.4rem' }}>
-                        {['fr','en'].map(lang => (
+                        {['fr', 'en'].map(lang => (
                             <button key={lang} onClick={() => i18n.changeLanguage(lang)} style={{
                                 padding: '.3rem .75rem', borderRadius: '6px', fontSize: '.78rem', fontWeight: 700,
                                 cursor: 'pointer', border: '1.5px solid', transition: 'all .15s',
-                                background:   i18n.language === lang ? '#0d6efd' : 'transparent',
-                                color:        i18n.language === lang ? '#fff'    : '#64748b',
-                                borderColor:  i18n.language === lang ? '#0d6efd' : '#e2e8f0',
+                                background: i18n.language === lang ? '#0d6efd' : 'transparent',
+                                color: i18n.language === lang ? '#fff' : '#64748b',
+                                borderColor: i18n.language === lang ? '#0d6efd' : '#e2e8f0',
                             }}>{lang.toUpperCase()}</button>
                         ))}
                     </div>
